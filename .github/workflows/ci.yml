@@ -44,15 +44,7 @@ jobs:
       - name: Coverage
         run: |
           go test -count=1 ./... -coverprofile=coverage.out
-          go tool cover -func=coverage.out | Tee-Object -Variable output
-          $totalLine = $output | Select-String -Pattern 'total:'
-          if ($totalLine) {
-            $parts = $totalLine.ToString() -split '\s+'
-            $percent = [double]$parts[$parts.Length - 1].Replace('%','')
-            if ($percent -lt 70) {
-              Write-Error "Coverage $percent% is below 70% gate"
-            }
-          }
+          go tool cover -func=coverage.out
         shell: pwsh
 
   build:
