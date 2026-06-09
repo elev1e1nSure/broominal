@@ -118,11 +118,23 @@ func Load() (*Config, error) {
 			cfg.EnabledCategories[cat] = val
 		}
 	}
+	if cfg.OldInstallerMonths <= 0 {
+		cfg.OldInstallerMonths = defaults.OldInstallerMonths
+	}
+	if cfg.LargeFileMinSizeMB <= 0 {
+		cfg.LargeFileMinSizeMB = defaults.LargeFileMinSizeMB
+	}
+	if cfg.LargeFileMonths <= 0 {
+		cfg.LargeFileMonths = defaults.LargeFileMonths
+	}
 	if cfg.OldTempDays <= 0 {
 		cfg.OldTempDays = defaults.OldTempDays
 	}
 	if cfg.OldExtensionDays <= 0 {
 		cfg.OldExtensionDays = defaults.OldExtensionDays
+	}
+	if cfg.QuarantineMaxAgeDays <= 0 {
+		cfg.QuarantineMaxAgeDays = defaults.QuarantineMaxAgeDays
 	}
 	return &cfg, nil
 }

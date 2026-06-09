@@ -1,6 +1,7 @@
 package quarantine
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -61,7 +62,7 @@ func TestMoveDryRun(t *testing.T) {
 	_ = os.WriteFile(src, []byte("data"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, freed, files, _, err := Move(items, true)
+	id, freed, files, _, err := Move(context.Background(), items, true)
 	if err != nil {
 		t.Fatalf("Move dry-run failed: %v", err)
 	}
@@ -95,7 +96,7 @@ func TestMoveReal(t *testing.T) {
 		{Path: src2, Size: 2, Selected: true},
 	}
 
-	id, freed, files, _, err := Move(items, false)
+	id, freed, files, _, err := Move(context.Background(), items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -131,7 +132,7 @@ func TestMoveMissingFile(t *testing.T) {
 	items := []types.Item{
 		{Path: filepath.Join(tmp, "missing.txt"), Size: 10, Selected: true},
 	}
-	_, freed, files, _, err := Move(items, false)
+	_, freed, files, _, err := Move(context.Background(), items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -161,7 +162,7 @@ func TestMoveDuplicateNames(t *testing.T) {
 		{Path: f2, Size: 1, Selected: true},
 	}
 
-	id, _, _, _, err := Move(items, false)
+	id, _, _, _, err := Move(context.Background(), items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -201,7 +202,7 @@ func TestRestoreHappyPath(t *testing.T) {
 	_ = os.WriteFile(src, []byte("data"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(items, false)
+	id, _, _, _, err := Move(context.Background(), items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -234,7 +235,7 @@ func TestRestoreConflictSkip(t *testing.T) {
 	_ = os.WriteFile(src, []byte("original"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(items, false)
+	id, _, _, _, err := Move(context.Background(), items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -268,7 +269,7 @@ func TestRestoreForceOverwrite(t *testing.T) {
 	_ = os.WriteFile(src, []byte("original"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(items, false)
+	id, _, _, _, err := Move(context.Background(), items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -300,7 +301,7 @@ func TestCheckRestoreConflicts(t *testing.T) {
 	_ = os.WriteFile(src, []byte("data"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(items, false)
+	id, _, _, _, err := Move(context.Background(), items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -564,5 +565,94 @@ func TestRestoreManifestDisallowedPath(t *testing.T) {
 	}
 	if restored != 0 {
 		t.Errorf("restored = %d, want 0", restored)
+	}
+}
+
+func TestMoveContextCancellation(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	// Create multiple files
+	var items []types.Item
+	for i := 0; i < 5; i++ {
+		p := filepath.Join(tmp, fmt.Sprintf("file%d.txt", i))
+		_ = os.WriteFile(p, []byte("data"), 0644)
+		items = append(items, types.Item{Path: p, Size: 4, Selected: true})
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately
+
+	_, freed, files, skipped, err := Move(ctx, items, false)
+	if err != context.Canceled {
+		t.Fatalf("expected context.Canceled, got: %v", err)
+	}
+	// Should have moved 0 files because ctx was cancelled before loop
+	if files != 0 {
+		t.Errorf("files = %d, want 0", files)
+	}
+	if freed != 0 {
+		t.Errorf("freed = %d, want 0", freed)
+	}
+	if skipped != 0 {
+		t.Errorf("skipped = %d, want 0", skipped)
+	}
+}
+
+func TestMoveLockedFile(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	locked := filepath.Join(tmp, "locked.txt")
+	_ = os.WriteFile(locked, []byte("data"), 0644)
+
+	// Open file to simulate lock on Windows
+	f, err := os.Open(locked)
+	if err != nil {
+		t.Skipf("cannot open file for lock simulation: %v", err)
+	}
+	defer f.Close()
+
+	items := []types.Item{{Path: locked, Size: 4, Selected: true}}
+	_, freed, files, skipped, err := Move(context.Background(), items, false)
+	if err != nil {
+		t.Fatalf("Move failed: %v", err)
+	}
+	if files != 0 && skipped != 1 {
+		t.Errorf("locked file: files=%d skipped=%d, want files=0 skipped=1", files, skipped)
+	}
+	if freed != 0 {
+		t.Errorf("freed = %d, want 0", freed)
+	}
+}
+
+func TestRestoreEmptyDir(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	src := filepath.Join(tmp, "emptydir")
+	_ = os.MkdirAll(src, 0755)
+
+	items := []types.Item{{Path: src, Size: 0, Selected: true}}
+	id, _, files, _, err := Move(context.Background(), items, false)
+	if err != nil {
+		t.Fatalf("Move failed: %v", err)
+	}
+	if files != 1 {
+		t.Errorf("files = %d, want 1", files)
+	}
+
+	// Remove original dir before restore
+	_ = os.RemoveAll(src)
+
+	restored, _, err := Restore(id, false)
+	if err != nil {
+		t.Fatalf("Restore failed: %v", err)
+	}
+	if restored != 1 {
+		t.Errorf("restored = %d, want 1", restored)
+	}
+	if _, err := os.Stat(src); os.IsNotExist(err) {
+		t.Error("empty dir should be restored")
 	}
 }

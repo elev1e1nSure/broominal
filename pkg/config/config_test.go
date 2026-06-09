@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -186,5 +187,91 @@ func TestDirPermissions(t *testing.T) {
 		if perm != 0700 {
 			t.Errorf("config dir permissions = %04o, want 0700", perm)
 		}
+	}
+}
+
+func TestIsExcluded(t *testing.T) {
+	cfg := &Config{
+		Exclusions: []string{"node_modules", "temp"},
+	}
+	tests := []struct {
+		path string
+		want bool
+	}{
+		{`C:\project\node_modules\pkg`, true},
+		{`C:\project\NODE_MODULES\pkg`, true},
+		{`C:\temp\file.txt`, true},
+		{`C:\template\file.txt`, false},
+		{`C:\safe\file.txt`, false},
+	}
+	for _, tt := range tests {
+		got := cfg.IsExcluded(tt.path)
+		if got != tt.want {
+			t.Errorf("IsExcluded(%q) = %v, want %v", tt.path, got, tt.want)
+		}
+	}
+}
+
+func TestAppDirFallback(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", "")
+	t.Setenv("USERPROFILE", tmp)
+
+	want := filepath.Join(tmp, "broominal")
+	if AppDir() != want {
+		t.Errorf("AppDir() = %q, want %q", AppDir(), want)
+	}
+}
+
+func TestLoadReadError(t *testing.T) {
+	// Create a config path that is a directory instead of a file
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+	_ = os.MkdirAll(Path(), 0755)
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error when config path is a directory")
+	}
+}
+
+func TestLoadInvalidThresholds(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	bad := &Config{
+		EnabledCategories:    map[string]bool{"Temp": true},
+		OldInstallerMonths:     -1,
+		LargeFileMinSizeMB:   0,
+		LargeFileMonths:      -5,
+		OldTempDays:          0,
+		OldExtensionDays:     -1,
+		QuarantineMaxAgeDays: 0,
+	}
+	_ = os.MkdirAll(Dir(), 0755)
+	data, _ := json.Marshal(bad)
+	_ = os.WriteFile(Path(), data, 0644)
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if cfg.OldInstallerMonths <= 0 {
+		t.Errorf("OldInstallerMonths = %d, want > 0", cfg.OldInstallerMonths)
+	}
+	if cfg.LargeFileMinSizeMB <= 0 {
+		t.Errorf("LargeFileMinSizeMB = %d, want > 0", cfg.LargeFileMinSizeMB)
+	}
+	if cfg.LargeFileMonths <= 0 {
+		t.Errorf("LargeFileMonths = %d, want > 0", cfg.LargeFileMonths)
+	}
+	if cfg.OldTempDays <= 0 {
+		t.Errorf("OldTempDays = %d, want > 0", cfg.OldTempDays)
+	}
+	if cfg.OldExtensionDays <= 0 {
+		t.Errorf("OldExtensionDays = %d, want > 0", cfg.OldExtensionDays)
+	}
+	if cfg.QuarantineMaxAgeDays <= 0 {
+		t.Errorf("QuarantineMaxAgeDays = %d, want > 0", cfg.QuarantineMaxAgeDays)
 	}
 }

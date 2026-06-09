@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -128,7 +129,7 @@ func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
-			res, err := cleaner.Run(selected, m.dryRun, m.result)
+			res, err := cleaner.Run(context.Background(), selected, m.dryRun, m.result)
 			if err != nil {
 				return cleanDoneMsg{nil, err}
 			}

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -58,10 +60,16 @@ const usageTemplate = `{{bold "Usage:"}}
 `
 
 func main() {
+	var jsonLogs bool
 	var rootCmd = &cobra.Command{
 		Use:   "broominal",
 		Short: "Safe Windows cleanup with undo",
 		Long:  "A safe, transparent, undoable Windows cleanup tool.",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			if jsonLogs {
+				slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
+			}
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := tui.Start(); err != nil {
 				fmt.Fprintf(os.Stderr, "TUI error: %v\n", err)
@@ -70,6 +78,7 @@ func main() {
 		},
 	}
 
+	rootCmd.PersistentFlags().BoolVar(&jsonLogs, "json-logs", false, "Output structured JSON logs to stderr")
 	rootCmd.SetHelpTemplate(helpTemplate)
 	rootCmd.SetUsageTemplate(usageTemplate)
 
@@ -97,7 +106,7 @@ func scanCmd() *cobra.Command {
 			if cfg == nil {
 				cfg = config.Default()
 			}
-			res, err := scanner.ScanWithConfig(cfg)
+			res, err := scanner.ScanWithConfig(context.Background(), cfg)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
 				os.Exit(1)
@@ -147,11 +156,12 @@ func cleanCmd() *cobra.Command {
 		Use:   "clean",
 		Short: "Clean selected items",
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
 			cfg, _ := config.Load()
 			if cfg == nil {
 				cfg = config.Default()
 			}
-			res, err := scanner.ScanWithConfig(cfg)
+			res, err := scanner.ScanWithConfig(ctx, cfg)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
 				os.Exit(1)
@@ -177,7 +187,7 @@ func cleanCmd() *cobra.Command {
 					selected = append(selected, it)
 				}
 			}
-			cleanResult, err := cleaner.Run(selected, dryRun, res)
+			cleanResult, err := cleaner.Run(ctx, selected, dryRun, res)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Clean failed: %v\n", err)
 				os.Exit(1)
@@ -270,7 +280,7 @@ func reportCmd() *cobra.Command {
 			if cfg == nil {
 				cfg = config.Default()
 			}
-			res, err := scanner.ScanWithConfig(cfg)
+			res, err := scanner.ScanWithConfig(context.Background(), cfg)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
 				os.Exit(1)

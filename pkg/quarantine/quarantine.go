@@ -82,6 +82,13 @@ func Move(ctx context.Context, items []types.Item, dryRun bool) (string, int64, 
 			continue
 		}
 
+		// Check for symlinks - refuse to process
+		if info, err := os.Lstat(it.Path); err == nil && info.Mode()&os.ModeSymlink != 0 {
+			skipped++
+			slog.Warn("quarantine: skipping symlink", "path", it.Path)
+			continue
+		}
+
 		qPath := uniquePath(qDir, filepath.Base(it.Path))
 
 		moved := true
@@ -507,6 +514,16 @@ func uniquePath(dir, name string) string {
 }
 
 func copyAndDelete(src, dst string) error {
+	// Check if source is a symlink - refuse to follow
+	if info, err := os.Lstat(src); err == nil && info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("refusing to follow symlink: %s", src)
+	}
+
+	// Check if destination already exists (could be symlink attack)
+	if _, err := os.Lstat(dst); err == nil {
+		return fmt.Errorf("destination already exists: %s", dst)
+	}
+
 	in, err := os.Open(src)
 	if err != nil {
 		return err

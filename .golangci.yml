@@ -1,0 +1,44 @@
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+
+linters:
+  enable:
+    - errcheck
+    - gosec
+    - staticcheck
+    - gocritic
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - unused
+  disable:
+    - structcheck
+    - varcheck
+    - deadcode
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  gosec:
+    severity: medium
+    confidence: medium
+  gocritic:
+    enabled-checks:
+      - builtinShadow
+      - sloppyReassign
+      - truncateCmp
+      - equalFold
+      - badCond
+    disabled-checks:
+      - hugeParam
+      - rangeExprCopy
+      - rangeValCopy
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0

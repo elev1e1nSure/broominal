@@ -1,7 +1,9 @@
 package tui
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/config"
@@ -36,7 +38,7 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				if cfg == nil {
 					cfg = config.Default()
 				}
-				res, err := scanner.ScanWithConfig(cfg)
+				res, err := scanner.ScanWithConfig(context.Background(), cfg)
 				if err != nil {
 					return errMsg{err}
 				}

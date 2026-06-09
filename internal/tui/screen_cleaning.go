@@ -25,7 +25,8 @@ func (m model) handleKeyResult(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		conflicts, err := quarantine.CheckRestoreConflicts(m.cleanResult.RestoreID)
 		if err != nil {
 			m.err = err
-			return m, tea.Quit
+			m.screen = ScreenError
+			return m, nil
 		}
 		if len(conflicts) > 0 {
 			m.conflicts = conflicts
@@ -36,7 +37,8 @@ func (m model) handleKeyResult(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		_, skipped, err := quarantine.Restore(m.cleanResult.RestoreID, false)
 		if err != nil {
 			m.err = err
-			return m, tea.Quit
+			m.screen = ScreenError
+			return m, nil
 		}
 		if skipped == 0 {
 			m.cleanResult = nil // restored

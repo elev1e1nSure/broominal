@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,18 +14,20 @@ import (
 type CategoryScanner interface {
 	Name() string
 	Risk() types.RiskLevel
-	Scan(cfg *config.Config) ([]types.Item, error)
+	Scan(ctx context.Context, cfg *config.Config) ([]types.Item, error)
 }
 
 type catScanner struct {
 	name string
 	risk types.RiskLevel
-	scan func(*config.Config) ([]types.Item, error)
+	scan func(context.Context, *config.Config) ([]types.Item, error)
 }
 
-func (c catScanner) Name() string                                  { return c.name }
-func (c catScanner) Risk() types.RiskLevel                         { return c.risk }
-func (c catScanner) Scan(cfg *config.Config) ([]types.Item, error) { return c.scan(cfg) }
+func (c catScanner) Name() string                                            { return c.name }
+func (c catScanner) Risk() types.RiskLevel                                   { return c.risk }
+func (c catScanner) Scan(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	return c.scan(ctx, cfg)
+}
 
 // allScanners registers every supported cleanup category.
 var allScanners = []CategoryScanner{

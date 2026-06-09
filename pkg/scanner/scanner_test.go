@@ -1,6 +1,8 @@
 package scanner
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -173,7 +175,7 @@ func TestScanWithConfigDisabledCategories(t *testing.T) {
 	cfg.EnabledCategories["Temp"] = false
 	cfg.EnabledCategories["Downloads"] = false
 
-	res, err := ScanWithConfig(cfg)
+	res, err := ScanWithConfig(context.Background(), cfg)
 	if err != nil {
 		t.Fatalf("ScanWithConfig error: %v", err)
 	}
@@ -182,5 +184,119 @@ func TestScanWithConfigDisabledCategories(t *testing.T) {
 		if cat.Category == "Temp" || cat.Category == "Downloads" {
 			t.Errorf("category %q should be disabled", cat.Category)
 		}
+	}
+}
+
+func TestScanOldTempFiles(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("TEMP", tmp)
+
+	old := time.Now().AddDate(0, 0, -10)
+	p := filepath.Join(tmp, "old_temp.txt")
+	_ = os.WriteFile(p, []byte("temp"), 0644)
+	_ = os.Chtimes(p, old, old)
+
+	cfg := config.Default()
+	cfg.OldTempDays = 7
+
+	items, err := scanOldTempFiles(cfg)
+	if err != nil {
+		t.Fatalf("scanOldTempFiles error: %v", err)
+	}
+	found := false
+	for _, it := range items {
+		if it.Path == p {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected to find %q in old temp files", p)
+	}
+}
+
+func TestScanOldExtensions(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("TEMP", tmp)
+	t.Setenv("USERPROFILE", tmp)
+
+	old := time.Now().AddDate(0, 0, -40)
+	p := filepath.Join(tmp, "old_backup.bak")
+	_ = os.WriteFile(p, []byte("backup"), 0644)
+	_ = os.Chtimes(p, old, old)
+
+	cfg := config.Default()
+	cfg.OldExtensionDays = 30
+
+	items, err := scanOldExtensions(".bak", cfg)
+	if err != nil {
+		t.Fatalf("scanOldExtensions error: %v", err)
+	}
+	found := false
+	for _, it := range items {
+		if it.Path == p {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected to find %q in old extensions", p)
+	}
+}
+
+func TestScanEmptyFolders(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("TEMP", tmp)
+	t.Setenv("USERPROFILE", tmp)
+
+	empty := filepath.Join(tmp, "empty_folder")
+	_ = os.MkdirAll(empty, 0755)
+
+	cfg := config.Default()
+	items, err := scanEmptyFolders(cfg)
+	if err != nil {
+		t.Fatalf("scanEmptyFolders error: %v", err)
+	}
+	found := false
+	for _, it := range items {
+		if it.Path == empty {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected to find %q in empty folders", empty)
+	}
+}
+
+func TestScanFirefoxCache(t *testing.T) {
+	tmp := t.TempDir()
+	cache2 := filepath.Join(tmp, "cache2")
+	_ = os.MkdirAll(cache2, 0755)
+	_ = os.WriteFile(filepath.Join(cache2, "entry1"), []byte("data"), 0644)
+
+	cfg := config.Default()
+	items, err := scanFirefoxCache(tmp, cfg)
+	if err != nil {
+		t.Fatalf("scanFirefoxCache error: %v", err)
+	}
+	if len(items) == 0 {
+		t.Error("expected some cache items from cache2")
+	}
+}
+
+func TestScanDirMaxFilesLimit(t *testing.T) {
+	tmp := t.TempDir()
+	for i := 0; i < maxScanFiles+5; i++ {
+		p := filepath.Join(tmp, fmt.Sprintf("file%d.txt", i))
+		_ = os.WriteFile(p, []byte("x"), 0644)
+	}
+	cfg := config.Default()
+	items, err := scanDir(tmp, "test", types.RiskSafe, nil, true, cfg)
+	if err != nil {
+		t.Fatalf("scanDir error: %v", err)
+	}
+	if len(items) != maxScanFiles {
+		t.Errorf("expected %d items, got %d", maxScanFiles, len(items))
 	}
 }
