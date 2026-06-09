@@ -285,6 +285,112 @@ func TestScanFirefoxCache(t *testing.T) {
 	}
 }
 
+func TestScanStartupLeftovers(t *testing.T) {
+	appdata := t.TempDir()
+	programdata := t.TempDir()
+	t.Setenv("APPDATA", appdata)
+	t.Setenv("PROGRAMDATA", programdata)
+
+	// User startup folder — 2 shortcut files + 1 non-shortcut (filtered out)
+	startupDir := filepath.Join(appdata, "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
+	_ = os.MkdirAll(startupDir, 0755)
+	_ = os.WriteFile(filepath.Join(startupDir, "OldApp.lnk"), []byte("lnk"), 0644)
+	_ = os.WriteFile(filepath.Join(startupDir, "OldApp.url"), []byte("url"), 0644)
+	_ = os.WriteFile(filepath.Join(startupDir, "readme.txt"), []byte("txt"), 0644)
+
+	cfg := config.Default()
+	items, err := scanStartupLeftovers(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("scanStartupLeftovers error: %v", err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("expected 2 items (.lnk + .url), got %d", len(items))
+	}
+	for _, it := range items {
+		if it.Category != "startup_leftover" {
+			t.Errorf("category = %q, want startup_leftover", it.Category)
+		}
+		if it.Risk != types.RiskReview {
+			t.Errorf("risk = %v, want RiskReview", it.Risk)
+		}
+	}
+}
+
+func TestExtractTaskCommand(t *testing.T) {
+	cases := []struct {
+		name string
+		xml  string
+		want string
+	}{
+		{
+			name: "UTF-8 XML",
+			xml: `<?xml version="1.0"?><Task><Actions><Exec><Command>C:\Broken\app.exe</Command></Exec></Actions></Task>`,
+			want: `C:\Broken\app.exe`,
+		},
+		{
+			name: "quoted command",
+			xml: `<Task><Actions><Exec><Command>"C:\My App\app.exe"</Command></Exec></Actions></Task>`,
+			want: `C:\My App\app.exe`,
+		},
+		{
+			name: "no command tag",
+			xml:  `<Task><Actions></Actions></Task>`,
+			want: "",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := extractTaskCommand([]byte(tc.xml))
+			if got != tc.want {
+				t.Errorf("extractTaskCommand = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestScanDuplicateFiles(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("USERPROFILE", tmp)
+
+	downloads := filepath.Join(tmp, "Downloads")
+	_ = os.MkdirAll(downloads, 0755)
+
+	// Two 2-MB files with identical content — one duplicate expected
+	content := make([]byte, 2*1024*1024)
+	for i := range content {
+		content[i] = 0xAB
+	}
+	_ = os.WriteFile(filepath.Join(downloads, "file1.bin"), content, 0644)
+	_ = os.WriteFile(filepath.Join(downloads, "file2.bin"), content, 0644)
+
+	// Different content — should NOT be flagged
+	other := make([]byte, 2*1024*1024)
+	for i := range other {
+		other[i] = 0xCD
+	}
+	_ = os.WriteFile(filepath.Join(downloads, "file3.bin"), other, 0644)
+
+	// Small file (< 1 MB) — should be ignored even if duplicated
+	small := []byte("tiny")
+	_ = os.WriteFile(filepath.Join(downloads, "small1.txt"), small, 0644)
+	_ = os.WriteFile(filepath.Join(downloads, "small2.txt"), small, 0644)
+
+	cfg := config.Default()
+	items, err := scanDuplicateFiles(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("scanDuplicateFiles error: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 duplicate, got %d", len(items))
+	}
+	if items[0].Category != "duplicate_files" {
+		t.Errorf("category = %q, want duplicate_files", items[0].Category)
+	}
+	if items[0].Risk != types.RiskReview {
+		t.Errorf("risk = %v, want RiskReview", items[0].Risk)
+	}
+}
+
 func TestScanDirMaxFilesLimit(t *testing.T) {
 	tmp := t.TempDir()
 	for i := 0; i < maxScanFiles+5; i++ {

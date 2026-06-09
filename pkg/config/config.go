@@ -57,11 +57,14 @@ func Default() *Config {
 			"Nvidia Installer Leftovers": false,
 			"Zoom Cache":                 false,
 			// Deep
-			"Downloads":        false,
-			"Recycle Bin":      false,
-			"Old Installers":   false,
-			"Large Old Files":  false,
-			"Windows Defender": false,
+			"Downloads":          false,
+			"Recycle Bin":        false,
+			"Old Installers":     false,
+			"Large Old Files":    false,
+			"Windows Defender":   false,
+			"Startup Leftovers":  false,
+			"Scheduled Tasks":    false,
+			"Duplicate Files":    false,
 		},
 		ActivePreset: string(PresetQuick),
 		Exclusions:   []string{},
@@ -253,6 +256,8 @@ func (c *Config) ApplyPreset(p Preset) {
 		"Old Installers",
 		"Large Old Files",
 		"Windows Defender",
+		"Startup Leftovers",
+		"Scheduled Tasks",
 	)
 
 	var categories []string

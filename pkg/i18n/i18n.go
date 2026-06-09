@@ -167,6 +167,9 @@ var translations = map[string]map[string]string{
 		"cat_windows_defender":                "Windows Defender History",
 		"cat_amd_gpu_cache":                   "AMD GPU Cache",
 		"cat_zoom_cache":                      "Zoom Cache",
+		"cat_startup_leftover":                "Startup Leftovers",
+		"cat_scheduled_tasks_leftover":        "Scheduled Tasks",
+		"cat_duplicate_files":                 "Duplicate Files",
 		"cat_desc_temp":                       "Temporary files from %TEMP%. Created by running applications. These are typically removed automatically, but some may remain.",
 		"cat_desc_downloads":                  "Files in your Downloads folder. May contain installers, documents, or media you intended to keep.",
 		"cat_desc_browser_cache":              "Cached images, scripts and data from websites. Used to speed up browsing. Will be rebuilt on next visit. Passwords, cookies and history are not affected.",
@@ -203,6 +206,9 @@ var translations = map[string]map[string]string{
 		"cat_desc_icon_cache":                 "Windows icon cache for faster file browser rendering. Will be rebuilt automatically.",
 		"cat_desc_amd_gpu_cache":              "Compiled shader caches for AMD graphics cards (DxCache, CLCache). Rebuilt automatically by the GPU driver when needed.",
 		"cat_desc_zoom_cache":                 "Meeting thumbnails, downloaded files and log data from Zoom. Rebuilt on next launch. Does not affect contacts, recordings or call history.",
+		"cat_desc_startup_leftover":           "Shortcut files (.lnk, .url) in the Windows Startup folders. These launch programs on login. Review and remove entries you no longer need.",
+		"cat_desc_scheduled_tasks_leftover":   "Scheduled tasks from third-party programs whose executable no longer exists on disk. Orphaned tasks waste scheduler resources and may cause errors.",
+		"cat_desc_duplicate_files":            "Identical files (by content) found in Downloads, Desktop and Documents. Only copies are flagged \u2014 the original is always kept.",
 		"check_updates":                       "Check for Updates",
 		"update_available":                    "Update Available",
 		"current_version":                     "Current version",
@@ -238,7 +244,7 @@ var translations = map[string]map[string]string{
 		"preset_deep_desc":                    "Includes user files (Downloads, Recycle Bin). Review before applying.",
 		"preset_quick_cats":                   "System · Browsers · GPU  (17 categories)",
 		"preset_standard_cats":                "+ Messengers · Games · Services · Dev · Logs · System archives · Zoom  (+9)",
-		"preset_deep_cats":                    "+ Downloads · Recycle Bin · Old Installers · Large Files · Defender  (+5)",
+		"preset_deep_cats":                    "+ Downloads · Recycle Bin · Old Installers · Large Files · Defender · Startup · Scheduled Tasks  (+7)",
 	},
 	"ru": {
 		"main_menu":                           "Меню",
@@ -398,6 +404,9 @@ var translations = map[string]map[string]string{
 		"cat_windows_defender":                "Журнал Windows Defender",
 		"cat_amd_gpu_cache":                   "Кэш AMD GPU",
 		"cat_zoom_cache":                      "Кэш Zoom",
+		"cat_startup_leftover":                "Остатки автозагрузки",
+		"cat_scheduled_tasks_leftover":        "Задания планировщика",
+		"cat_duplicate_files":                 "Дубликаты файлов",
 		"cat_desc_temp":                       "Временные файлы из %TEMP%. Создаются запущенными программами. Обычно удаляются автоматически, но часть остается.",
 		"cat_desc_downloads":                  "Файлы из папки Загрузки. Могут содержать установщики, документы или медиа, которые вы хотели сохранить.",
 		"cat_desc_browser_cache":              "Кэшированные изображения, скрипты и данные с сайтов. Используется для ускорения загрузки страниц. Пересоздастся при следующем посещении. Пароли, куки и история не затрагиваются.",
@@ -432,6 +441,9 @@ var translations = map[string]map[string]string{
 		"cat_desc_windows_defender":           "История проверок и записи карантина Windows Defender. Безопасно удалить — реальная защита не отключается.",
 		"cat_desc_amd_gpu_cache":              "Скомпилированные кэши шейдеров для видеокарт AMD (DxCache, CLCache). Пересоздаются драйвером GPU автоматически при необходимости.",
 		"cat_desc_zoom_cache":                 "Миниатюры встреч, загруженные файлы и логи Zoom. Пересоздаются при следующем запуске. Контакты, записи и история звонков не затрагиваются.",
+		"cat_desc_startup_leftover":           "Файлы ярлыков (.lnk, .url) в папках автозагрузки Windows. Запускают программы при входе в систему. Изучите список и удалите ненужные записи.",
+		"cat_desc_scheduled_tasks_leftover":   "Задачи планировщика сторонних программ, исполняемые файлы которых больше не существуют на диске. Оставленные задачи тратят ресурсы планировщика и могут вызывать ошибки.",
+		"cat_desc_duplicate_files":            "Одинаковые файлы (по содержимому) в Загрузках, на Рабочем столе и в Документах. Помечаются только копии — оригинал всегда сохраняется.",
 		"cat_desc_windows_prefetch":           "Файлы Windows Prefetch для быстрого запуска приложений. Пересоздаются автоматически.",
 		"cat_desc_icon_cache":                 "Кэш иконок Windows для быстрого отображения в проводнике. Пересоздаётся автоматически.",
 		"check_updates":                       "Проверить обновления",
@@ -469,7 +481,7 @@ var translations = map[string]map[string]string{
 		"preset_deep_desc":                    "Включает файлы пользователя (загрузки, корзина). Требует внимания.",
 		"preset_quick_cats":                   "Система · Браузеры · GPU  (17 категорий)",
 		"preset_standard_cats":                "+ Мессенджеры · Игры · Сервисы · Разработка · Логи · Системные архивы · Zoom  (+9)",
-		"preset_deep_cats":                    "+ Загрузки · Корзина · Установщики · Большие файлы · Defender  (+5)",
+		"preset_deep_cats":                    "+ Загрузки · Корзина · Установщики · Большие файлы · Defender · Автозагрузка · Планировщик  (+7)",
 	},
 }
 
@@ -546,6 +558,9 @@ var categoryKeyMap = map[string]string{
 	"Windows Defender":           "cat_windows_defender",
 	"AMD GPU Cache":               "cat_amd_gpu_cache",
 	"Zoom Cache":                  "cat_zoom_cache",
+	"Startup Leftovers":           "cat_startup_leftover",
+	"Scheduled Tasks":             "cat_scheduled_tasks_leftover",
+	"Duplicate Files":             "cat_duplicate_files",
 }
 
 // CategoryName returns the translated display name for a scanner category.
@@ -595,6 +610,9 @@ var categoryDescKeyMap = map[string]string{
 	"Windows Defender":           "cat_desc_windows_defender",
 	"AMD GPU Cache":               "cat_desc_amd_gpu_cache",
 	"Zoom Cache":                  "cat_desc_zoom_cache",
+	"Startup Leftovers":           "cat_desc_startup_leftover",
+	"Scheduled Tasks":             "cat_desc_scheduled_tasks_leftover",
+	"Duplicate Files":             "cat_desc_duplicate_files",
 }
 
 // CategoryDescription returns a brief description of what a category contains and its safety.

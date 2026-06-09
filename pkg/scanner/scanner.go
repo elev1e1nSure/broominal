@@ -2,8 +2,10 @@ package scanner
 
 import (
 	"context"
+	"crypto/md5"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -427,6 +429,188 @@ func scanZoomCache(ctx context.Context, cfg *config.Config) ([]types.Item, error
 	} {
 		subItems, _ := scanDir(ctx, path, "zoom_cache", types.RiskSafe, nil, true, cfg)
 		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanStartupLeftovers(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	paths := []string{
+		filepath.Join(os.Getenv("APPDATA"), "Microsoft", "Windows", "Start Menu", "Programs", "Startup"),
+		filepath.Join(os.Getenv("PROGRAMDATA"), "Microsoft", "Windows", "Start Menu", "Programs", "StartUp"),
+	}
+	for _, path := range paths {
+		subItems, _ := scanDir(ctx, path, "startup_leftover", types.RiskReview, []string{".lnk", ".url"}, false, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func extractTaskCommand(data []byte) string {
+	s := string(data)
+	if len(data) >= 2 && data[0] == 0xFF && data[1] == 0xFE {
+		var b strings.Builder
+		for i := 2; i+1 < len(data); i += 2 {
+			b.WriteRune(rune(uint16(data[i]) | uint16(data[i+1])<<8))
+		}
+		s = b.String()
+	}
+	lower := strings.ToLower(s)
+	const open, close = "<command>", "</command>"
+	start := strings.Index(lower, open)
+	if start < 0 {
+		return ""
+	}
+	start += len(open)
+	end := strings.Index(lower[start:], close)
+	if end < 0 {
+		return ""
+	}
+	return strings.Trim(strings.TrimSpace(s[start:start+end]), `"'`)
+}
+
+func scanScheduledTasksLeftovers(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	root := filepath.Join(os.Getenv("SystemRoot"), "System32", "Tasks")
+	var items []types.Item
+	var count int
+	_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if err != nil {
+			if errors.Is(err, os.ErrPermission) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if d.IsDir() {
+			if path == root {
+				return nil
+			}
+			rel, _ := filepath.Rel(root, path)
+			top := strings.SplitN(rel, string(filepath.Separator), 2)[0]
+			if strings.EqualFold(top, "Microsoft") {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if cfg.IsExcluded(path) {
+			return nil
+		}
+		data, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return nil
+		}
+		cmd := extractTaskCommand(data)
+		if cmd == "" {
+			return nil
+		}
+		expanded := os.ExpandEnv(cmd)
+		if _, statErr := os.Stat(expanded); statErr == nil {
+			return nil
+		}
+		info, infoErr := d.Info()
+		if infoErr != nil {
+			return nil
+		}
+		count++
+		if count > maxScanFiles {
+			slog.Info("scan: max file limit reached, truncating", "category", "scheduled_tasks_leftover", "limit", maxScanFiles)
+			return errScanLimit
+		}
+		items = append(items, types.Item{
+			Category: "scheduled_tasks_leftover",
+			Path:     path,
+			Size:     info.Size(),
+			Risk:     types.RiskReview,
+		})
+		return nil
+	})
+	return items, nil
+}
+
+func hashFileMD5(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
+}
+
+func scanDuplicateFiles(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	const minSize = 1 * 1024 * 1024 // 1 MB
+	roots := []string{
+		filepath.Join(os.Getenv("USERPROFILE"), "Downloads"),
+		filepath.Join(os.Getenv("USERPROFILE"), "Desktop"),
+		filepath.Join(os.Getenv("USERPROFILE"), "Documents"),
+	}
+	type entry struct {
+		path string
+		size int64
+	}
+	bySize := make(map[int64][]entry)
+	for _, root := range roots {
+		if root == "" {
+			continue
+		}
+		_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			if err != nil {
+				if errors.Is(err, os.ErrPermission) {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if d.IsDir() {
+				return nil
+			}
+			if cfg.IsExcluded(path) {
+				return nil
+			}
+			info, err := d.Info()
+			if err != nil || info.Size() < minSize {
+				return nil
+			}
+			bySize[info.Size()] = append(bySize[info.Size()], entry{path: path, size: info.Size()})
+			return nil
+		})
+	}
+	byHash := make(map[string][]entry)
+	for _, files := range bySize {
+		if len(files) < 2 {
+			continue
+		}
+		for _, f := range files {
+			if ctx.Err() != nil {
+				break
+			}
+			h, err := hashFileMD5(f.path)
+			if err != nil {
+				continue
+			}
+			byHash[h] = append(byHash[h], f)
+		}
+	}
+	var items []types.Item
+	for _, entries := range byHash {
+		if len(entries) < 2 {
+			continue
+		}
+		for _, e := range entries[1:] {
+			items = append(items, types.Item{
+				Category: "duplicate_files",
+				Path:     e.path,
+				Size:     e.size,
+				Risk:     types.RiskReview,
+			})
+		}
 	}
 	return items, nil
 }

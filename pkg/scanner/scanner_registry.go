@@ -155,4 +155,7 @@ var allScanners = []CategoryScanner{
 	catScanner{"Windows Defender", types.RiskReview, scanWindowsDefender},
 	catScanner{"AMD GPU Cache", types.RiskSafe, scanAMDGPUCache},
 	catScanner{"Zoom Cache", types.RiskSafe, scanZoomCache},
+	catScanner{"Startup Leftovers", types.RiskReview, scanStartupLeftovers},
+	catScanner{"Scheduled Tasks", types.RiskReview, scanScheduledTasksLeftovers},
+	catScanner{"Duplicate Files", types.RiskReview, scanDuplicateFiles},
 }
