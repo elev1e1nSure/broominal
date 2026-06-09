@@ -106,7 +106,7 @@ Files are moved to `%LOCALAPPDATA%\broominal\quarantine\<restore-id>` with a `ma
 - **transparent** — scan results, reports, and manifests are plain JSON
 - **undoable** — restore any cleanup by ID or restore the latest one
 - **predictable** — explicit categories, risk levels, and exclusions
-- **interactive** — Bubbletea TUI for scan, preview, dry-run, and restore
+- **interactive** — Bubbletea TUI for scan, preview, and restore
 - **multilingual** — English and Russian with first-run auto-detection
 - **30+ categories** — temp, caches, logs, browser data, dev tools, and more
 - **doctor** — lightweight health checks for permissions, manifests, and state
@@ -127,14 +127,17 @@ Scan results are saved as JSON for transparency and can be reviewed before any c
 
 ### clean
 
-Clean selected items. By default, only **safe** items are cleaned.
+Clean selected items. By default, safe and review items are cleaned. Danger items require explicit confirmation.
 
 ```powershell
-# clean safe items only (default)
+# clean safe and review items (default)
 broominal clean
 
-# allow cleaning danger items (requires explicit confirmation)
+# allow cleaning danger items
 broominal clean --danger
+
+# clean only safe items
+broominal clean --safe
 
 # preview what would be cleaned without actually cleaning
 broominal clean --dry-run
@@ -243,7 +246,7 @@ broominal clean --danger
 broominal clean --dry-run
 ```
 
-Config file (`%APPDATA%\broominal\config.json`):
+Config file (`%LOCALAPPDATA%\broominal\config.json`):
 
 ```json
 {
