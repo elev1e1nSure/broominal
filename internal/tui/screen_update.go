@@ -92,14 +92,17 @@ func (m model) viewNoUpdate() string {
 func (m model) viewUpdating() string {
 	var body string
 	body += m.appTitle(i18n.T("updating")) + "\n\n"
-	body += fmt.Sprintf("  %s %s\n", m.spinner.View(), m.updateProgress)
-	if m.updateError != nil {
-		body += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"
-		body += "\n" + footer(keyHint("Esc", i18n.T("back")))
-	} else if m.updateProgress == i18n.T("update_complete_restart") {
+	if m.updateProgress == i18n.T("update_complete_restart") {
+		body += fmt.Sprintf("  %s\n", m.updateProgress)
 		body += "\n" + footer(keyHint("Enter", i18n.T("restart")))
 	} else {
-		body += "\n" + mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
+		body += fmt.Sprintf("  %s %s\n", m.spinner.View(), m.updateProgress)
+		if m.updateError != nil {
+			body += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"
+			body += "\n" + footer(keyHint("Esc", i18n.T("back")))
+		} else {
+			body += "\n" + mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
+		}
 	}
 	return body
 }
