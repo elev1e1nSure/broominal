@@ -172,8 +172,8 @@ func TestViewConfirm(t *testing.T) {
 	if !strings.Contains(out, "Confirm Cleanup") {
 		t.Error("view should contain 'Confirm Cleanup'")
 	}
-	if !strings.Contains(out, "DRY-RUN") {
-		t.Error("view should contain 'DRY-RUN' when dryRun is true")
+	if !strings.Contains(out, "PREVIEW") {
+		t.Error("view should contain 'PREVIEW' when dryRun is true")
 	}
 }
 
@@ -196,8 +196,8 @@ func TestViewDryRunResult(t *testing.T) {
 	m.dryRun = true
 	m.cleanResult = &types.CleanResult{Freed: 100, Files: 1}
 	out := m.View()
-	if !strings.Contains(out, "Dry-Run Complete") {
-		t.Error("view should contain 'Dry-Run Complete'")
+	if !strings.Contains(out, "Preview Complete") {
+		t.Error("view should contain 'Preview Complete'")
 	}
 }
 
@@ -356,7 +356,7 @@ func TestViewRestoreEmpty(t *testing.T) {
 	m.screen = ScreenRestore
 	m.restoreIDs = []string{}
 	out := m.View()
-	if !strings.Contains(out, "No quarantines") {
+	if !strings.Contains(out, "No backups") {
 		t.Error("view should show empty message")
 	}
 }
@@ -382,8 +382,8 @@ func TestViewDoctor(t *testing.T) {
 		{Name: "Test", Status: doctor.StatusPass, Detail: "ok"},
 	}
 	out := m.View()
-	if !strings.Contains(out, "Doctor") {
-		t.Error("view should contain 'Doctor'")
+	if !strings.Contains(out, "System Check") {
+		t.Error("view should contain 'System Check'")
 	}
 	if !strings.Contains(out, "Test") {
 		t.Error("view should contain check name")
