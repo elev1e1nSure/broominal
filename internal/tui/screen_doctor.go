@@ -22,8 +22,11 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				msg, err := doctor.Fix(m.doctorChecks[i].FixKey)
 				if err != nil {
 					m.doctorFixResult = style.Failf("[FAIL]") + " " + err.Error()
-				} else {
-					m.doctorFixResult = style.Passf("[OK]") + " " + msg
+					return m, nil
+				}
+				m.doctorFixResult = style.Passf("[OK]") + " " + msg
+				if m.doctorChecks[i].FixKey == "admin" {
+					return m, tea.Quit
 				}
 				break
 			}
