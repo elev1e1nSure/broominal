@@ -16,6 +16,7 @@ func (m model) handleKeyResult(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.selectedIdx = 0
 		m.cleanResult = nil
 		m.restoreResult = ""
+		m.result = nil
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("r"))) {
