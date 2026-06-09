@@ -50,8 +50,6 @@ func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-		m.screen = ScreenConfig
-		m.selectedIdx = 0
 		return m, nil
 	}
 	return m, nil
@@ -69,7 +67,7 @@ func (m model) viewLanguage() string {
 		}
 		marker := ""
 		if lang == i18n.CurrentLanguage() {
-			marker = safeStyle.Render(" [OK]")
+			marker = safeStyle.Render(" [x]")
 		}
 		if i == m.selectedIdx {
 			body += selectedStyle.Render(fmt.Sprintf("> %s%s", label, marker)) + "\n"
@@ -78,7 +76,7 @@ func (m model) viewLanguage() string {
 		}
 	}
 	body += "\n" + footer(
-		keyHint("Enter", i18n.T("select")),
+		keyHint("Enter", i18n.T("apply")),
 		keyHint("Esc", i18n.T("back")),
 	)
 	return body
