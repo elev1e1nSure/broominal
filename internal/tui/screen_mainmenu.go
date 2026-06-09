@@ -77,10 +77,7 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.doctorQuarantineStats = doctor.QuarantineStats()
 			m.screen = ScreenDoctor
 			return m, nil
-		case 3: // Quarantine Cleanup
-			m.screen = ScreenQuarantineCleanup
-			return m, nil
-		case 4: // Settings
+		case 3: // Settings
 			cfg, err := config.Load()
 			if err != nil {
 				m.err = err
@@ -101,7 +98,6 @@ func (m model) viewMainMenu() string {
 		i18n.T("menu_scan_clean"),
 		i18n.T("menu_restore"),
 		i18n.T("menu_doctor"),
-		i18n.T("menu_cleanup"),
 		i18n.T("menu_settings"),
 	}
 	var body string

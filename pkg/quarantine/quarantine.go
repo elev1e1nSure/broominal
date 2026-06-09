@@ -392,6 +392,36 @@ func CleanupAll() (int, int64, error) {
 	return deleted, freed, nil
 }
 
+// Delete removes a specific quarantine entry by ID.
+// Returns freed bytes or error if not found.
+func Delete(id string) (int64, error) {
+	if err := validateID(id); err != nil {
+		return 0, err
+	}
+	dirPath := filepath.Join(BaseDir(), id)
+	info, err := os.Stat(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, fmt.Errorf("backup not found: %s", id)
+		}
+		return 0, err
+	}
+	var size int64
+	if info.IsDir() {
+		filepath.Walk(dirPath, func(path string, fi os.FileInfo, err error) error {
+			if err != nil || fi.IsDir() {
+				return nil
+			}
+			size += fi.Size()
+			return nil
+		})
+	}
+	if err := os.RemoveAll(dirPath); err != nil {
+		return 0, err
+	}
+	return size, nil
+}
+
 // GetLast возвращает последний restore ID
 func GetLast() (string, error) {
 	ids, err := List()

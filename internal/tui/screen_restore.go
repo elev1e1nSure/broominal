@@ -28,6 +28,55 @@ func (m model) handleKeyRestore(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	}
+	// Delete selected backup
+	if key.Matches(msg, key.NewBinding(key.WithKeys("d"))) {
+		if len(m.restoreEntries) == 0 || m.restoreIdx >= len(m.restoreEntries) {
+			return m, nil
+		}
+		id := m.restoreEntries[m.restoreIdx].id
+		_, err := quarantine.Delete(id)
+		if err != nil {
+			m.err = err
+			m.screen = ScreenError
+			return m, nil
+		}
+		// Reload list
+		ids, _ := quarantine.List()
+		var entries []restoreEntry
+		for _, rid := range ids {
+			mf, _ := quarantine.GetManifest(rid)
+			if mf == nil {
+				continue
+			}
+			entries = append(entries, restoreEntry{
+				id:        mf.ID,
+				createdAt: mf.CreatedAt,
+				totalSize: mf.TotalSize,
+				files:     mf.Files,
+				label:     mf.Label,
+			})
+		}
+		m.restoreEntries = entries
+		if m.restoreIdx >= len(m.restoreEntries) && len(m.restoreEntries) > 0 {
+			m.restoreIdx = len(m.restoreEntries) - 1
+		}
+		return m, nil
+	}
+	// Delete all backups
+	if key.Matches(msg, key.NewBinding(key.WithKeys("a"))) {
+		if len(m.restoreEntries) == 0 {
+			return m, nil
+		}
+		_, _, err := quarantine.CleanupAll()
+		if err != nil {
+			m.err = err
+			m.screen = ScreenError
+			return m, nil
+		}
+		m.restoreEntries = nil
+		m.restoreIdx = 0
+		return m, nil
+	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		if len(m.restoreEntries) == 0 {
 			return m, nil
@@ -86,9 +135,6 @@ func (m model) viewRestore() string {
 	if m.restoreResult != "" {
 		body += "\n" + safeStyle.Render("  [OK] "+m.restoreResult) + "\n"
 	}
-	body += "\n" + footer(
-		keyHint("Enter", i18n.T("restore")),
-		keyHint("Esc", i18n.T("back")),
-	)
+	body += "\n" + mutedStyle.Render("  "+i18n.T("hint_restore"))
 	return body
 }
