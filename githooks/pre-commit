@@ -1,0 +1,18 @@
+#!/bin/sh
+# Pre-commit hook: warn when code changes may need doc updates
+# To enable: git config core.hooksPath githooks
+
+STAGED_FILES=$(git diff --cached --name-only)
+DOC_CHANGED=$(echo "$STAGED_FILES" | grep -E "^(README|AGENTS|README\.ru)\.md$")
+CODE_CHANGED=$(echo "$STAGED_FILES" | grep -E "^(cmd/|pkg/|internal/|go\.mod)")
+
+if [ -n "$CODE_CHANGED" ] && [ -z "$DOC_CHANGED" ]; then
+    echo ""
+    echo "⚠️  Code changes detected without doc updates."
+    echo "   Consider running /docs in Windsurf to sync README, AGENTS, and README.ru."
+    echo "   Staged:"
+    echo "$CODE_CHANGED" | sed 's/^/     /'
+    echo ""
+    # Non-blocking: allow commit after 2s pause
+    sleep 2
+fi
