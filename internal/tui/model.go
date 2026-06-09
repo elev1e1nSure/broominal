@@ -82,10 +82,10 @@ type model struct {
 	adminPromptIdx int
 	// Update screen
 	updateAvailableRelease *update.Release
-	updateError           error
-	updateProgress        string
-	checkUpdateOnStartup  bool
-	updateFromConfig      bool
+	updateError            error
+	updateProgress         string
+	checkUpdateOnStartup   bool
+	updateFromConfig       bool
 }
 
 type configCategoryItem struct {
@@ -150,4 +150,3 @@ func initialModel() model {
 		spinner: s,
 	}
 }
-

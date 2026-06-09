@@ -28,18 +28,18 @@ func Default() *Config {
 	return &Config{
 		EnabledCategories: map[string]bool{
 			// Safe (default)
-			"Temp":                       true,
-			"Browser Cache":              true,
-			"Thumbnails Cache":           true,
-			"DirectX Shader Cache":       true,
-			"Empty Folders":              true,
-			"Delivery Optimization":      true,
-			"Icon Cache":                 true,
-			"Windows Error Reports":      true,
-			"Opera Cache":                true,
-			"Brave Cache":                true,
-			"Vivaldi Cache":              true,
-			"Yandex Cache":               true,
+			"Temp":                  true,
+			"Browser Cache":         true,
+			"Thumbnails Cache":      true,
+			"DirectX Shader Cache":  true,
+			"Empty Folders":         true,
+			"Delivery Optimization": true,
+			"Icon Cache":            true,
+			"Windows Error Reports": true,
+			"Opera Cache":           true,
+			"Brave Cache":           true,
+			"Vivaldi Cache":         true,
+			"Yandex Cache":          true,
 			// Normal
 			"Downloads":                  false,
 			"Recycle Bin":                false,
@@ -58,7 +58,7 @@ func Default() *Config {
 			"Crash & Memory Dumps":       false,
 			"Nvidia Installer Leftovers": false,
 			// Hard
-			"Windows Defender":           false,
+			"Windows Defender": false,
 		},
 		Exclusions: []string{},
 		AutoRiskOverrides: map[string]string{
