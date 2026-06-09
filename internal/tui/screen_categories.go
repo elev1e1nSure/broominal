@@ -112,11 +112,6 @@ func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.selectedIdx = 0
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("t"))) {
-		m.dryRun = !m.dryRun
-		m.confirmMsg = buildConfirmMessage(m.categories, m.result)
-		return m, nil
-	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		m.screen = ScreenCleaning
 		return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
@@ -129,7 +124,7 @@ func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
-			res, err := cleaner.Run(context.Background(), selected, m.dryRun, m.result)
+			res, err := cleaner.Run(context.Background(), selected, m.result)
 			if err != nil {
 				return cleanDoneMsg{nil, err}
 			}
@@ -216,12 +211,8 @@ func (m model) viewDetails() string {
 
 func (m model) viewConfirm() string {
 	head := titleStyle.Render(i18n.T("confirm_cleanup"))
-	if m.dryRun {
-		head += " " + reviewStyle.Render(i18n.T("dry_run"))
-	}
 	return head + "\n\n" + m.confirmMsg + "\n\n" + footer(
 		keyHint("Enter", i18n.T("proceed")),
-		keyHint("T", i18n.T("toggle_dry_run")),
 		keyHint("Esc", i18n.T("back")),
 	)
 }

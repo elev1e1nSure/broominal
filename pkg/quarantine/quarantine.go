@@ -36,24 +36,8 @@ func generateBackupID() string {
 }
 
 // Move перемещает файлы в карантин и возвращает restore ID
-func Move(ctx context.Context, items []types.Item, dryRun bool) (string, int64, int, int, error) {
+func Move(ctx context.Context, items []types.Item) (string, int64, int, int, error) {
 	id := generateBackupID()
-
-	if dryRun {
-		var freed int64
-		var files int
-		for _, it := range items {
-			if !it.Selected {
-				continue
-			}
-			if _, err := os.Stat(it.Path); os.IsNotExist(err) {
-				continue
-			}
-			freed += it.Size
-			files++
-		}
-		return id, freed, files, 0, nil
-	}
 
 	qDir := filepath.Join(BaseDir(), id)
 	if err := os.MkdirAll(qDir, 0700); err != nil {
@@ -298,7 +282,7 @@ func List() ([]string, error) {
 
 // Cleanup removes quarantine entries older than maxAgeDays.
 // Returns number of deleted quarantines and total freed bytes.
-func Cleanup(maxAgeDays int, dryRun bool) (int, int64, error) {
+func Cleanup(maxAgeDays int) (int, int64, error) {
 	qDir := BaseDir()
 	entries, err := os.ReadDir(qDir)
 	if err != nil {
@@ -311,6 +295,7 @@ func Cleanup(maxAgeDays int, dryRun bool) (int, int64, error) {
 	cutoff := time.Now().AddDate(0, 0, -maxAgeDays)
 	var deleted int
 	var freed int64
+	var errs []error
 
 	for _, e := range entries {
 		if !e.IsDir() {
@@ -326,50 +311,43 @@ func Cleanup(maxAgeDays int, dryRun bool) (int, int64, error) {
 		var createdAt time.Time
 		mf, err := os.Open(manifestPath)
 		if err != nil {
-			// broken quarantine: use dir mod time
 			info, _ := os.Stat(dirPath)
 			if info != nil {
 				createdAt = info.ModTime()
 			}
 		} else {
 			var manifest types.Manifest
-			if err := json.NewDecoder(mf).Decode(&manifest); err != nil {
-				slog.Warn("cleanup: failed to decode manifest", "path", filepath.Join(dirPath, "manifest.json"), "error", err)
-			} else {
-				createdAt = manifest.CreatedAt
-			}
-			if err := mf.Close(); err != nil {
-				slog.Warn("cleanup: failed to close manifest", "path", filepath.Join(dirPath, "manifest.json"), "error", err)
-			}
+			_ = json.NewDecoder(mf).Decode(&manifest)
+			createdAt = manifest.CreatedAt
+			_ = mf.Close()
 		}
 
 		if createdAt.IsZero() || createdAt.Before(cutoff) {
 			var size int64
-			if err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+			_ = filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 				if err != nil || info.IsDir() {
 					return nil
 				}
 				size += info.Size()
 				return nil
-			}); err != nil {
-				slog.Warn("quarantine cleanup: failed to walk dir", "path", dirPath, "error", err)
-			}
-			if !dryRun {
-				if err := os.RemoveAll(dirPath); err != nil {
-					slog.Warn("cleanup: failed to remove quarantine dir", "path", dirPath, "error", err)
-				}
+			})
+			if err := os.RemoveAll(dirPath); err != nil {
+				errs = append(errs, err)
 			}
 			deleted++
 			freed += size
 		}
 	}
 
+	if len(errs) > 0 {
+		slog.Warn("quarantine cleanup: some directories could not be removed", "errors", len(errs))
+	}
 	return deleted, freed, nil
 }
 
 // CleanupAll removes all quarantine entries regardless of age.
 // Returns number of deleted quarantines and total freed bytes.
-func CleanupAll(dryRun bool) (int, int64, error) {
+func CleanupAll() (int, int64, error) {
 	qDir := BaseDir()
 	entries, err := os.ReadDir(qDir)
 	if err != nil {
@@ -381,6 +359,7 @@ func CleanupAll(dryRun bool) (int, int64, error) {
 
 	var deleted int
 	var freed int64
+	var errs []error
 
 	for _, e := range entries {
 		if !e.IsDir() {
@@ -393,24 +372,23 @@ func CleanupAll(dryRun bool) (int, int64, error) {
 		dirPath := filepath.Join(qDir, id)
 
 		var size int64
-		if err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		_ = filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 			if err != nil || info.IsDir() {
 				return nil
 			}
 			size += info.Size()
 			return nil
-		}); err != nil {
-			slog.Warn("quarantine cleanup all: failed to walk dir", "path", dirPath, "error", err)
-		}
-		if !dryRun {
-			if err := os.RemoveAll(dirPath); err != nil {
-				slog.Warn("cleanup: failed to remove quarantine dir", "path", dirPath, "error", err)
-			}
+		})
+		if err := os.RemoveAll(dirPath); err != nil {
+			errs = append(errs, err)
 		}
 		deleted++
 		freed += size
 	}
 
+	if len(errs) > 0 {
+		slog.Warn("quarantine cleanup all: some directories could not be removed", "errors", len(errs))
+	}
 	return deleted, freed, nil
 }
 

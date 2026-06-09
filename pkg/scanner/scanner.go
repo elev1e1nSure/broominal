@@ -411,7 +411,10 @@ func scanDiscordCache(ctx context.Context, cfg *config.Config) ([]types.Item, er
 	var items []types.Item
 	for _, sub := range []string{"Cache", "Code Cache"} {
 		path := filepath.Join(root, sub)
-		subItems, _ := scanDir(ctx, path, "discord_cache", types.RiskSafe, nil, true, cfg)
+		subItems, err := scanDir(ctx, path, "discord_cache", types.RiskSafe, nil, true, cfg)
+		if err != nil {
+			slog.Warn("scan discord cache failed", "path", path, "error", err)
+		}
 		items = append(items, subItems...)
 	}
 	return items, nil
@@ -426,7 +429,10 @@ func scanSteamCache(ctx context.Context, cfg *config.Config) ([]types.Item, erro
 	var items []types.Item
 	for _, sub := range []string{"appcache", "htmlcache"} {
 		path := filepath.Join(root, sub)
-		subItems, _ := scanDir(ctx, path, "steam_cache", types.RiskSafe, nil, true, cfg)
+		subItems, err := scanDir(ctx, path, "steam_cache", types.RiskSafe, nil, true, cfg)
+		if err != nil {
+			slog.Warn("scan steam cache failed", "path", path, "error", err)
+		}
 		items = append(items, subItems...)
 	}
 	return items, nil
@@ -439,7 +445,10 @@ func scanCrashMemoryDumps(ctx context.Context, cfg *config.Config) ([]types.Item
 		filepath.Join(os.Getenv("SystemRoot"), "Minidump"),
 	}
 	for _, path := range paths {
-		subItems, _ := scanDir(ctx, path, "crash_dumps", types.RiskReview, nil, true, cfg)
+		subItems, err := scanDir(ctx, path, "crash_dumps", types.RiskReview, nil, true, cfg)
+		if err != nil {
+			slog.Warn("scan crash dumps failed", "path", path, "error", err)
+		}
 		items = append(items, subItems...)
 	}
 	// MEMORY.DMP
@@ -462,7 +471,10 @@ func scanNvidiaInstallerLeftovers(ctx context.Context, cfg *config.Config) ([]ty
 		filepath.Join(os.Getenv("ProgramData"), "NVIDIA Corporation", "Downloader"),
 	}
 	for _, path := range paths {
-		subItems, _ := scanDir(ctx, path, "nvidia_installer_leftovers", types.RiskReview, nil, true, cfg)
+		subItems, err := scanDir(ctx, path, "nvidia_installer_leftovers", types.RiskReview, nil, true, cfg)
+		if err != nil {
+			slog.Warn("scan nvidia leftovers failed", "path", path, "error", err)
+		}
 		items = append(items, subItems...)
 	}
 	return items, nil
@@ -473,7 +485,10 @@ func scanVSCodeCache(ctx context.Context, cfg *config.Config) ([]types.Item, err
 	root := filepath.Join(os.Getenv("APPDATA"), "Code")
 	for _, sub := range []string{"Cache", "Code Cache"} {
 		path := filepath.Join(root, sub)
-		subItems, _ := scanDir(ctx, path, "vscode_cache", types.RiskSafe, nil, true, cfg)
+		subItems, err := scanDir(ctx, path, "vscode_cache", types.RiskSafe, nil, true, cfg)
+		if err != nil {
+			slog.Warn("scan vscode cache failed", "path", path, "error", err)
+		}
 		items = append(items, subItems...)
 	}
 	return items, nil

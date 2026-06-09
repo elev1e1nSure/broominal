@@ -58,7 +58,6 @@ type model struct {
 	err                   error
 	width                 int
 	height                int
-	dryRun                bool
 	conflicts             []string
 	restoreForceOverwrite bool
 	// Restore screen

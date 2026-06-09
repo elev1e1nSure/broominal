@@ -19,7 +19,7 @@ func (m model) handleKeyResult(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("r"))) {
-		if m.dryRun || m.cleanResult == nil {
+		if m.cleanResult == nil {
 			return m, nil
 		}
 		conflicts, err := quarantine.CheckRestoreConflicts(m.cleanResult.RestoreID)
@@ -104,20 +104,13 @@ func (m model) viewResult() string {
 			safeStyle.Render("  [OK] "+i18n.T("hint_restored")) + "\n\n" +
 			footer(keyHint("Esc", i18n.T("back")))
 	}
-	var body string
-	if m.dryRun {
-		body = titleStyle.Render(i18n.T("dry_run_complete")) + "\n\n" +
-			fmt.Sprintf("  Would free: %s\n", valueStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
-			fmt.Sprintf("  Files:      %s\n\n", valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files)))
-	} else {
-		body = titleStyle.Render(i18n.T("cleanup_complete")) + "\n\n" +
-			fmt.Sprintf("  Freed:      %s\n", safeStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
-			fmt.Sprintf("  Files:      %s\n", valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files)))
-		if m.cleanResult.Skipped > 0 {
-			body += fmt.Sprintf("  Skipped:    %s\n", reviewStyle.Render(fmt.Sprintf("%d", m.cleanResult.Skipped)))
-		}
-		body += fmt.Sprintf("  Restore ID: %s\n\n", mutedStyle.Render(m.cleanResult.RestoreID))
+	body := titleStyle.Render(i18n.T("cleanup_complete")) + "\n\n" +
+		fmt.Sprintf("  Freed:      %s\n", safeStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
+		fmt.Sprintf("  Files:      %s\n", valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files)))
+	if m.cleanResult.Skipped > 0 {
+		body += fmt.Sprintf("  Skipped:    %s\n", reviewStyle.Render(fmt.Sprintf("%d", m.cleanResult.Skipped)))
 	}
+	body += fmt.Sprintf("  Restore ID: %s\n\n", mutedStyle.Render(m.cleanResult.RestoreID))
 	body += footer(
 		keyHint("R", i18n.T("restore_last")),
 		keyHint("Esc", i18n.T("back")),

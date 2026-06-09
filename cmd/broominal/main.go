@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -60,7 +62,27 @@ const usageTemplate = `{{bold "Usage:"}}
 {{gray "Use"}} {{cyan .CommandPath}} [command] --help {{gray "for more information about a command."}}{{end}}
 `
 
+func setupFileLogging() {
+	appData := os.Getenv("LOCALAPPDATA")
+	if appData == "" {
+		return
+	}
+	logDir := filepath.Join(appData, "broominal")
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		return
+	}
+	logFile := filepath.Join(logDir, "broominal.log")
+	f, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return
+	}
+	log.SetOutput(f)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 func main() {
+	setupFileLogging()
+
 	var jsonLogs bool
 	var rootCmd = &cobra.Command{
 		Use:   "broominal",
@@ -154,7 +176,6 @@ func uiCmd() *cobra.Command {
 func cleanCmd() *cobra.Command {
 	var safeOnly bool
 	var danger bool
-	var dryRun bool
 	cmd := &cobra.Command{
 		Use:   "clean",
 		Short: "Clean selected items",
@@ -191,14 +212,10 @@ func cleanCmd() *cobra.Command {
 					selected = append(selected, it)
 				}
 			}
-			cleanResult, err := cleaner.Run(ctx, selected, dryRun, res)
+			cleanResult, err := cleaner.Run(ctx, selected, res)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Clean failed: %v\n", err)
 				os.Exit(1)
-			}
-			if dryRun {
-				fmt.Printf("%s Would free %s in %d files\n", style.Yellowf("[dry-run]"), style.Cyanf(util.FormatSize(cleanResult.Freed)), cleanResult.Files)
-				return
 			}
 			msg := fmt.Sprintf("%s %s in %s files", style.Greenf("Cleaned"), style.Cyanf(util.FormatSize(cleanResult.Freed)), style.Boldf("%d", cleanResult.Files))
 			if cleanResult.Skipped > 0 {
@@ -209,7 +226,6 @@ func cleanCmd() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&safeOnly, "safe", false, "Only clean safe items")
 	cmd.Flags().BoolVar(&danger, "danger", false, "Allow cleaning danger items")
-	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Simulate cleaning without moving files")
 	return cmd
 }
 
@@ -344,7 +360,6 @@ func doctorCmd() *cobra.Command {
 
 func quarantineCleanupCmd() *cobra.Command {
 	var force bool
-	var dryRun bool
 	var maxAgeDays int
 	cmd := &cobra.Command{
 		Use:   "quarantine-cleanup",
@@ -358,34 +373,24 @@ func quarantineCleanupCmd() *cobra.Command {
 					maxAgeDays = 30
 				}
 			}
-			deleted, freed, err := quarantine.Cleanup(maxAgeDays, true)
+			deleted, freed, err := quarantine.Cleanup(maxAgeDays)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Cleanup check failed: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Cleanup failed: %v\n", err)
 				os.Exit(1)
 			}
 			if deleted == 0 {
 				fmt.Println(style.Greenf("No old quarantines to remove."))
 				return
 			}
-			fmt.Printf("Will remove %s quarantine(s) (%s)\n", style.Boldf("%d", deleted), style.Cyanf(util.FormatSize(freed)))
-			if !force && !dryRun {
+			if !force {
+				fmt.Printf("Will remove %s quarantine(s) (%s)\n", style.Boldf("%d", deleted), style.Cyanf(util.FormatSize(freed)))
 				fmt.Printf("Use %s to proceed.\n", style.Yellowf("--force"))
 				return
-			}
-			if dryRun {
-				fmt.Println(style.Yellowf("[dry-run] Nothing removed."))
-				return
-			}
-			deleted, freed, err = quarantine.Cleanup(maxAgeDays, false)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Cleanup failed: %v\n", err)
-				os.Exit(1)
 			}
 			fmt.Printf("%s %s quarantine(s), freed %s\n", style.Greenf("Removed"), style.Boldf("%d", deleted), style.Cyanf(util.FormatSize(freed)))
 		},
 	}
 	cmd.Flags().BoolVar(&force, "force", false, "Confirm deletion without prompt")
-	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be deleted")
 	cmd.Flags().IntVar(&maxAgeDays, "max-age-days", 0, "Override max age (default from config or 30)")
 	return cmd
 }

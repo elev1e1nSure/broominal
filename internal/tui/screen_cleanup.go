@@ -18,10 +18,6 @@ func (m model) handleKeyQuarantineCleanup(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.selectedIdx = 0
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("t"))) {
-		m.dryRun = !m.dryRun
-		return m, nil
-	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("a"))) {
 		m.quarantineCleanupAll = !m.quarantineCleanupAll
 		return m, nil
@@ -32,28 +28,24 @@ func (m model) handleKeyQuarantineCleanup(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			var freed int64
 			var err error
 			if m.quarantineCleanupAll {
-				deleted, freed, err = quarantine.CleanupAll(m.dryRun)
+				deleted, freed, err = quarantine.CleanupAll()
 			} else {
 				cfg, _ := config.Load()
 				maxAge := 30
 				if cfg != nil && cfg.QuarantineMaxAgeDays > 0 {
 					maxAge = cfg.QuarantineMaxAgeDays
 				}
-				deleted, freed, err = quarantine.Cleanup(maxAge, m.dryRun)
+				deleted, freed, err = quarantine.Cleanup(maxAge)
 			}
 			if err != nil {
 				return errMsg{err}
-			}
-			label := "Removed"
-			if m.dryRun {
-				label = "Would remove"
 			}
 			modeLabel := i18n.T("old_only")
 			if m.quarantineCleanupAll {
 				modeLabel = i18n.T("all_quarantines")
 			}
 			return cleanDoneMsg{&types.CleanResult{
-				RestoreID: fmt.Sprintf("%s %d quarantines (%s), freed %s", label, deleted, modeLabel, util.FormatSize(freed)),
+				RestoreID: fmt.Sprintf("Removed %d quarantines (%s), freed %s", deleted, modeLabel, util.FormatSize(freed)),
 				Freed:     freed,
 				Files:     deleted,
 			}, nil}
@@ -64,9 +56,6 @@ func (m model) handleKeyQuarantineCleanup(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) viewQuarantineCleanup() string {
 	head := titleStyle.Render(i18n.T("quarantine_cleanup"))
-	if m.dryRun {
-		head += " " + reviewStyle.Render(i18n.T("dry_run"))
-	}
 	var modeLine string
 	if m.quarantineCleanupAll {
 		modeLine = safeStyle.Render(i18n.T("all_quarantines")) + " " + mutedStyle.Render("/ "+i18n.T("old_only"))
@@ -78,7 +67,6 @@ func (m model) viewQuarantineCleanup() string {
 		"  " + i18n.T("mode") + ": " + modeLine + "\n\n" +
 		footer(
 			keyHint("A", i18n.T("toggle_mode")),
-			keyHint("T", i18n.T("toggle_dry_run")),
 			keyHint("Enter", i18n.T("proceed")),
 			keyHint("Esc", i18n.T("back")),
 		)

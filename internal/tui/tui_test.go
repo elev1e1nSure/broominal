@@ -168,13 +168,9 @@ func TestViewConfirm(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenConfirm
 	m.confirmMsg = "Will free: 100 B"
-	m.dryRun = true
 	out := m.View()
 	if !strings.Contains(out, "Confirm Cleanup") {
 		t.Error("view should contain 'Confirm Cleanup'")
-	}
-	if !strings.Contains(out, "PREVIEW") {
-		t.Error("view should contain 'PREVIEW' when dryRun is true")
 	}
 }
 
@@ -191,16 +187,6 @@ func TestViewResult(t *testing.T) {
 	}
 }
 
-func TestViewDryRunResult(t *testing.T) {
-	m := initialModel()
-	m.screen = ScreenResult
-	m.dryRun = true
-	m.cleanResult = &types.CleanResult{Freed: 100, Files: 1}
-	out := m.View()
-	if !strings.Contains(out, "Preview Complete") {
-		t.Error("view should contain 'Preview Complete'")
-	}
-}
 
 func TestViewRestoreConflict(t *testing.T) {
 	m := initialModel()

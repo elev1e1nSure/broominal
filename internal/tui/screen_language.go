@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -33,10 +34,15 @@ func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.selectedIdx < len(langs) {
 			lang := langs[m.selectedIdx]
 			i18n.SetLanguage(lang)
-			cfg, _ := config.Load()
+			cfg, err := config.Load()
+			if err != nil {
+				slog.Warn("tui: failed to load config for language change", "error", err)
+			}
 			if cfg != nil {
 				cfg.Language = lang
-				_ = config.Save(cfg)
+				if err := config.Save(cfg); err != nil {
+					slog.Warn("tui: failed to save language config", "error", err)
+				}
 			}
 		}
 		m.screen = ScreenMainMenu

@@ -10,10 +10,9 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
-// Run moves selected items to quarantine and optionally persists a report.
-// If dryRun is true, nothing is moved and no report is saved.
-func Run(ctx context.Context, items []types.Item, dryRun bool, scanResult *types.ScanResult) (*types.CleanResult, error) {
-	id, freed, files, skipped, err := quarantine.Move(ctx, items, dryRun)
+// Run moves selected items to quarantine and persists a report.
+func Run(ctx context.Context, items []types.Item, scanResult *types.ScanResult) (*types.CleanResult, error) {
+	id, freed, files, skipped, err := quarantine.Move(ctx, items)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +22,7 @@ func Run(ctx context.Context, items []types.Item, dryRun bool, scanResult *types
 		Files:     files,
 		Skipped:   skipped,
 	}
-	if !dryRun && scanResult != nil {
+	if scanResult != nil {
 		if _, err := report.Save(scanResult, result); err != nil {
 			slog.Warn("cleaner: failed to save report", "error", err)
 		}

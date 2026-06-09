@@ -54,32 +54,6 @@ func TestCopyAndDelete(t *testing.T) {
 	}
 }
 
-func TestMoveDryRun(t *testing.T) {
-	tmp := t.TempDir()
-	t.Setenv("LOCALAPPDATA", tmp)
-
-	src := filepath.Join(tmp, "keep.txt")
-	_ = os.WriteFile(src, []byte("data"), 0644)
-
-	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, freed, files, _, err := Move(context.Background(), items, true)
-	if err != nil {
-		t.Fatalf("Move dry-run failed: %v", err)
-	}
-	if id == "" {
-		t.Errorf("dry-run id = %q, want non-empty", id)
-	}
-	if freed != 4 {
-		t.Errorf("dry-run freed = %d, want 4", freed)
-	}
-	if files != 1 {
-		t.Errorf("dry-run files = %d, want 1", files)
-	}
-	if _, err := os.Stat(src); os.IsNotExist(err) {
-		t.Error("dry-run should not move files")
-	}
-}
-
 func TestMoveReal(t *testing.T) {
 	tmp := t.TempDir()
 	t.Setenv("LOCALAPPDATA", tmp)
@@ -96,7 +70,7 @@ func TestMoveReal(t *testing.T) {
 		{Path: src2, Size: 2, Selected: true},
 	}
 
-	id, freed, files, _, err := Move(context.Background(), items, false)
+	id, freed, files, _, err := Move(context.Background(), items)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -132,7 +106,7 @@ func TestMoveMissingFile(t *testing.T) {
 	items := []types.Item{
 		{Path: filepath.Join(tmp, "missing.txt"), Size: 10, Selected: true},
 	}
-	_, freed, files, _, err := Move(context.Background(), items, false)
+	_, freed, files, _, err := Move(context.Background(), items)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -162,7 +136,7 @@ func TestMoveDuplicateNames(t *testing.T) {
 		{Path: f2, Size: 1, Selected: true},
 	}
 
-	id, _, _, _, err := Move(context.Background(), items, false)
+	id, _, _, _, err := Move(context.Background(), items)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -202,7 +176,7 @@ func TestRestoreHappyPath(t *testing.T) {
 	_ = os.WriteFile(src, []byte("data"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(context.Background(), items, false)
+	id, _, _, _, err := Move(context.Background(), items)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -235,7 +209,7 @@ func TestRestoreConflictSkip(t *testing.T) {
 	_ = os.WriteFile(src, []byte("original"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(context.Background(), items, false)
+	id, _, _, _, err := Move(context.Background(), items)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -269,7 +243,7 @@ func TestRestoreForceOverwrite(t *testing.T) {
 	_ = os.WriteFile(src, []byte("original"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(context.Background(), items, false)
+	id, _, _, _, err := Move(context.Background(), items)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -301,7 +275,7 @@ func TestCheckRestoreConflicts(t *testing.T) {
 	_ = os.WriteFile(src, []byte("data"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(context.Background(), items, false)
+	id, _, _, _, err := Move(context.Background(), items)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -373,7 +347,7 @@ func TestCleanupEmpty(t *testing.T) {
 	tmp := t.TempDir()
 	t.Setenv("LOCALAPPDATA", tmp)
 
-	deleted, freed, err := Cleanup(30, false)
+	deleted, freed, err := Cleanup(30)
 	if err != nil {
 		t.Fatalf("Cleanup failed: %v", err)
 	}
@@ -397,7 +371,7 @@ func TestCleanupRemovesOld(t *testing.T) {
 	manifest := `{"id":"20200101-000000","created_at":"2020-01-01T00:00:00Z","items":[]}`
 	_ = os.WriteFile(filepath.Join(oldDir, "manifest.json"), []byte(manifest), 0644)
 
-	deleted, freed, err := Cleanup(30, false)
+	deleted, freed, err := Cleanup(30)
 	if err != nil {
 		t.Fatalf("Cleanup failed: %v", err)
 	}
@@ -412,30 +386,6 @@ func TestCleanupRemovesOld(t *testing.T) {
 	}
 }
 
-func TestCleanupDryRun(t *testing.T) {
-	tmp := t.TempDir()
-	t.Setenv("LOCALAPPDATA", tmp)
-
-	qDir := BaseDir()
-	oldDir := filepath.Join(qDir, "20200101-000000")
-	_ = os.MkdirAll(oldDir, 0755)
-	manifest := `{"id":"20200101-000000","created_at":"2020-01-01T00:00:00Z","items":[]}`
-	_ = os.WriteFile(filepath.Join(oldDir, "manifest.json"), []byte(manifest), 0644)
-
-	deleted, freed, err := Cleanup(30, true)
-	if err != nil {
-		t.Fatalf("Cleanup dry-run failed: %v", err)
-	}
-	if deleted != 1 {
-		t.Errorf("deleted = %d, want 1", deleted)
-	}
-	// Dir should still exist after dry-run
-	if _, err := os.Stat(oldDir); os.IsNotExist(err) {
-		t.Error("dry-run should not remove quarantine")
-	}
-	_ = freed
-}
-
 func TestCleanupKeepsRecent(t *testing.T) {
 	tmp := t.TempDir()
 	t.Setenv("LOCALAPPDATA", tmp)
@@ -446,7 +396,7 @@ func TestCleanupKeepsRecent(t *testing.T) {
 	manifest := `{"id":"20991231-235959","created_at":"` + time.Now().Format(time.RFC3339) + `","items":[]}`
 	_ = os.WriteFile(filepath.Join(recentDir, "manifest.json"), []byte(manifest), 0644)
 
-	deleted, freed, err := Cleanup(30, false)
+	deleted, freed, err := Cleanup(30)
 	if err != nil {
 		t.Fatalf("Cleanup failed: %v", err)
 	}
@@ -583,7 +533,7 @@ func TestMoveContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel immediately
 
-	_, freed, files, skipped, err := Move(ctx, items, false)
+	_, freed, files, skipped, err := Move(ctx, items)
 	if err != context.Canceled {
 		t.Fatalf("expected context.Canceled, got: %v", err)
 	}
@@ -614,7 +564,7 @@ func TestMoveLockedFile(t *testing.T) {
 	defer f.Close()
 
 	items := []types.Item{{Path: locked, Size: 4, Selected: true}}
-	_, freed, files, skipped, err := Move(context.Background(), items, false)
+	_, freed, files, skipped, err := Move(context.Background(), items)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -634,7 +584,7 @@ func TestRestoreEmptyDir(t *testing.T) {
 	_ = os.MkdirAll(src, 0755)
 
 	items := []types.Item{{Path: src, Size: 0, Selected: true}}
-	id, _, files, _, err := Move(context.Background(), items, false)
+	id, _, files, _, err := Move(context.Background(), items)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
