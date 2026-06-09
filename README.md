@@ -1,199 +1,265 @@
 <div align="center">
 
-# Broominal
+# broominal
 
-**Safe, transparent, undoable Windows cleanup from the terminal.**
+safe, transparent, undoable windows cleanup from the terminal.
 
-[![Go](https://img.shields.io/badge/Go-1.26.3-00ADD8?logo=go)](https://go.dev)
-[![CI](https://github.com/elev1e1nSure/broominal/actions/workflows/ci.yml/badge.svg)](https://github.com/elev1e1nSure/broominal/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/elev1e1nSure/broominal?label=release)](https://github.com/elev1e1nSure/broominal/releases)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows-blue?logo=windows)](https://github.com/elev1e1nSure/broominal)
+<br>
 
-[Russian](README.ru.md)
+[![go](https://img.shields.io/badge/go-1.26.3-00ADD8?logo=go\&logoColor=white)](https://go.dev)
+[![ci](https://github.com/elev1e1nSure/broominal/actions/workflows/ci.yml/badge.svg)](https://github.com/elev1e1nSure/broominal/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/elev1e1nSure/broominal?label=release)](https://github.com/elev1e1nSure/broominal/releases)
+[![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![platform](https://img.shields.io/badge/platform-Windows-0078D4?logo=windows\&logoColor=white)](https://github.com/elev1e1nSure/broominal)
+
+<br>
+
+[english](README.md) · [русский](README.ru.md) · [releases](../../releases) · [contributing](CONTRIBUTING.md)
 
 </div>
 
 ---
 
-> **Broominal** is a Windows cleanup CLI/TUI tool built around one rule: cleanup must be reversible. It moves selected files into a local quarantine with JSON manifests and reports, so every cleanup can be inspected and restored. Designed for boring, predictable cleanup — not fake "PC boost" magic.
+## overview
+
+**broominal** is a windows cleanup cli/tui built around one rule:
+
+> cleanup must be reversible.
+
+instead of permanently deleting files, broominal moves selected items into a local quarantine, stores json manifests, and makes every cleanup inspectable and restorable.
+
+no fake boost magic. no hidden system tweaking. no “trust me bro” cleanup.
 
 ---
 
-## Why Broominal
+## why broominal
 
-| Feature | Description |
-|---------|-------------|
-| **Safe by default** | Files are moved to quarantine instead of being permanently deleted |
-| **Transparent** | Scan results, reports, and manifests are plain JSON |
-| **Undoable** | Restore a cleanup by ID or restore the latest cleanup |
-| **Interactive** | Bubbletea TUI for category selection, previews, dry-run, and restore flow |
-| **Multilingual** | English and Russian with first-run auto-detection |
-
----
-
-## Features
-
-| Feature | Description |
-|---------|-------------|
-| **Smart Scan** | 25+ cleanup categories: Temp, Downloads, Browser Cache, Recycle Bin, Logs, Old Installers, Large Old Files, Thumbnails, DirectX Shader Cache, Delivery Optimization, Windows Error Reports, Discord/Steam/VSCode/Edge/Chrome/Firefox caches, Old .tmp/.log/.bak, Empty Folders, npm/pip Cache, Windows Update Cache, Crash Dumps, Nvidia Leftovers, Telegram Cache |
-| **Risk Levels** | `safe` / `review` / `danger` — system paths and protected extensions are never cleaned automatically |
-| **Undoable Cleanup** | Every cleanup gets a restore ID; `restore <id>` moves files back |
-| **Dry-Run** | `--dry-run` in CLI and `T` in TUI show what would happen without moving files |
-| **Config-Driven** | JSON config for thresholds, exclusions, category toggles, risk overrides, and language |
-| **Doctor** | Health checks for permissions, directories, manifests, and quarantine stats |
-| **Quarantine Cleanup** | Remove old quarantines with dry-run preview and explicit confirmation |
-| **TUI** | Interactive Bubbletea interface with Main Menu, scan flow, restore picker, doctor, config viewer, cleanup, and language selector |
-| **i18n** | English / Russian. Auto-detects language by IP on first launch |
+| principle           | what it means                                                  |
+| ------------------- | -------------------------------------------------------------- |
+| **safe by default** | files are moved to quarantine instead of being deleted         |
+| **transparent**     | scan results, reports, and manifests are plain json            |
+| **undoable**        | restore a cleanup by id or restore the latest cleanup          |
+| **predictable**     | categories, risk levels, and exclusions are explicit           |
+| **interactive**     | bubbletea tui for scan, preview, dry-run, cleanup, and restore |
+| **multilingual**    | english and russian with first-run auto-detection              |
 
 ---
 
-## Safety model
+## features
+
+| feature                | description                                                      |
+| ---------------------- | ---------------------------------------------------------------- |
+| **smart scan**         | 25+ cleanup categories for windows and common apps               |
+| **risk levels**        | `safe`, `review`, and `danger` classification                    |
+| **undoable cleanup**   | every cleanup gets a restore id                                  |
+| **dry-run mode**       | preview cleanup without moving files                             |
+| **json config**        | thresholds, exclusions, toggles, risk overrides, and language    |
+| **doctor**             | checks permissions, directories, manifests, and quarantine state |
+| **quarantine cleanup** | removes old quarantines with preview and confirmation            |
+| **tui**                | interactive terminal interface powered by bubbletea              |
+| **i18n**               | english and russian localization                                 |
+
+---
+
+## cleanup categories
+
+broominal scans common temporary and cache locations, including:
+
+| group                 | examples                                                                   |
+| --------------------- | -------------------------------------------------------------------------- |
+| **windows**           | temp, recycle bin, thumbnails, directx shader cache, delivery optimization |
+| **system reports**    | windows error reports, crash dumps, old logs                               |
+| **browsers**          | edge, chrome, firefox caches                                               |
+| **apps**              | discord, steam, vscode, telegram caches                                    |
+| **developer tools**   | npm cache, pip cache                                                       |
+| **files**             | old `.tmp`, `.log`, `.bak`, installers, large old files, empty folders     |
+| **drivers / updates** | windows update cache, nvidia leftovers                                     |
+
+---
+
+## safety model
 
 > [!IMPORTANT]
-> Safe cleanup is selected by default. Review cleanup requires manual choice. Danger items are not cleaned automatically.
+> safe cleanup is selected by default. review cleanup requires manual choice. danger items are never cleaned automatically.
 
-| Risk | Default behavior | Examples |
-|------|------------------|----------|
-| `safe` | selected by default | Temp files, thumbnails, shader cache, common app caches |
-| `review` | user must select manually | Downloads, dumps, Windows Update cache, Telegram cache |
+| risk     | default behavior            | examples                                                    |
+| -------- | --------------------------- | ----------------------------------------------------------- |
+| `safe`   | selected by default         | temp files, thumbnails, shader cache, common app caches     |
+| `review` | user must select manually   | downloads, dumps, windows update cache, telegram cache      |
 | `danger` | never cleaned automatically | system paths, protected extensions, unknown risky locations |
 
-Files are moved to:
+files are moved to:
 
-```
+```text
 %LOCALAPPDATA%\broominal\quarantine\<restore-id>
 ```
 
-Each cleanup stores a `manifest.json`, which maps original paths to quarantined paths for restore.
+each cleanup stores a `manifest.json`, mapping original paths to quarantined paths.
 
 ---
 
-## Quick Start
+## quick start
 
-### Install
+### install from source
 
 ```powershell
-# From source (requires Go 1.26.3+)
 go install github.com/elev1e1nSure/broominal/cmd/broominal@latest
 ```
 
-Or download the latest `.exe` from [Releases](../../releases).
+requires **go 1.26.3+**.
 
-### Usage
+or download the latest `.exe` from [releases](../../releases).
+
+---
+
+## usage
 
 ```powershell
-# Scan safe zones
+# scan safe zones
 broominal scan
 
-# Launch interactive TUI
+# launch interactive tui
 broominal ui
 
-# Clean safe items only
+# clean safe items only
 broominal clean --safe
 
-# Simulate cleanup without moving files
+# simulate cleanup without moving files
 broominal clean --dry-run
 
-# Restore a specific cleanup
+# restore a specific cleanup
 broominal restore <id>
 
-# Restore with overwrite
+# restore with overwrite
 broominal restore <id> --force-overwrite
 
-# Run health checks
+# run health checks
 broominal doctor
 
-# Show config
+# show config
 broominal config
 
-# Remove quarantines older than 30 days
+# preview old quarantine cleanup
 broominal quarantine-cleanup --dry-run
+
+# remove quarantines older than 30 days
 broominal quarantine-cleanup --force
+
+# remove quarantines older than 7 days
 broominal quarantine-cleanup --force --max-age-days 7
 ```
 
 ---
 
-## Build from source
-
-Requires **Go 1.26.3+**.
+## build from source
 
 ```powershell
-# Clone and build
+git clone https://github.com/elev1e1nSure/broominal.git
+cd broominal
+
 go build -o broominal.exe ./cmd/broominal
 
-# Run the TUI
 .\broominal.exe ui
 ```
 
 ---
 
-## Architecture
+## architecture
 
-> **Small packages, explicit responsibilities, and no hidden cleanup magic.**
+```text
+cmd/broominal/
+  cli entrypoint
 
-```
-cmd/broominal/      CLI entrypoint (Cobra)
 pkg/
-  scanner/          File discovery by cleanup category
-  cleaner/          Quarantine move + report save pipeline
-  quarantine/       Move / Restore / Cleanup with JSON manifests
-  report/           JSON report generation
-  risk/             Risk classification from paths, extensions, and config
-  config/           JSON configuration and defaults
-  doctor/           Health checks for runtime state
-  i18n/             EN/RU localization and language detection
-  style/            ANSI color helpers for CLI output
-  util/             Size formatting and shared helpers
-  types/            Shared domain types
+  scanner/       file discovery by cleanup category
+  cleaner/       quarantine move + report save pipeline
+  quarantine/    move, restore, cleanup, json manifests
+  report/        json report generation
+  risk/          risk classification from paths, extensions, config
+  config/        json configuration and defaults
+  doctor/        runtime health checks
+  i18n/          english/russian localization
+  style/         ansi color helpers for cli output
+  util/          size formatting and shared helpers
+  types/         shared domain types
+
 internal/
-  tui/              Bubbletea interactive interface
+  tui/           bubbletea interactive interface
 ```
 
 ---
 
-## Development
+## design philosophy
 
-### Githooks
+broominal is intentionally boring.
 
-Enable shared hooks to enforce code style and commit conventions:
+it does not promise performance miracles, registry magic, or hidden optimization. it only finds cleanup candidates, classifies risk, shows what it found, and moves selected files into quarantine so the operation can be reversed.
+
+small packages. explicit responsibilities. no hidden cleanup magic.
+
+---
+
+## development
+
+### githooks
+
+enable shared hooks:
 
 ```powershell
 git config core.hooksPath githooks
 ```
 
-Hooks included:
+included hooks:
 
-- `pre-commit` — warns when code changes may need doc updates
-- `commit-msg` — enforces [Conventional Commits](https://www.conventionalcommits.org/) (`feat|fix|chore|refactor|docs|test|build|ci|perf|style|revert`)
+| hook         | purpose                                                |
+| ------------ | ------------------------------------------------------ |
+| `pre-commit` | warns when code changes may need documentation updates |
+| `commit-msg` | enforces conventional commits                          |
 
-### CI / CD
+supported commit types:
 
-All pushes and pull requests to `main` trigger:
-
-- `gofmt` check
-- `go vet`
-- `golangci-lint`
-- `go test ./...`
-- Windows build artifact upload
-
-### Releasing
-
-Run the **Release** workflow from GitHub Actions. It will:
-
-1. Generate release notes from Conventional Commits via `git-cliff`
-2. Build `broominal.exe`
-3. Create a signed tag and GitHub Release with `checksums.txt`
+```text
+feat, fix, chore, refactor, docs, test, build, ci, perf, style, revert
+```
 
 ---
 
-## Contributing
+## ci / cd
 
-Bug reports, cleanup-category ideas, safety improvements, and Windows edge cases are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+pushes and pull requests to `main` run:
+
+```text
+gofmt
+go vet
+golangci-lint
+go test ./...
+windows build artifact upload
+```
 
 ---
 
-## License
+## release
 
-[MIT](LICENSE) © elev1e1nSure
+the release workflow:
+
+```text
+1. generates release notes from conventional commits via git-cliff
+2. builds broominal.exe
+3. creates a signed tag
+4. publishes a github release
+5. uploads checksums.txt
+```
+
+---
+
+## contributing
+
+bug reports, cleanup-category ideas, safety improvements, and windows edge cases are welcome.
+
+see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+## license
+
+[mit](LICENSE) © elev1e1nSure
