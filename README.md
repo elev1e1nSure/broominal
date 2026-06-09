@@ -215,6 +215,17 @@ broominal quarantine-cleanup --force
 broominal quarantine-cleanup --max-age-days 7 --force
 ```
 
+### report
+
+Generate a cleanup report from the last scan.
+
+```powershell
+# generate report from last scan
+broominal report
+```
+
+The report is saved as JSON and includes scan results and cleanup statistics.
+
 ---
 
 ## Configuration

@@ -215,6 +215,17 @@ broominal quarantine-cleanup --force
 broominal quarantine-cleanup --max-age-days 7 --force
 ```
 
+### report
+
+Сгенерировать отчёт об очистке из последнего сканирования.
+
+```powershell
+# сгенерировать отчёт из последнего сканирования
+broominal report
+```
+
+Отчёт сохраняется в формате JSON и включает результаты сканирования и статистику очистки.
+
 ---
 
 ## Конфигурация
