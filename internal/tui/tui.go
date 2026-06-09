@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
+	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/report"
 	"github.com/elev1e1nSure/broominal/pkg/scanner"
@@ -36,6 +37,7 @@ const (
 	ScreenDoctor
 	ScreenConfig
 	ScreenQuarantineCleanup
+	ScreenLanguage
 )
 
 // TUI model
@@ -76,7 +78,23 @@ func (c categoryItem) FilterValue() string { return c.cat.Category }
 
 // Start запускает TUI
 func Start() error {
-	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
+	cfg, _ := config.Load()
+	if cfg != nil && cfg.Language != "" {
+		i18n.SetLanguage(cfg.Language)
+	}
+	m := initialModel()
+	if cfg == nil || cfg.Language == "" {
+		// first run: try to auto-detect, then show language picker
+		if lang, err := i18n.DetectFromIP(); err == nil {
+			i18n.SetLanguage(lang)
+			if cfg != nil {
+				cfg.Language = lang
+				_ = config.Save(cfg)
+			}
+		}
+		m.screen = ScreenLanguage
+	}
+	p := tea.NewProgram(m, tea.WithAltScreen())
 	_, err := p.Run()
 	return err
 }
@@ -176,7 +194,7 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-			if m.selectedIdx < 4 {
+			if m.selectedIdx < 5 {
 				m.selectedIdx++
 			}
 			return m, nil
@@ -220,6 +238,10 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case 4: // Quarantine Cleanup
 				m.screen = ScreenQuarantineCleanup
+				return m, nil
+			case 5: // Settings
+				m.selectedIdx = 0
+				m.screen = ScreenLanguage
 				return m, nil
 			}
 		}
@@ -487,6 +509,41 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			})
 		}
 
+	case ScreenLanguage:
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
+			if m.selectedIdx > 0 {
+				m.selectedIdx--
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
+			langs := i18n.SupportedLanguages()
+			if m.selectedIdx < len(langs)-1 {
+				m.selectedIdx++
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+			langs := i18n.SupportedLanguages()
+			if m.selectedIdx < len(langs) {
+				lang := langs[m.selectedIdx]
+				i18n.SetLanguage(lang)
+				cfg, _ := config.Load()
+				if cfg != nil {
+					cfg.Language = lang
+					_ = config.Save(cfg)
+				}
+			}
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			return m, nil
+		}
+
 	case ScreenError:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 			return m, tea.Quit
@@ -525,6 +582,8 @@ func (m model) View() string {
 		return m.viewConfig()
 	case ScreenQuarantineCleanup:
 		return m.viewQuarantineCleanup()
+	case ScreenLanguage:
+		return m.viewLanguage()
 	}
 	return ""
 }
@@ -541,23 +600,23 @@ var (
 
 func (m model) viewDashboard() string {
 	if m.result == nil {
-		return "Scanning...\n"
+		return i18n.T("scanning") + "\n"
 	}
 	return fmt.Sprintf(
 		"%s\n\n%s\n%s\n%s\n%s\n\n%s\n",
-		titleStyle.Render(" Broominal — Dashboard "),
-		fmt.Sprintf("  Total found:  %s", scanner.FormatSize(m.result.TotalSize)),
-		fmt.Sprintf("  %s Safe:       %s", safeStyle.Render("●"), scanner.FormatSize(m.result.SafeSize)),
-		fmt.Sprintf("  %s Review:     %s", reviewStyle.Render("●"), scanner.FormatSize(m.result.ReviewSize)),
-		fmt.Sprintf("  %s Danger:     %s", dangerStyle.Render("●"), scanner.FormatSize(m.result.DangerSize)),
-		mutedStyle.Render("  Press Enter or Space to continue"),
+		titleStyle.Render(" "+i18n.T("dashboard")+" "),
+		fmt.Sprintf("  %s:  %s", i18n.T("total_found"), scanner.FormatSize(m.result.TotalSize)),
+		fmt.Sprintf("  %s %s:       %s", safeStyle.Render("●"), i18n.T("safe"), scanner.FormatSize(m.result.SafeSize)),
+		fmt.Sprintf("  %s %s:     %s", reviewStyle.Render("●"), i18n.T("review"), scanner.FormatSize(m.result.ReviewSize)),
+		fmt.Sprintf("  %s %s:     %s", dangerStyle.Render("●"), i18n.T("danger"), scanner.FormatSize(m.result.DangerSize)),
+		mutedStyle.Render("  "+i18n.T("hint_continue")),
 	)
 }
 
 func (m model) viewCategories() string {
 	var s string
-	s += titleStyle.Render(" Categories ") + "\n\n"
-	s += fmt.Sprintf("  %-20s %10s %8s %8s  %s\n", "Category", "Size", "Files", "Risk", "Select")
+	s += titleStyle.Render(" "+i18n.T("categories")+" ") + "\n\n"
+	s += fmt.Sprintf("  %-20s %10s %8s %8s  %s\n", i18n.T("category"), i18n.T("size"), i18n.T("files"), i18n.T("risk"), i18n.T("select"))
 	s += "  " + strings.Repeat("-", 60) + "\n"
 	for i, c := range m.categories {
 		marker := "[ ]"
@@ -588,74 +647,74 @@ func (m model) viewCategories() string {
 		)
 		s += style.Render(line) + "\n"
 	}
-	s += "\n" + mutedStyle.Render("  Space: toggle  Enter: confirm  D: details  Q: quit")
+	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_categories"))
 	return s
 }
 
 func (m model) viewDetails() string {
-	return titleStyle.Render(fmt.Sprintf(" Details: %s ", m.categories[m.detailCat].cat.Category)) + "\n\n" +
+	return titleStyle.Render(fmt.Sprintf(" %s: %s ", i18n.T("details"), m.categories[m.detailCat].cat.Category)) + "\n\n" +
 		m.detailList.View() + "\n" +
-		mutedStyle.Render("  Q/Esc: back")
+		mutedStyle.Render("  "+i18n.T("hint_back"))
 }
 
 func (m model) viewConfirm() string {
 	dryLabel := ""
 	if m.dryRun {
-		dryLabel = reviewStyle.Render(" [DRY-RUN] ")
+		dryLabel = reviewStyle.Render(" " + i18n.T("dry_run") + " ")
 	}
-	return titleStyle.Render(" Confirm Cleanup ") + dryLabel + "\n\n" +
+	return titleStyle.Render(" "+i18n.T("confirm_cleanup")+" ") + dryLabel + "\n\n" +
 		m.confirmMsg + "\n\n" +
-		mutedStyle.Render("  Enter: proceed  T: toggle dry-run  Esc: back")
+		mutedStyle.Render("  "+i18n.T("hint_confirm"))
 }
 
 func (m model) viewResult() string {
 	if m.cleanResult == nil {
-		return titleStyle.Render(" Restored ") + "\n\n" +
-			mutedStyle.Render("  Files restored successfully.") + "\n\n" +
-			mutedStyle.Render("  Q: quit")
+		return titleStyle.Render(" "+i18n.T("restored")+" ") + "\n\n" +
+			mutedStyle.Render("  "+i18n.T("hint_restored")) + "\n\n" +
+			mutedStyle.Render("  Q: "+i18n.T("quit"))
 	}
 	if m.dryRun {
-		return titleStyle.Render(" Dry-Run Complete ") + "\n\n" +
-			fmt.Sprintf("  Would free: %s\n", scanner.FormatSize(m.cleanResult.Freed)) +
-			fmt.Sprintf("  Files:      %d\n\n", m.cleanResult.Files) +
-			mutedStyle.Render("  Q: quit")
+		return titleStyle.Render(" "+i18n.T("dry_run_complete")+" ") + "\n\n" +
+			fmt.Sprintf("  %s: %s\n", i18n.T("would_free"), scanner.FormatSize(m.cleanResult.Freed)) +
+			fmt.Sprintf("  %s:      %d\n\n", i18n.T("files"), m.cleanResult.Files) +
+			mutedStyle.Render("  Q: "+i18n.T("quit"))
 	}
-	return titleStyle.Render(" Cleanup Complete ") + "\n\n" +
-		fmt.Sprintf("  Freed:     %s\n", scanner.FormatSize(m.cleanResult.Freed)) +
-		fmt.Sprintf("  Files:     %d\n", m.cleanResult.Files) +
-		fmt.Sprintf("  Restore:   %s\n\n", m.cleanResult.RestoreID) +
-		mutedStyle.Render("  R: restore last  Q: quit")
+	return titleStyle.Render(" "+i18n.T("cleanup_complete")+" ") + "\n\n" +
+		fmt.Sprintf("  %s:     %s\n", i18n.T("freed"), scanner.FormatSize(m.cleanResult.Freed)) +
+		fmt.Sprintf("  %s:     %d\n", i18n.T("files"), m.cleanResult.Files) +
+		fmt.Sprintf("  %s:   %s\n\n", i18n.T("restore_id"), m.cleanResult.RestoreID) +
+		mutedStyle.Render("  "+i18n.T("hint_result"))
 }
 
 func (m model) viewRestoreConflict() string {
 	var s string
-	s += titleStyle.Render(" Restore Conflicts ") + "\n\n"
-	s += dangerStyle.Render(fmt.Sprintf("  %d file(s) already exist at original paths:", len(m.conflicts))) + "\n"
+	s += titleStyle.Render(" "+i18n.T("restore_conflicts")+" ") + "\n\n"
+	s += dangerStyle.Render(fmt.Sprintf("  %d %s:", len(m.conflicts), i18n.T("files_already_exist"))) + "\n"
 	for _, p := range m.conflicts {
 		s += mutedStyle.Render(fmt.Sprintf("    %s", p)) + "\n"
 	}
-	s += "\n" + mutedStyle.Render("  O: overwrite all  S: skip all  C/Esc: cancel")
+	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_conflicts"))
 	return s
 }
 
 func (m model) viewWarnRecycleBin() string {
 	cat := m.categories[m.detailCat].cat
-	return titleStyle.Render(" Warning ") + "\n\n" +
-		dangerStyle.Render(fmt.Sprintf("  Recycle Bin contains %d files.", cat.Files)) + "\n" +
-		mutedStyle.Render("  Opening details may be very slow.") + "\n\n" +
-		mutedStyle.Render("  Enter: continue anyway  Esc: back")
+	return titleStyle.Render(" "+i18n.T("warning")+" ") + "\n\n" +
+		dangerStyle.Render(fmt.Sprintf("  "+i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
+		mutedStyle.Render("  "+i18n.T("hint_recycle_warn")) + "\n\n" +
+		mutedStyle.Render("  "+i18n.T("hint_recycle_continue"))
 }
 
 func (m model) viewCleaning() string {
-	return titleStyle.Render(" Cleaning... ") + "\n\n" +
-		fmt.Sprintf("  %s Moving files to quarantine...\n", m.spinner.View()) +
-		mutedStyle.Render("  Please wait, this may take a while.")
+	return titleStyle.Render(" "+i18n.T("cleaning")+" ") + "\n\n" +
+		fmt.Sprintf("  %s %s\n", m.spinner.View(), i18n.T("moving_files")) +
+		mutedStyle.Render("  "+i18n.T("please_wait"))
 }
 
 func (m model) viewError() string {
-	return titleStyle.Render(" Error ") + "\n\n" +
+	return titleStyle.Render(" "+i18n.T("error")+" ") + "\n\n" +
 		dangerStyle.Render(fmt.Sprintf("  %v", m.err)) + "\n\n" +
-		mutedStyle.Render("  Press Q or Esc to quit")
+		mutedStyle.Render("  "+i18n.T("hint_error_quit"))
 }
 
 func buildDetailList(items []types.Item, w, h int) list.Model {
@@ -711,14 +770,15 @@ func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
 
 func (m model) viewMainMenu() string {
 	items := []string{
-		"Scan & Clean",
-		"Restore from Quarantine",
-		"Doctor (Health Checks)",
-		"View Config",
-		"Quarantine Cleanup",
+		i18n.T("menu_scan_clean"),
+		i18n.T("menu_restore"),
+		i18n.T("menu_doctor"),
+		i18n.T("menu_config"),
+		i18n.T("menu_cleanup"),
+		i18n.T("menu_settings"),
 	}
 	var s string
-	s += titleStyle.Render(" Broominal — Main Menu ") + "\n\n"
+	s += titleStyle.Render(" "+i18n.T("main_menu")+" ") + "\n\n"
 	for i, item := range items {
 		style := mutedStyle
 		prefix := "  "
@@ -728,15 +788,15 @@ func (m model) viewMainMenu() string {
 		}
 		s += style.Render(fmt.Sprintf("%s%s", prefix, item)) + "\n"
 	}
-	s += "\n" + mutedStyle.Render("  Enter: select  Q: quit")
+	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_select"))
 	return s
 }
 
 func (m model) viewRestore() string {
 	var s string
-	s += titleStyle.Render(" Restore from Quarantine ") + "\n\n"
+	s += titleStyle.Render(" "+i18n.T("restore")+" ") + "\n\n"
 	if len(m.restoreIDs) == 0 {
-		s += mutedStyle.Render("  No quarantines available.") + "\n"
+		s += mutedStyle.Render("  "+i18n.T("no_quarantines")) + "\n"
 	} else {
 		for i, id := range m.restoreIDs {
 			style := mutedStyle
@@ -751,13 +811,13 @@ func (m model) viewRestore() string {
 	if m.restoreResult != "" {
 		s += "\n" + safeStyle.Render("  "+m.restoreResult) + "\n"
 	}
-	s += "\n" + mutedStyle.Render("  Enter: restore  Q/Esc: back")
+	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_restore"))
 	return s
 }
 
 func (m model) viewDoctor() string {
 	var s string
-	s += titleStyle.Render(" Doctor — Health Checks ") + "\n\n"
+	s += titleStyle.Render(" "+i18n.T("doctor")+" ") + "\n\n"
 	for _, c := range m.doctorChecks {
 		var marker string
 		switch c.Status {
@@ -770,17 +830,17 @@ func (m model) viewDoctor() string {
 		}
 		s += fmt.Sprintf("  %-28s %s  %s\n", c.Name, marker, mutedStyle.Render(c.Detail))
 	}
-	s += "\n" + mutedStyle.Render("  Q/Esc: back")
+	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_back"))
 	return s
 }
 
 func (m model) viewConfig() string {
 	var s string
-	s += titleStyle.Render(" Current Config ") + "\n\n"
+	s += titleStyle.Render(" "+i18n.T("config")+" ") + "\n\n"
 	for _, line := range strings.Split(m.configView, "\n") {
 		s += mutedStyle.Render("  "+line) + "\n"
 	}
-	s += "\n" + mutedStyle.Render("  Q/Esc: back")
+	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_back"))
 	return s
 }
 
@@ -788,10 +848,36 @@ func (m model) viewQuarantineCleanup() string {
 	var s string
 	dryLabel := ""
 	if m.dryRun {
-		dryLabel = reviewStyle.Render(" [DRY-RUN] ")
+		dryLabel = reviewStyle.Render(" " + i18n.T("dry_run") + " ")
 	}
-	s += titleStyle.Render(" Quarantine Cleanup ") + dryLabel + "\n\n"
-	s += mutedStyle.Render("  Deletes quarantines older than max age days.") + "\n\n"
-	s += mutedStyle.Render("  T: toggle dry-run  Enter: proceed  Q/Esc: back")
+	s += titleStyle.Render(" "+i18n.T("quarantine_cleanup")+" ") + dryLabel + "\n\n"
+	s += mutedStyle.Render("  "+i18n.T("cleanup_desc")) + "\n\n"
+	s += mutedStyle.Render("  "+i18n.T("hint_cleanup"))
+	return s
+}
+
+func (m model) viewLanguage() string {
+	langs := i18n.SupportedLanguages()
+	labels := map[string]string{"en": i18n.T("english"), "ru": i18n.T("russian")}
+	var s string
+	s += titleStyle.Render(" "+i18n.T("select_language")+" ") + "\n\n"
+	for i, lang := range langs {
+		style := mutedStyle
+		prefix := "  "
+		if i == m.selectedIdx {
+			style = selectedStyle
+			prefix = "> "
+		}
+		label := labels[lang]
+		if label == "" {
+			label = lang
+		}
+		marker := ""
+		if lang == i18n.CurrentLanguage() {
+			marker = safeStyle.Render(" [✓]")
+		}
+		s += style.Render(fmt.Sprintf("%s%s%s", prefix, label, marker)) + "\n"
+	}
+	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_language"))
 	return s
 }

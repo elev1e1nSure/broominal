@@ -411,3 +411,35 @@ func TestViewQuarantineCleanup(t *testing.T) {
 		t.Error("view should contain 'Quarantine Cleanup'")
 	}
 }
+
+func TestViewLanguage(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenLanguage
+	out := m.View()
+	if !strings.Contains(out, "Select Language") {
+		t.Error("view should contain 'Select Language'")
+	}
+	if !strings.Contains(out, "English") {
+		t.Error("view should contain 'English'")
+	}
+}
+
+func TestHandleKeyLanguageSelect(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenLanguage
+	m.selectedIdx = 0
+
+	// Move down to Russian
+	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyDown})
+	mm := newM.(model)
+	if mm.selectedIdx != 1 {
+		t.Errorf("after down: selectedIdx = %d, want 1", mm.selectedIdx)
+	}
+
+	// Select Russian
+	newM2, _ := mm.handleKey(tea.KeyMsg{Type: tea.KeyEnter})
+	mm2 := newM2.(model)
+	if mm2.screen != ScreenMainMenu {
+		t.Errorf("after select: screen = %d, want MainMenu", mm2.screen)
+	}
+}

@@ -17,6 +17,7 @@ type Config struct {
 	Exclusions           []string          `json:"exclusions"`
 	AutoRiskOverrides    map[string]string `json:"auto_risk_overrides"`
 	QuarantineMaxAgeDays int               `json:"quarantine_max_age_days"`
+	Language             string            `json:"language"`
 }
 
 // Default returns the built-in default configuration.
@@ -50,6 +51,7 @@ func Default() *Config {
 			"node_modules":  "review",
 		},
 		QuarantineMaxAgeDays: 30,
+		Language:             "",
 	}
 }
 
