@@ -266,6 +266,28 @@ func TestViewCleaning(t *testing.T) {
 	}
 }
 
+func TestUpdateCleanDoneMsgErrorShowsScreenError(t *testing.T) {
+	m := initialModel()
+	newM, _ := m.Update(cleanDoneMsg{result: nil, err: fmt.Errorf("clean failed")})
+	mm := newM.(model)
+	if mm.screen != ScreenError {
+		t.Errorf("screen = %d, want ScreenError", mm.screen)
+	}
+}
+
+func TestHandleKeyErrorScreenQuit(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenError
+	newM, cmd := m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	mm := newM.(model)
+	if mm.screen != ScreenError {
+		t.Errorf("screen should remain ScreenError, got %d", mm.screen)
+	}
+	if cmd == nil {
+		t.Error("expected tea.Quit command")
+	}
+}
+
 func TestBuildConfirmMessage(t *testing.T) {
 	cats := []categoryItem{
 		{cat: types.CategorySummary{Category: "Temp", Risk: types.RiskSafe, Size: 100, Files: 2}, selected: true},

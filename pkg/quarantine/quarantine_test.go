@@ -366,3 +366,95 @@ func TestListAndGetLast(t *testing.T) {
 		t.Errorf("GetLast = %q, want id-2", last)
 	}
 }
+
+func TestCleanupEmpty(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	deleted, freed, err := Cleanup(30, false)
+	if err != nil {
+		t.Fatalf("Cleanup failed: %v", err)
+	}
+	if deleted != 0 {
+		t.Errorf("deleted = %d, want 0", deleted)
+	}
+	if freed != 0 {
+		t.Errorf("freed = %d, want 0", freed)
+	}
+}
+
+func TestCleanupRemovesOld(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	qDir := BaseDir()
+	oldDir := filepath.Join(qDir, "old-id")
+	_ = os.MkdirAll(oldDir, 0755)
+	_ = os.WriteFile(filepath.Join(oldDir, "file.txt"), []byte("data"), 0644)
+	// Write a valid manifest with old date
+	manifest := `{"id":"old-id","created_at":"2020-01-01T00:00:00Z","items":[]}`
+	_ = os.WriteFile(filepath.Join(oldDir, "manifest.json"), []byte(manifest), 0644)
+
+	deleted, freed, err := Cleanup(30, false)
+	if err != nil {
+		t.Fatalf("Cleanup failed: %v", err)
+	}
+	if deleted != 1 {
+		t.Errorf("deleted = %d, want 1", deleted)
+	}
+	if freed == 0 {
+		t.Error("expected freed > 0")
+	}
+	if _, err := os.Stat(oldDir); !os.IsNotExist(err) {
+		t.Error("old quarantine should be removed")
+	}
+}
+
+func TestCleanupDryRun(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	qDir := BaseDir()
+	oldDir := filepath.Join(qDir, "old-id")
+	_ = os.MkdirAll(oldDir, 0755)
+	manifest := `{"id":"old-id","created_at":"2020-01-01T00:00:00Z","items":[]}`
+	_ = os.WriteFile(filepath.Join(oldDir, "manifest.json"), []byte(manifest), 0644)
+
+	deleted, freed, err := Cleanup(30, true)
+	if err != nil {
+		t.Fatalf("Cleanup dry-run failed: %v", err)
+	}
+	if deleted != 1 {
+		t.Errorf("deleted = %d, want 1", deleted)
+	}
+	// Dir should still exist after dry-run
+	if _, err := os.Stat(oldDir); os.IsNotExist(err) {
+		t.Error("dry-run should not remove quarantine")
+	}
+	_ = freed
+}
+
+func TestCleanupKeepsRecent(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	qDir := BaseDir()
+	recentDir := filepath.Join(qDir, "recent-id")
+	_ = os.MkdirAll(recentDir, 0755)
+	manifest := `{"id":"recent-id","created_at":"` + time.Now().Format(time.RFC3339) + `","items":[]}`
+	_ = os.WriteFile(filepath.Join(recentDir, "manifest.json"), []byte(manifest), 0644)
+
+	deleted, freed, err := Cleanup(30, false)
+	if err != nil {
+		t.Fatalf("Cleanup failed: %v", err)
+	}
+	if deleted != 0 {
+		t.Errorf("deleted = %d, want 0", deleted)
+	}
+	if freed != 0 {
+		t.Errorf("freed = %d, want 0", freed)
+	}
+	if _, err := os.Stat(recentDir); os.IsNotExist(err) {
+		t.Error("recent quarantine should be kept")
+	}
+}

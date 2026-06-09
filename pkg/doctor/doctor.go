@@ -10,6 +10,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/report"
+	"github.com/elev1e1nSure/broominal/pkg/scanner"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
@@ -74,16 +75,18 @@ func checkDir(path, name string) Check {
 	}
 	// test write
 	testFile := filepath.Join(path, ".write_test")
-	if f, err := os.Create(testFile); err != nil {
+	f, err := os.Create(testFile)
+	if err != nil {
 		return Check{
 			Name:   name + " directory",
 			Status: StatusFail,
 			Detail: fmt.Sprintf("Cannot write to %s: %v", path, err),
 		}
-	} else {
+	}
+	defer func() {
 		_ = f.Close()
 		_ = os.Remove(testFile)
-	}
+	}()
 	return Check{
 		Name:   name + " directory",
 		Status: StatusPass,
@@ -197,19 +200,7 @@ func checkQuarantineStats() Check {
 	return Check{
 		Name:   "Quarantine stats",
 		Status: StatusPass,
-		Detail: fmt.Sprintf("%d quarantines, %d files, %s", len(entries), totalFiles, formatSize(totalSize)),
+		Detail: fmt.Sprintf("%d quarantines, %d files, %s", len(entries), totalFiles, scanner.FormatSize(totalSize)),
 	}
 }
 
-func formatSize(b int64) string {
-	const unit = 1024
-	if b < unit {
-		return fmt.Sprintf("%d B", b)
-	}
-	div, exp := int64(unit), 0
-	for n := b / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
-}
