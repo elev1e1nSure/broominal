@@ -56,6 +56,27 @@ func Default() *Config {
 			"Windows Update Cache":       false,
 			"Crash & Memory Dumps":       false,
 			"Nvidia Installer Leftovers": false,
+			"Opera Cache":                false,
+			"Brave Cache":                false,
+			"Vivaldi Cache":              false,
+			"Yandex Cache":               false,
+			"Office Cache":               false,
+			"Adobe Cache":                false,
+			"Docker Cache":               false,
+			"JetBrains Cache":            false,
+			"Go Build Cache":             false,
+			"Rust Cache":                 false,
+			"NuGet Cache":                false,
+			"Unity Cache":                false,
+			"Epic Games Cache":           false,
+			"Battle.net Cache":           false,
+			"Rockstar Cache":             false,
+			"EA App Cache":               false,
+			"Ubisoft Cache":              false,
+			"GOG Galaxy Cache":           false,
+			"OBS Cache":                  false,
+			"Windows Defender":           false,
+			"TeamViewer Logs":            false,
 		},
 		Exclusions: []string{},
 		AutoRiskOverrides: map[string]string{
@@ -200,60 +221,109 @@ func containsIgnoreCase(s, substr string) bool {
 type Preset string
 
 const (
-	PresetSafe   Preset = "safe"
-	PresetNormal Preset = "normal"
-	PresetHard   Preset = "hard"
+	PresetQuick     Preset = "quick"
+	PresetStandard  Preset = "standard"
+	PresetDeveloper Preset = "developer"
+	PresetGamer     Preset = "gamer"
+	PresetDeep      Preset = "deep"
 )
 
 func (c *Config) ApplyPreset(p Preset) {
 	c.EnabledCategories = make(map[string]bool)
 
-	safeCategories := []string{
+	quickCategories := []string{
 		"Temp",
-		"Downloads",
 		"Browser Cache",
-		"Recycle Bin",
-		"Logs",
-		"Old Installers",
-		"Large Old Files",
 		"Thumbnails Cache",
 		"DirectX Shader Cache",
+		"Empty Folders",
 		"Delivery Optimization",
+		"Icon Cache",
 		"Windows Error Reports",
+		"Opera Cache",
+		"Brave Cache",
+		"Vivaldi Cache",
+		"Yandex Cache",
+	}
+
+	standardCategories := append(quickCategories,
+		"Logs",
 		"Steam Cache",
+		"Messenger Cache",
 		"VSCode Cache",
 		"Edge Code Cache",
 		"Chrome Code Cache",
 		"Firefox Cache2",
-		"Empty Folders",
 		"npm Cache",
 		"pip Cache",
 		"Spotify Cache",
 		"OneDrive Cache",
-		"Visual Studio Cache",
 		"Git Cache",
 		"Windows Prefetch",
-		"Icon Cache",
-	}
-
-	normalCategories := append(safeCategories,
-		"Messenger Cache",
+		"Office Cache",
+		"OBS Cache",
+		"TeamViewer Logs",
+		"Epic Games Cache",
+		"Battle.net Cache",
+		"Rockstar Cache",
+		"EA App Cache",
+		"Ubisoft Cache",
+		"GOG Galaxy Cache",
 	)
 
-	hardCategories := append(normalCategories,
+	developerCategories := append(standardCategories,
+		"Docker Cache",
+		"JetBrains Cache",
+		"Go Build Cache",
+		"Rust Cache",
+		"NuGet Cache",
+		"Unity Cache",
+		"Visual Studio Cache",
+		"Adobe Cache",
+	)
+
+	gamerCategories := append(quickCategories,
+		"Logs",
+		"Steam Cache",
+		"Messenger Cache",
+		"Spotify Cache",
+		"OneDrive Cache",
+		"Windows Prefetch",
+		"Office Cache",
+		"OBS Cache",
+		"TeamViewer Logs",
+		"Epic Games Cache",
+		"Battle.net Cache",
+		"Rockstar Cache",
+		"EA App Cache",
+		"Ubisoft Cache",
+		"GOG Galaxy Cache",
+		"Large Old Files",
+	)
+
+	deepCategories := append(developerCategories,
+		"Downloads",
+		"Old Installers",
+		"Large Old Files",
 		"Windows Update Cache",
 		"Crash & Memory Dumps",
 		"Nvidia Installer Leftovers",
+		"Recycle Bin",
+		"Windows Defender",
 	)
 
 	var categories []string
 	switch p {
-	case PresetSafe:
-		categories = safeCategories
-	case PresetNormal:
-		categories = normalCategories
-	case PresetHard:
-		categories = hardCategories
+	case PresetQuick:
+		categories = quickCategories
+	case PresetStandard:
+		categories = standardCategories
+	case PresetDeveloper:
+		categories = developerCategories
+	case PresetGamer:
+		categories = gamerCategories
+	case PresetDeep:
+		categories = deepCategories
 	}
 
 	for _, cat := range categories {

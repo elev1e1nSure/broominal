@@ -41,9 +41,12 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if m.configCfg != nil {
 				var items []configCategoryItem
 				for cat, enabled := range m.configCfg.EnabledCategories {
-					items = append(items, configCategoryItem{name: cat, enabled: enabled})
+					items = append(items, configCategoryItem{name: cat, enabled: enabled, group: categoryGroup(cat)})
 				}
 				sort.Slice(items, func(i, j int) bool {
+					if items[i].group != items[j].group {
+						return items[i].group < items[j].group
+					}
 					return items[i].name < items[j].name
 				})
 				m.configCategories = items
@@ -124,7 +127,7 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-		if m.selectedIdx < 2 {
+		if m.selectedIdx < 4 {
 			m.selectedIdx++
 		}
 		return m, nil
@@ -133,11 +136,15 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.configCfg != nil {
 			switch m.selectedIdx {
 			case 0:
-				m.configCfg.ApplyPreset(config.PresetSafe)
+				m.configCfg.ApplyPreset(config.PresetQuick)
 			case 1:
-				m.configCfg.ApplyPreset(config.PresetNormal)
+				m.configCfg.ApplyPreset(config.PresetStandard)
 			case 2:
-				m.configCfg.ApplyPreset(config.PresetHard)
+				m.configCfg.ApplyPreset(config.PresetDeveloper)
+			case 3:
+				m.configCfg.ApplyPreset(config.PresetGamer)
+			case 4:
+				m.configCfg.ApplyPreset(config.PresetDeep)
 			}
 			_ = config.Save(m.configCfg)
 		}
@@ -169,6 +176,49 @@ func (m model) viewConfig() string {
 	return body
 }
 
+func categoryGroup(name string) string {
+	switch name {
+	case "Temp", "Logs", "Thumbnails Cache", "DirectX Shader Cache", "Delivery Optimization",
+		"Windows Error Reports", "Windows Update Cache", "Crash & Memory Dumps",
+		"Nvidia Installer Leftovers", "Windows Prefetch", "Icon Cache", "Empty Folders", "Windows Defender":
+		return "1_system"
+	case "Browser Cache", "Edge Code Cache", "Chrome Code Cache", "Firefox Cache2",
+		"Opera Cache", "Brave Cache", "Vivaldi Cache", "Yandex Cache":
+		return "2_browsers"
+	case "Messenger Cache":
+		return "3_messengers"
+	case "Steam Cache", "Epic Games Cache", "Battle.net Cache", "Rockstar Cache",
+		"EA App Cache", "Ubisoft Cache", "GOG Galaxy Cache":
+		return "4_games"
+	case "VSCode Cache", "npm Cache", "pip Cache", "Git Cache", "Visual Studio Cache",
+		"Docker Cache", "JetBrains Cache", "Go Build Cache", "Rust Cache", "NuGet Cache", "Unity Cache":
+		return "5_dev"
+	case "Spotify Cache", "OneDrive Cache", "Office Cache", "Adobe Cache", "OBS Cache", "TeamViewer Logs":
+		return "6_apps"
+	default:
+		return "0_user"
+	}
+}
+
+func groupTitle(group string) string {
+	switch group {
+	case "1_system":
+		return i18n.T("group_system")
+	case "2_browsers":
+		return i18n.T("group_browsers")
+	case "3_messengers":
+		return i18n.T("group_messengers")
+	case "4_games":
+		return i18n.T("group_games")
+	case "5_dev":
+		return i18n.T("group_dev")
+	case "6_apps":
+		return i18n.T("group_apps")
+	default:
+		return i18n.T("group_user")
+	}
+}
+
 func (m model) viewConfigCategories() string {
 	var body string
 	body += m.appTitle(i18n.T("config_categories")) + "\n\n"
@@ -177,8 +227,13 @@ func (m model) viewConfigCategories() string {
 		visible = 5
 	}
 	start, end := clampWindow(m.selectedIdx, len(m.configCategories), visible)
+	var lastGroup string
 	for i := start; i < end; i++ {
 		c := m.configCategories[i]
+		if c.group != lastGroup {
+			lastGroup = c.group
+			body += "\n" + lipgloss.NewStyle().Bold(true).Render("  "+groupTitle(c.group)) + "\n"
+		}
 		marker := "[ ]"
 		if c.enabled {
 			marker = safeStyle.Render("[x]")
@@ -205,9 +260,11 @@ func (m model) viewConfigPresets() string {
 		style    lipgloss.Style
 		expected int
 	}{
-		{"Safe", "Кэш браузеров, темпы, системный мусор", config.PresetSafe, safeStyle, 25},
-		{"Normal", "Safe + мессенджеры", config.PresetNormal, reviewStyle, 26},
-		{"Hard", "Всё включено - максимальная очистка", config.PresetHard, dangerStyle, 29},
+		{"Quick", "~5 сек — браузеры, темпы, системный мусор", config.PresetQuick, safeStyle, 12},
+		{"Standard", "Quick + мессенджеры, ланчеры, dev-инструменты", config.PresetStandard, reviewStyle, 34},
+		{"Developer", "Standard + Docker, JetBrains, Go, Rust, Unity", config.PresetDeveloper, reviewStyle, 42},
+		{"Gamer", "Quick + ланчеры, мессенджеры, большие файлы", config.PresetGamer, reviewStyle, 28},
+		{"Deep", "Всё включено — максимальная очистка", config.PresetDeep, dangerStyle, 50},
 	}
 
 	currentPreset := -1

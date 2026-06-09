@@ -90,6 +90,7 @@ type model struct {
 type configCategoryItem struct {
 	name    string
 	enabled bool
+	group   string
 }
 
 type categoryItem struct {
