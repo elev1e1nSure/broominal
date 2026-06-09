@@ -39,7 +39,8 @@ jobs:
       - name: Generate checksums
         run: |
           $hash = Get-FileHash broominal.exe -Algorithm SHA256
-          "$($hash.Hash)  broominal.exe" | Out-File -Encoding utf8 checksums.txt
+          "$( $hash.Hash)  broominal.exe" | Out-File -Encoding utf8 checksums.txt
+          "$($hash.Hash)" | Out-File -Encoding utf8 broominal.exe.sha256
         shell: pwsh
 
       - name: Create and push tag
@@ -60,3 +61,4 @@ jobs:
           files: |
             broominal.exe
             checksums.txt
+            broominal.exe.sha256

@@ -17,6 +17,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/report"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 	"github.com/elev1e1nSure/broominal/pkg/util"
+	"golang.org/x/sys/windows"
 )
 
 // Status indicates the result of a check.
@@ -246,9 +247,9 @@ func Fix(fixKey string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("cannot locate executable: %w", err)
 		}
-		cmd := exec.Command("powershell", "-Command",
-			fmt.Sprintf("Start-Process -FilePath '%s' -Verb runAs", exe))
-		if err := cmd.Start(); err != nil {
+		verbPtr, _ := windows.UTF16PtrFromString("runas")
+		exePtr, _ := windows.UTF16PtrFromString(exe)
+		if err := windows.ShellExecute(0, verbPtr, exePtr, nil, nil, windows.SW_NORMAL); err != nil {
 			return "", fmt.Errorf("failed to elevate: %w", err)
 		}
 		return "Restarting as administrator...", nil

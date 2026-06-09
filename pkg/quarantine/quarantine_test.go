@@ -483,6 +483,19 @@ func TestRestoreManifestPathTraversal(t *testing.T) {
 	}
 }
 
+func TestIsAllowedRestorePathPrefixConfusion(t *testing.T) {
+	t.Setenv("TEMP", `C:\temp`)
+	if !isAllowedRestorePath(`C:\temp\file.txt`) {
+		t.Error("expected C:\\temp\\file.txt to be allowed")
+	}
+	if isAllowedRestorePath(`C:\tempfoo\file.txt`) {
+		t.Error("expected C:\\tempfoo\\file.txt to be disallowed (prefix confusion)")
+	}
+	if !isAllowedRestorePath(`C:\temp`) {
+		t.Error("expected C:\\temp to be allowed (exact root)")
+	}
+}
+
 func TestRestoreManifestDisallowedPath(t *testing.T) {
 	tmp := t.TempDir()
 	t.Setenv("LOCALAPPDATA", tmp)

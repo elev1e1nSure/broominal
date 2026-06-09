@@ -459,7 +459,11 @@ func isAllowedRestorePath(path string) bool {
 			continue
 		}
 		rootClean := strings.ToLower(filepath.Clean(root))
-		if strings.HasPrefix(lowerClean, rootClean) {
+		rootCleanSep := rootClean
+		if !strings.HasSuffix(rootCleanSep, string(filepath.Separator)) {
+			rootCleanSep += string(filepath.Separator)
+		}
+		if strings.HasPrefix(lowerClean, rootCleanSep) || lowerClean == rootClean {
 			return true
 		}
 	}
@@ -523,7 +527,7 @@ func copyAndDelete(src, dst string) error {
 	}
 	defer in.Close()
 
-	out, err := os.Create(dst)
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}

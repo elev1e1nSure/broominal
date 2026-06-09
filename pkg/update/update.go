@@ -1,6 +1,8 @@
 package update
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -152,6 +154,28 @@ func DownloadUpdate(release *Release) (string, error) {
 	if _, err := io.Copy(f, resp.Body); err != nil {
 		return "", fmt.Errorf("failed to write update file: %w", err)
 	}
+	if err := f.Close(); err != nil {
+		return "", fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	// Verify checksum if available
+	var checksumAsset *Asset
+	for i := range release.Assets {
+		a := &release.Assets[i]
+		if a.Name == asset.Name+".sha256" || a.Name == "checksums.txt" {
+			checksumAsset = a
+			break
+		}
+	}
+	if checksumAsset != nil {
+		if err := verifyChecksum(checksumAsset, tmpPath); err != nil {
+			_ = os.Remove(tmpPath)
+			return "", fmt.Errorf("checksum verification failed: %w", err)
+		}
+		slog.Info("update: checksum verified")
+	} else {
+		slog.Warn("update: no checksum asset found, skipping verification")
+	}
 
 	return tmpPath, nil
 }
@@ -178,6 +202,54 @@ func InstallUpdate(updatePath string) error {
 
 	_ = os.Remove(backupPath)
 	_ = os.Remove(updatePath)
+	return nil
+}
+
+func parseChecksum(data, fileName string) (string, error) {
+	lines := strings.Split(strings.TrimSpace(data), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) == 1 {
+			return fields[0], nil
+		}
+		if len(fields) >= 2 && strings.EqualFold(fields[1], fileName) {
+			return fields[0], nil
+		}
+	}
+	return "", fmt.Errorf("checksum for %s not found", fileName)
+}
+
+func verifyChecksum(asset *Asset, filePath string) error {
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(asset.BrowserDownloadURL)
+	if err != nil {
+		return fmt.Errorf("failed to download checksum: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status for checksum: %d", resp.StatusCode)
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read checksum: %w", err)
+	}
+	expected, err := parseChecksum(string(data), filepath.Base(filePath))
+	if err != nil {
+		return err
+	}
+	f, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return err
+	}
+	actual := hex.EncodeToString(h.Sum(nil))
+	if !strings.EqualFold(expected, actual) {
+		return fmt.Errorf("checksum mismatch: expected %s, got %s", expected, actual)
+	}
 	return nil
 }
 
