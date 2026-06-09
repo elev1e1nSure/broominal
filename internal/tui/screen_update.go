@@ -17,7 +17,18 @@ type installUpdateMsg struct {
 
 func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	s := msg.String()
-	if s == "q" || s == "esc" || s == "m" {
+	if s == "esc" {
+		if m.updateFromConfig {
+			m.screen = ScreenConfig
+		} else {
+			m.screen = ScreenMainMenu
+		}
+		m.selectedIdx = 0
+		m.updateAvailableRelease = nil
+		m.updateError = nil
+		return m, nil
+	}
+	if s == "q" || s == "m" {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = 0
 		m.updateAvailableRelease = nil
@@ -33,7 +44,11 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		})
 	}
 	if s == "n" {
-		m.screen = ScreenMainMenu
+		if m.updateFromConfig {
+			m.screen = ScreenConfig
+		} else {
+			m.screen = ScreenMainMenu
+		}
 		m.selectedIdx = 0
 		m.updateAvailableRelease = nil
 		return m, nil
@@ -51,12 +66,25 @@ func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		_ = exec.Command("cmd", "/c", "start", "", exePath, "ui").Start()
 		return m, tea.Quit
 	}
-	if m.updateError != nil && (s == "esc" || s == "q" || s == "m") {
-		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
-		m.updateError = nil
-		m.updateProgress = ""
-		return m, nil
+	if m.updateError != nil {
+		if s == "esc" {
+			if m.updateFromConfig {
+				m.screen = ScreenConfig
+			} else {
+				m.screen = ScreenMainMenu
+			}
+			m.selectedIdx = 0
+			m.updateError = nil
+			m.updateProgress = ""
+			return m, nil
+		}
+		if s == "q" || s == "m" {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			m.updateError = nil
+			m.updateProgress = ""
+			return m, nil
+		}
 	}
 	return m, nil
 }
@@ -81,8 +109,13 @@ func (m model) viewUpdateAvailable() string {
 
 func (m model) handleKeyNoUpdate(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	s := msg.String()
-	if s == "enter" || s == "esc" || s == "q" || s == "m" {
+	if s == "enter" || s == "esc" {
 		m.screen = ScreenConfig
+		m.selectedIdx = 0
+		return m, nil
+	}
+	if s == "q" || s == "m" {
+		m.screen = ScreenMainMenu
 		m.selectedIdx = 0
 		return m, nil
 	}
