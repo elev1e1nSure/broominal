@@ -212,7 +212,7 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-			if m.selectedIdx < 5 {
+			if m.selectedIdx < 4 {
 				m.selectedIdx++
 			}
 			return m, nil
@@ -247,7 +247,10 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				m.doctorChecks = doctor.Run()
 				m.screen = ScreenDoctor
 				return m, nil
-			case 3: // Config
+			case 3: // Quarantine Cleanup
+				m.screen = ScreenQuarantineCleanup
+				return m, nil
+			case 4: // Settings
 				cfg, err := config.Load()
 				if err != nil {
 					m.err = err
@@ -257,13 +260,6 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				m.configCfg = cfg
 				m.selectedIdx = 0
 				m.screen = ScreenConfig
-				return m, nil
-			case 4: // Quarantine Cleanup
-				m.screen = ScreenQuarantineCleanup
-				return m, nil
-			case 5: // Settings
-				m.selectedIdx = 0
-				m.screen = ScreenLanguage
 				return m, nil
 			}
 		}
@@ -1002,7 +998,6 @@ func (m model) viewMainMenu() string {
 		i18n.T("menu_scan_clean"),
 		i18n.T("menu_restore"),
 		i18n.T("menu_doctor"),
-		i18n.T("menu_config"),
 		i18n.T("menu_cleanup"),
 		i18n.T("menu_settings"),
 	}
