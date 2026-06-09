@@ -75,8 +75,7 @@ type model struct {
 	configThresholds []configThresholdItem
 	configCfg        *config.Config
 	// Cleanup screen
-	cleanupResult        string
-	quarantineCleanupAll bool
+	cleanupResult string
 	// Admin prompt
 	adminPromptIdx int
 }
