@@ -44,7 +44,6 @@ func ScanWithConfig(ctx context.Context, cfg *config.Config) (*types.ScanResult,
 		}
 		items, err := sc.Scan(ctx, cfg)
 		if err != nil {
-			slog.Warn("scan category failed", "category", sc.Name(), "error", err)
 			continue
 		}
 		mergeItems(categories, sc.Name(), sc.Risk(), items)
@@ -78,7 +77,6 @@ func scanDir(ctx context.Context, root, category string, risk types.RiskLevel, m
 		}
 		if err != nil {
 			if errors.Is(err, os.ErrPermission) {
-				slog.Warn("scan: permission denied, skipping", "path", path, "category", category)
 				return filepath.SkipDir
 			}
 			if errors.Is(err, os.ErrNotExist) {
@@ -115,13 +113,12 @@ func scanDir(ctx context.Context, root, category string, risk types.RiskLevel, m
 
 		info, err := d.Info()
 		if err != nil {
-			slog.Warn("scan: failed to read file info, skipping", "path", path, "category", category, "error", err)
 			return nil
 		}
 
 		count++
 		if count > maxScanFiles {
-			slog.Warn("scan: max file limit reached, truncating", "category", category, "limit", maxScanFiles)
+			slog.Info("scan: max file limit reached, truncating", "category", category, "limit", maxScanFiles)
 			return errScanLimit
 		}
 
@@ -147,8 +144,7 @@ func scanFirefoxCache(ctx context.Context, root string, cfg *config.Config) ([]t
 		}
 		if err != nil {
 			if errors.Is(err, os.ErrPermission) {
-				slog.Warn("scan: permission denied, skipping", "path", path, "category", "browser_cache")
-				return filepath.SkipDir
+					return filepath.SkipDir
 			}
 			if errors.Is(err, os.ErrNotExist) {
 				return nil
@@ -158,9 +154,7 @@ func scanFirefoxCache(ctx context.Context, root string, cfg *config.Config) ([]t
 		if d.IsDir() {
 			if filepath.Base(path) == "cache2" {
 				sub, err := scanDir(ctx, path, "browser_cache", types.RiskSafe, nil, true, cfg)
-				if err != nil {
-					slog.Warn("scan firefox cache2 failed", "path", path, "error", err)
-				} else {
+				if err == nil {
 					items = append(items, sub...)
 				}
 				return filepath.SkipDir
@@ -241,14 +235,13 @@ func scanOldInstallers(ctx context.Context, root string, cfg *config.Config) ([]
 		return true
 	}
 
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 		if err != nil {
 			if errors.Is(err, os.ErrPermission) {
-				slog.Warn("scan: permission denied, skipping", "path", path, "category", "old_installers")
-				return filepath.SkipDir
+					return filepath.SkipDir
 			}
 			if errors.Is(err, os.ErrNotExist) {
 				return nil
@@ -258,12 +251,11 @@ func scanOldInstallers(ctx context.Context, root string, cfg *config.Config) ([]
 		if match(path, d) {
 			info, err := d.Info()
 			if err != nil {
-				slog.Warn("scan: failed to read file info, skipping", "path", path, "category", "old_installers", "error", err)
 				return nil
 			}
 			count++
 			if count > maxScanFiles {
-				slog.Warn("scan: max file limit reached, truncating", "category", "old_installers", "limit", maxScanFiles)
+				slog.Info("scan: max file limit reached, truncating", "category", "old_installers", "limit", maxScanFiles)
 				return errScanLimit
 			}
 			items = append(items, types.Item{
@@ -275,9 +267,6 @@ func scanOldInstallers(ctx context.Context, root string, cfg *config.Config) ([]
 		}
 		return nil
 	})
-	if err != nil && !errors.Is(err, errScanLimit) {
-		slog.Warn("scan old installers failed", "error", err)
-	}
 	return items, nil
 }
 
@@ -295,14 +284,13 @@ func scanLargeOldFiles(ctx context.Context, root string, cfg *config.Config) ([]
 	var items []types.Item
 	var count int
 
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 		if err != nil {
 			if errors.Is(err, os.ErrPermission) {
-				slog.Warn("scan: permission denied, skipping", "path", path, "category", "large_old_files")
-				return filepath.SkipDir
+					return filepath.SkipDir
 			}
 			if errors.Is(err, os.ErrNotExist) {
 				return nil
@@ -317,7 +305,6 @@ func scanLargeOldFiles(ctx context.Context, root string, cfg *config.Config) ([]
 		}
 		info, err := d.Info()
 		if err != nil {
-			slog.Warn("scan: failed to read file info, skipping", "path", path, "category", "large_old_files", "error", err)
 			return nil
 		}
 		if info.Size() < minSize {
@@ -332,7 +319,7 @@ func scanLargeOldFiles(ctx context.Context, root string, cfg *config.Config) ([]
 		}
 		count++
 		if count > maxScanFiles {
-			slog.Warn("scan: max file limit reached, truncating", "category", "large_old_files", "limit", maxScanFiles)
+			slog.Info("scan: max file limit reached, truncating", "category", "large_old_files", "limit", maxScanFiles)
 			return errScanLimit
 		}
 		items = append(items, types.Item{
@@ -343,9 +330,6 @@ func scanLargeOldFiles(ctx context.Context, root string, cfg *config.Config) ([]
 		})
 		return nil
 	})
-	if err != nil && !errors.Is(err, errScanLimit) {
-		slog.Warn("scan large old files failed", "error", err)
-	}
 	return items, nil
 }
 
@@ -413,7 +397,6 @@ func scanDiscordCache(ctx context.Context, cfg *config.Config) ([]types.Item, er
 		path := filepath.Join(root, sub)
 		subItems, err := scanDir(ctx, path, "discord_cache", types.RiskSafe, nil, true, cfg)
 		if err != nil {
-			slog.Warn("scan discord cache failed", "path", path, "error", err)
 		}
 		items = append(items, subItems...)
 	}
@@ -431,7 +414,6 @@ func scanSteamCache(ctx context.Context, cfg *config.Config) ([]types.Item, erro
 		path := filepath.Join(root, sub)
 		subItems, err := scanDir(ctx, path, "steam_cache", types.RiskSafe, nil, true, cfg)
 		if err != nil {
-			slog.Warn("scan steam cache failed", "path", path, "error", err)
 		}
 		items = append(items, subItems...)
 	}
@@ -447,7 +429,6 @@ func scanCrashMemoryDumps(ctx context.Context, cfg *config.Config) ([]types.Item
 	for _, path := range paths {
 		subItems, err := scanDir(ctx, path, "crash_dumps", types.RiskReview, nil, true, cfg)
 		if err != nil {
-			slog.Warn("scan crash dumps failed", "path", path, "error", err)
 		}
 		items = append(items, subItems...)
 	}
@@ -473,7 +454,6 @@ func scanNvidiaInstallerLeftovers(ctx context.Context, cfg *config.Config) ([]ty
 	for _, path := range paths {
 		subItems, err := scanDir(ctx, path, "nvidia_installer_leftovers", types.RiskReview, nil, true, cfg)
 		if err != nil {
-			slog.Warn("scan nvidia leftovers failed", "path", path, "error", err)
 		}
 		items = append(items, subItems...)
 	}
@@ -487,7 +467,6 @@ func scanVSCodeCache(ctx context.Context, cfg *config.Config) ([]types.Item, err
 		path := filepath.Join(root, sub)
 		subItems, err := scanDir(ctx, path, "vscode_cache", types.RiskSafe, nil, true, cfg)
 		if err != nil {
-			slog.Warn("scan vscode cache failed", "path", path, "error", err)
 		}
 		items = append(items, subItems...)
 	}
@@ -531,13 +510,12 @@ func scanOldTempFiles(ctx context.Context, cfg *config.Config) ([]types.Item, er
 		if root == "" {
 			continue
 		}
-		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
 			if err != nil {
 				if errors.Is(err, os.ErrPermission) {
-					slog.Warn("scan: permission denied, skipping", "path", path, "category", "old_temp_files")
 					return filepath.SkipDir
 				}
 				if errors.Is(err, os.ErrNotExist) {
@@ -553,13 +531,12 @@ func scanOldTempFiles(ctx context.Context, cfg *config.Config) ([]types.Item, er
 			}
 			info, err := d.Info()
 			if err != nil {
-				slog.Warn("scan: failed to read file info, skipping", "path", path, "category", "old_temp_files", "error", err)
 				return nil
 			}
 			if info.ModTime().Before(cutoff) {
 				count++
 				if count > maxScanFiles {
-					slog.Warn("scan: max file limit reached, truncating", "category", "old_temp_files", "limit", maxScanFiles)
+					slog.Info("scan: max file limit reached, truncating", "category", "old_temp_files", "limit", maxScanFiles)
 					return errScanLimit
 				}
 				items = append(items, types.Item{
@@ -571,9 +548,6 @@ func scanOldTempFiles(ctx context.Context, cfg *config.Config) ([]types.Item, er
 			}
 			return nil
 		})
-		if err != nil && !errors.Is(err, errScanLimit) {
-			slog.Warn("scan old temp files failed", "error", err)
-		}
 	}
 	return items, nil
 }
@@ -595,13 +569,12 @@ func scanOldExtensions(ctx context.Context, ext string, cfg *config.Config) ([]t
 		if root == "" {
 			continue
 		}
-		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
 			if err != nil {
 				if errors.Is(err, os.ErrPermission) {
-					slog.Warn("scan: permission denied, skipping", "path", path, "category", "old_extension_files")
 					return filepath.SkipDir
 				}
 				if errors.Is(err, os.ErrNotExist) {
@@ -620,13 +593,12 @@ func scanOldExtensions(ctx context.Context, ext string, cfg *config.Config) ([]t
 			}
 			info, err := d.Info()
 			if err != nil {
-				slog.Warn("scan: failed to read file info, skipping", "path", path, "category", "old_extension_files", "error", err)
 				return nil
 			}
 			if info.ModTime().Before(cutoff) {
 				count++
 				if count > maxScanFiles {
-					slog.Warn("scan: max file limit reached, truncating", "category", "old_extension_files", "limit", maxScanFiles)
+					slog.Info("scan: max file limit reached, truncating", "category", "old_extension_files", "limit", maxScanFiles)
 					return errScanLimit
 				}
 				items = append(items, types.Item{
@@ -638,9 +610,6 @@ func scanOldExtensions(ctx context.Context, ext string, cfg *config.Config) ([]t
 			}
 			return nil
 		})
-		if err != nil && !errors.Is(err, errScanLimit) {
-			slog.Warn("scan old extension files failed", "ext", ext, "error", err)
-		}
 	}
 	return items, nil
 }
@@ -655,13 +624,12 @@ func scanEmptyFolders(ctx context.Context, cfg *config.Config) ([]types.Item, er
 		if root == "" {
 			continue
 		}
-		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
 			if err != nil {
 				if errors.Is(err, os.ErrPermission) {
-					slog.Warn("scan: permission denied, skipping", "path", path, "category", "empty_folders")
 					return filepath.SkipDir
 				}
 				if errors.Is(err, os.ErrNotExist) {
@@ -677,7 +645,6 @@ func scanEmptyFolders(ctx context.Context, cfg *config.Config) ([]types.Item, er
 			}
 			entries, err := os.ReadDir(path)
 			if err != nil {
-				slog.Warn("scan: failed to read dir entries, skipping", "path", path, "category", "empty_folders", "error", err)
 				return nil
 			}
 			if len(entries) == 0 {
@@ -690,9 +657,6 @@ func scanEmptyFolders(ctx context.Context, cfg *config.Config) ([]types.Item, er
 			}
 			return nil
 		})
-		if err != nil {
-			slog.Warn("scan empty folders failed", "error", err)
-		}
 	}
 	return items, nil
 }

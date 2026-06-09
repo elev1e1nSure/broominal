@@ -26,15 +26,15 @@ no fake boost magic. no hidden system tweaking. no “trust me bro” cleanup.
 
 ## highlights
 
-- 🛡️ **safe by default** — files are quarantined, not deleted
-- 🔍 **transparent** — scan results, reports, and manifests are plain json
-- ↩️ **undoable** — restore any cleanup by id or restore the latest one
-- 📋 **predictable** — explicit categories, risk levels, and exclusions
-- 🎛️ **interactive** — bubbletea tui for scan, preview, dry-run, and restore
-- 🌍 **multilingual** — english and russian with first-run auto-detection
-- ⚡ **25+ categories** — temp, caches, logs, browser data, dev tools, and more
-- 🧪 **dry-run everywhere** — preview before touching a single file
-- 🩺 **doctor** — lightweight health checks for permissions, manifests, and state
+- **safe by default** — files are quarantined, not deleted
+- **transparent** — scan results, reports, and manifests are plain json
+- **undoable** — restore any cleanup by id or restore the latest one
+- **predictable** — explicit categories, risk levels, and exclusions
+- **interactive** — bubbletea tui for scan, preview, dry-run, and restore
+- **multilingual** — english and russian with first-run auto-detection
+- **25+ categories** — temp, caches, logs, browser data, dev tools, and more
+- **dry-run everywhere** — preview before touching a single file
+- **doctor** — lightweight health checks for permissions, manifests, and state
 
 ## safety model
 

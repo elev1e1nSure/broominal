@@ -108,7 +108,35 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// normalizeKey maps Russian ЙЦУКЕН layout keystrokes to their Latin QWERTY equivalents.
+// This lets users navigate the TUI without switching keyboard layouts.
+func normalizeKey(msg tea.KeyMsg) tea.KeyMsg {
+	if msg.Type != tea.KeyRunes || len(msg.Runes) == 0 {
+		return msg
+	}
+	// ЙЦУКЕН -> QWERTY
+	m := map[rune]rune{
+		'й': 'q', 'ц': 'w', 'у': 'e', 'к': 'r', 'е': 't', 'н': 'y', 'г': 'u', 'ш': 'i', 'щ': 'o', 'з': 'p', 'х': '[', 'ъ': ']',
+		'ф': 'a', 'ы': 's', 'в': 'd', 'а': 'f', 'п': 'g', 'р': 'h', 'о': 'j', 'л': 'k', 'д': 'l', 'ж': ';', 'э': '\'',
+		'я': 'z', 'ч': 'x', 'с': 'c', 'м': 'v', 'и': 'b', 'т': 'n', 'ь': 'm', 'б': ',', 'ю': '.',
+		'Й': 'Q', 'Ц': 'W', 'У': 'E', 'К': 'R', 'Е': 'T', 'Н': 'Y', 'Г': 'U', 'Ш': 'I', 'Щ': 'O', 'З': 'P', 'Х': '{', 'Ъ': '}',
+		'Ф': 'A', 'Ы': 'S', 'В': 'D', 'А': 'F', 'П': 'G', 'Р': 'H', 'О': 'J', 'Л': 'K', 'Д': 'L', 'Ж': ':', 'Э': '"',
+		'Я': 'Z', 'Ч': 'X', 'С': 'C', 'М': 'V', 'И': 'B', 'Т': 'N', 'Ь': 'M', 'Б': '<', 'Ю': '>',
+	}
+	out := make([]rune, len(msg.Runes))
+	for i, r := range msg.Runes {
+		if v, ok := m[r]; ok {
+			out[i] = v
+		} else {
+			out[i] = r
+		}
+	}
+	msg.Runes = out
+	return msg
+}
+
 func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	msg = normalizeKey(msg)
 	// global quit
 	if key.Matches(msg, key.NewBinding(key.WithKeys("ctrl+c"))) {
 		return m, tea.Quit
