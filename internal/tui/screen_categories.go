@@ -15,12 +15,11 @@ import (
 )
 
 func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
-		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
+		m.screen = ScreenDashboard
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "m"))) {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = 0
 		return m, nil

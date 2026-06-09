@@ -14,9 +14,15 @@ import (
 )
 
 func (m model) handleKeyDashboard(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("enter", " "))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("d"))) {
 		m.selectedIdx = 0
 		m.screen = ScreenCategories
+		return m, nil
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("enter", " "))) {
+		m.confirmMsg = buildConfirmMessage(m.categories, m.result)
+		m.screen = ScreenConfirm
+		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("m", "q", "esc"))) {
 		m.screen = ScreenMainMenu
@@ -79,6 +85,6 @@ func (m model) viewDashboard() string {
 		body += "  " + mutedStyle.Render(fmt.Sprintf("... %s (%d)", i18n.T("more_categories"), len(cats)-visible)) + "\n"
 	}
 
-	body += "\n" + footer(keyHint("Enter", i18n.T("select_categories")), keyHint("Esc", i18n.T("back")))
+	body += "\n" + footer(keyHint("D", i18n.T("select_categories")), keyHint("Enter", i18n.T("confirm")), keyHint("Esc", i18n.T("back")))
 	return body
 }
