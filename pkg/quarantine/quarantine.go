@@ -105,12 +105,13 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 	if err != nil {
 		return 0, 0, fmt.Errorf("open manifest: %w", err)
 	}
-	defer mf.Close()
 
 	var manifest types.Manifest
 	if err := json.NewDecoder(mf).Decode(&manifest); err != nil {
+		mf.Close()
 		return 0, 0, fmt.Errorf("decode manifest: %w", err)
 	}
+	mf.Close()
 
 	var restored int
 	var skipped int
@@ -311,25 +312,33 @@ func copyAndDelete(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
 
 	out, err := os.Create(dst)
 	if err != nil {
+		in.Close()
 		return err
 	}
-	defer out.Close()
 
 	buf := make([]byte, 64*1024)
 	for {
 		n, err := in.Read(buf)
 		if n > 0 {
 			if _, werr := out.Write(buf[:n]); werr != nil {
+				out.Close()
+				in.Close()
 				return werr
 			}
 		}
 		if err != nil {
 			break
 		}
+	}
+	if cerr := out.Close(); cerr != nil {
+		in.Close()
+		return cerr
+	}
+	if cerr := in.Close(); cerr != nil {
+		return cerr
 	}
 	return os.Remove(src)
 }
