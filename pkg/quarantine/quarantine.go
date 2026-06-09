@@ -61,20 +61,23 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 
 		qPath := uniquePath(qDir, filepath.Base(it.Path))
 
+		moved := true
 		if err := os.Rename(it.Path, qPath); err != nil {
-			// fallback to copy+delete if cross-device
+			// fallback to copy+delete if cross-device or file is locked
 			if err := copyAndDelete(it.Path, qPath); err != nil {
-				return "", 0, 0, fmt.Errorf("move %s: %w", it.Path, err)
+				moved = false
 			}
 		}
 
-		manifest.Items = append(manifest.Items, types.ManifestItem{
-			Original:    it.Path,
-			Quarantined: qPath,
-			Size:        it.Size,
-		})
-		freed += it.Size
-		files++
+		if moved {
+			manifest.Items = append(manifest.Items, types.ManifestItem{
+				Original:    it.Path,
+				Quarantined: qPath,
+				Size:        it.Size,
+			})
+			freed += it.Size
+			files++
+		}
 	}
 
 	manifestPath := filepath.Join(qDir, "manifest.json")
