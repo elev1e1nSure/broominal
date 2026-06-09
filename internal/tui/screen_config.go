@@ -154,47 +154,19 @@ func (m model) handleKeyConfigThresholds(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewConfig() string {
+	items := []string{
+		i18n.T("config_categories"),
+		i18n.T("config_thresholds"),
+	}
 	var body string
 	body += titleStyle.Render(i18n.T("config")) + "\n\n"
-
-	// Categories summary
-	enabledCount := 0
-	totalCount := 0
-	if m.configCfg != nil {
-		for _, enabled := range m.configCfg.EnabledCategories {
-			totalCount++
-			if enabled {
-				enabledCount++
-			}
+	for i, item := range items {
+		if i == m.selectedIdx {
+			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + "\n"
+		} else {
+			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
 		}
 	}
-	catLine := fmt.Sprintf("%s  %d / %d", i18n.T("config_categories"), enabledCount, totalCount)
-	if 0 == m.selectedIdx {
-		body += selectedStyle.Render(fmt.Sprintf("> %s", catLine)) + "\n"
-	} else {
-		body += mutedStyle.Render(fmt.Sprintf("  %s", catLine)) + "\n"
-	}
-
-	// Thresholds summary
-	var threshSummary string
-	if m.configCfg != nil {
-		threshSummary = fmt.Sprintf("installers %d%s, large files %dMB/%d%s, temp %d%s, bak %d%s, auto-delete %d%s",
-			m.configCfg.OldInstallerMonths, i18n.T("months"),
-			m.configCfg.LargeFileMinSizeMB, m.configCfg.LargeFileMonths, i18n.T("months"),
-			m.configCfg.OldTempDays, i18n.T("days"),
-			m.configCfg.OldExtensionDays, i18n.T("days"),
-			m.configCfg.QuarantineMaxAgeDays, i18n.T("days"),
-		)
-	} else {
-		threshSummary = "..."
-	}
-	threshLine := fmt.Sprintf("%s  %s", i18n.T("config_thresholds"), mutedStyle.Render(threshSummary))
-	if 1 == m.selectedIdx {
-		body += selectedStyle.Render(fmt.Sprintf("> %s", threshLine)) + "\n"
-	} else {
-		body += mutedStyle.Render(fmt.Sprintf("  %s", threshLine)) + "\n"
-	}
-
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("select")),
 		keyHint("Esc", i18n.T("back")),
