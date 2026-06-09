@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
+	"github.com/elev1e1nSure/broominal/pkg/style"
 )
 
 func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -15,12 +16,27 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.selectedIdx = 0
 		return m, nil
 	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("f"))) {
+		for i := range m.doctorChecks {
+			if m.doctorChecks[i].FixKey != "" {
+				msg, err := doctor.Fix(m.doctorChecks[i].FixKey)
+				if err != nil {
+					m.doctorFixResult = style.Failf("[FAIL]") + " " + err.Error()
+				} else {
+					m.doctorFixResult = style.Passf("[OK]") + " " + msg
+				}
+				break
+			}
+		}
+		return m, nil
+	}
 	return m, nil
 }
 
 func (m model) viewDoctor() string {
 	var body string
 	body += titleStyle.Render(i18n.T("doctor")) + "\n\n"
+	var hasFix bool
 	for _, c := range m.doctorChecks {
 		var marker string
 		switch c.Status {
@@ -32,9 +48,21 @@ func (m model) viewDoctor() string {
 			marker = dangerStyle.Render("[FAIL]")
 		}
 		body += fmt.Sprintf("  %-28s %s  %s\n", c.Name, marker, mutedStyle.Render(c.Detail))
+		if c.Status != doctor.StatusPass && c.Suggestion != "" {
+			body += fmt.Sprintf("      %s %s\n", reviewStyle.Render("→"), mutedStyle.Render(c.Suggestion))
+		}
+		if c.FixKey != "" {
+			hasFix = true
+		}
 	}
-	body += "\n" + footer(
-		keyHint("Esc", i18n.T("back")),
-	)
+	if m.doctorFixResult != "" {
+		body += "\n  " + m.doctorFixResult + "\n"
+	}
+	var hints []string
+	if hasFix {
+		hints = append(hints, keyHint("F", i18n.T("fix_issue")))
+	}
+	hints = append(hints, keyHint("Esc", i18n.T("back")))
+	body += "\n" + footer(hints...)
 	return body
 }

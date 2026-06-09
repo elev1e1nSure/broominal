@@ -16,55 +16,27 @@
 
 ---
 
-<table>
-<tr>
-<td width="6" bgcolor="#00ADD8"></td>
-<td>
-
-**Broominal is a Windows cleanup CLI/TUI tool built around one rule: cleanup must be reversible.**
-
-It moves selected files into a local quarantine with JSON manifests and reports, so every cleanup can be inspected and restored.
-
-</td>
-</tr>
-</table>
-
-It is designed for boring, predictable cleanup — not fake “PC boost” magic.
+> **Broominal** is a Windows cleanup CLI/TUI tool built around one rule: cleanup must be reversible. It moves selected files into a local quarantine with JSON manifests and reports, so every cleanup can be inspected and restored. Designed for boring, predictable cleanup — not fake "PC boost" magic.
 
 ---
 
 ## Why Broominal
 
-<table>
-<tr>
-<td width="6" bgcolor="#2EA043"></td>
-<td><strong>Safe by default</strong><br>Files are moved to quarantine instead of being permanently deleted.</td>
-</tr>
-<tr>
-<td width="6" bgcolor="#00ADD8"></td>
-<td><strong>Transparent</strong><br>Scan results, reports, and manifests are plain JSON.</td>
-</tr>
-<tr>
-<td width="6" bgcolor="#8957E5"></td>
-<td><strong>Undoable</strong><br>Restore a cleanup by ID or restore the latest cleanup.</td>
-</tr>
-<tr>
-<td width="6" bgcolor="#F0883E"></td>
-<td><strong>Interactive</strong><br>Bubbletea TUI for category selection, previews, dry-run, and restore flow.</td>
-</tr>
-<tr>
-<td width="6" bgcolor="#8B949E"></td>
-<td><strong>Multilingual</strong><br>English and Russian with first-run auto-detection.</td>
-</tr>
-</table>
+| Feature | Description |
+|---------|-------------|
+| **Safe by default** | Files are moved to quarantine instead of being permanently deleted |
+| **Transparent** | Scan results, reports, and manifests are plain JSON |
+| **Undoable** | Restore a cleanup by ID or restore the latest cleanup |
+| **Interactive** | Bubbletea TUI for category selection, previews, dry-run, and restore flow |
+| **Multilingual** | English and Russian with first-run auto-detection |
 
 ---
 
 ## Features
 
 | Feature | Description |
-|--------|-------------|
-| **Smart Scan** | Temp, Downloads, Browser Cache, Recycle Bin, Logs, Old Installers, Large Old Files, Thumbnails, DirectX Shader Cache, Delivery Optimization, Windows Error Reports, Discord Cache, Steam Cache, VSCode Cache, Edge Code Cache, Chrome Code Cache, Firefox Cache2, Old Temp Files, Old .tmp/.log/.bak, Empty Folders, npm Cache, pip Cache, Windows Update Cache, Crash & Memory Dumps, Nvidia Installer Leftovers, Telegram Desktop Cache |
+|---------|-------------|
+| **Smart Scan** | 25+ cleanup categories: Temp, Downloads, Browser Cache, Recycle Bin, Logs, Old Installers, Large Old Files, Thumbnails, DirectX Shader Cache, Delivery Optimization, Windows Error Reports, Discord/Steam/VSCode/Edge/Chrome/Firefox caches, Old .tmp/.log/.bak, Empty Folders, npm/pip Cache, Windows Update Cache, Crash Dumps, Nvidia Leftovers, Telegram Cache |
 | **Risk Levels** | `safe` / `review` / `danger` — system paths and protected extensions are never cleaned automatically |
 | **Undoable Cleanup** | Every cleanup gets a restore ID; `restore <id>` moves files back |
 | **Dry-Run** | `--dry-run` in CLI and `T` in TUI show what would happen without moving files |
@@ -78,16 +50,8 @@ It is designed for boring, predictable cleanup — not fake “PC boost” magic
 
 ## Safety model
 
-<table>
-<tr>
-<td width="6" bgcolor="#2EA043"></td>
-<td>
-
-**Safe cleanup is selected by default. Review cleanup requires manual choice. Danger items are not cleaned automatically.**
-
-</td>
-</tr>
-</table>
+> [!IMPORTANT]
+> Safe cleanup is selected by default. Review cleanup requires manual choice. Danger items are not cleaned automatically.
 
 | Risk | Default behavior | Examples |
 |------|------------------|----------|
@@ -97,7 +61,7 @@ It is designed for boring, predictable cleanup — not fake “PC boost” magic
 
 Files are moved to:
 
-```text
+```
 %LOCALAPPDATA%\broominal\quarantine\<restore-id>
 ```
 
@@ -167,18 +131,9 @@ go build -o broominal.exe ./cmd/broominal
 
 ## Architecture
 
-<table>
-<tr>
-<td width="6" bgcolor="#8957E5"></td>
-<td>
+> **Small packages, explicit responsibilities, and no hidden cleanup magic.**
 
-**Small packages, explicit responsibilities, and no hidden cleanup magic.**
-
-</td>
-</tr>
-</table>
-
-```text
+```
 cmd/broominal/      CLI entrypoint (Cobra)
 pkg/
   scanner/          File discovery by cleanup category

@@ -27,9 +27,11 @@ const (
 
 // Check represents a single health check result.
 type Check struct {
-	Name   string
-	Status Status
-	Detail string
+	Name       string
+	Status     Status
+	Detail     string
+	Suggestion string // what the user can do to fix it
+	FixKey     string // non-empty if an automatic fix is available
 }
 
 // Run performs all health checks and returns the results.
@@ -52,9 +54,11 @@ func checkAdmin() Check {
 	cmd := exec.Command("cmd", "/c", "net", "session")
 	if err := cmd.Run(); err != nil {
 		return Check{
-			Name:   i18n.T("check_admin"),
-			Status: StatusWarn,
-			Detail: i18n.T("not_running_as_admin"),
+			Name:       i18n.T("check_admin"),
+			Status:     StatusWarn,
+			Detail:     i18n.T("not_running_as_admin"),
+			Suggestion: i18n.T("suggest_admin"),
+			FixKey:     "admin",
 		}
 	}
 	return Check{
@@ -69,9 +73,10 @@ func checkDir(path, name string) Check {
 		// try to create
 		if err := os.MkdirAll(path, 0700); err != nil {
 			return Check{
-				Name:   name,
-				Status: StatusFail,
-				Detail: fmt.Sprintf("%s: %v", path, err),
+				Name:       name,
+				Status:     StatusFail,
+				Detail:     fmt.Sprintf("%s: %v", path, err),
+				Suggestion: i18n.T("suggest_check_permissions"),
 			}
 		}
 	}
@@ -80,9 +85,10 @@ func checkDir(path, name string) Check {
 	f, err := os.Create(testFile)
 	if err != nil {
 		return Check{
-			Name:   name,
-			Status: StatusFail,
-			Detail: fmt.Sprintf(i18n.T("dir_not_writable"), path, err),
+			Name:       name,
+			Status:     StatusFail,
+			Detail:     fmt.Sprintf(i18n.T("dir_not_writable"), path, err),
+			Suggestion: i18n.T("suggest_check_permissions"),
 		}
 	}
 	defer func() {
@@ -100,17 +106,19 @@ func checkEnvDir(env, name string) Check {
 	val := os.Getenv(env)
 	if val == "" {
 		return Check{
-			Name:   name,
-			Status: StatusFail,
-			Detail: env + " not set",
+			Name:       name,
+			Status:     StatusFail,
+			Detail:     env + " not set",
+			Suggestion: i18n.T("suggest_env_missing"),
 		}
 	}
 	info, err := os.Stat(val)
 	if err != nil || !info.IsDir() {
 		return Check{
-			Name:   name,
-			Status: StatusFail,
-			Detail: fmt.Sprintf("%s is not accessible: %v", val, err),
+			Name:       name,
+			Status:     StatusFail,
+			Detail:     fmt.Sprintf("%s is not accessible: %v", val, err),
+			Suggestion: i18n.T("suggest_env_missing"),
 		}
 	}
 	return Check{
@@ -132,9 +140,10 @@ func checkManifests() Check {
 			}
 		}
 		return Check{
-			Name:   i18n.T("check_manifests"),
-			Status: StatusFail,
-			Detail: err.Error(),
+			Name:       i18n.T("check_manifests"),
+			Status:     StatusFail,
+			Detail:     err.Error(),
+			Suggestion: i18n.T("suggest_check_permissions"),
 		}
 	}
 	var invalid int
@@ -155,15 +164,37 @@ func checkManifests() Check {
 	}
 	if invalid > 0 {
 		return Check{
-			Name:   i18n.T("check_manifests"),
-			Status: StatusWarn,
-			Detail: fmt.Sprintf(i18n.T("invalid_manifests"), invalid),
+			Name:       i18n.T("check_manifests"),
+			Status:     StatusWarn,
+			Detail:     fmt.Sprintf(i18n.T("invalid_manifests"), invalid),
+			Suggestion: i18n.T("suggest_remove_damaged"),
 		}
 	}
 	return Check{
 		Name:   i18n.T("check_manifests"),
 		Status: StatusPass,
 		Detail: fmt.Sprintf(i18n.T("valid_backups"), len(entries)),
+	}
+}
+
+// Fix attempts to automatically fix a problem identified by FixKey.
+// Currently only "admin" is supported.
+func Fix(fixKey string) (string, error) {
+	switch fixKey {
+	case "admin":
+		// Relaunch the current executable with elevated privileges
+		exe, err := os.Executable()
+		if err != nil {
+			return "", fmt.Errorf("cannot locate executable: %w", err)
+		}
+		cmd := exec.Command("powershell", "-Command",
+			fmt.Sprintf("Start-Process -FilePath '%s' -Verb runAs", exe))
+		if err := cmd.Start(); err != nil {
+			return "", fmt.Errorf("failed to elevate: %w", err)
+		}
+		return "Restarting as administrator...", nil
+	default:
+		return "", fmt.Errorf("no automatic fix for %s", fixKey)
 	}
 }
 
@@ -179,9 +210,10 @@ func checkQuarantineStats() Check {
 			}
 		}
 		return Check{
-			Name:   i18n.T("check_stats"),
-			Status: StatusFail,
-			Detail: err.Error(),
+			Name:       i18n.T("check_stats"),
+			Status:     StatusFail,
+			Detail:     err.Error(),
+			Suggestion: i18n.T("suggest_check_permissions"),
 		}
 	}
 	var totalSize int64
