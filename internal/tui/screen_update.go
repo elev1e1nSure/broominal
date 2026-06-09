@@ -39,7 +39,17 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// No user input allowed during update
+	s := msg.String()
+	if m.updateProgress == i18n.T("update_complete_restart") && (s == "enter" || s == "y") {
+		return m, tea.Quit
+	}
+	if m.updateError != nil && (s == "esc" || s == "q" || s == "m") {
+		m.screen = ScreenMainMenu
+		m.selectedIdx = 0
+		m.updateError = nil
+		m.updateProgress = ""
+		return m, nil
+	}
 	return m, nil
 }
 
@@ -86,6 +96,8 @@ func (m model) viewUpdating() string {
 	if m.updateError != nil {
 		body += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"
 		body += "\n" + footer(keyHint("Esc", i18n.T("back")))
+	} else if m.updateProgress == i18n.T("update_complete_restart") {
+		body += "\n" + footer(keyHint("Enter", i18n.T("restart")))
 	} else {
 		body += "\n" + mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
 	}

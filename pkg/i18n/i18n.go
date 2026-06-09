@@ -208,6 +208,7 @@ var translations = map[string]map[string]string{
 		"checking_updates":               "Checking for updates...",
 		"no_update":                      "No Update Available",
 		"no_update_desc":                 "You are on the latest version.",
+		"restart":                        "Restart",
 	},
 	"ru": {
 		"main_menu":                      "Меню",
@@ -408,6 +409,7 @@ var translations = map[string]map[string]string{
 		"checking_updates":               "Проверка обновлений...",
 		"no_update":                      "Обновлений нет",
 		"no_update_desc":                 "У вас установлена последняя версия.",
+		"restart":                        "Перезапустить",
 	},
 }
 
