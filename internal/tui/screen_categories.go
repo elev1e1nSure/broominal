@@ -184,6 +184,7 @@ func (m model) viewCategories() string {
 			marker
 		body += line + "\n"
 	}
+	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("Space", i18n.T("toggle")),
 		keyHint("Enter", i18n.T("confirm")),
@@ -198,6 +199,7 @@ func (m model) viewWarnRecycleBin() string {
 	return titleStyle.Render(i18n.T("warning")) + "\n\n" +
 		dangerStyle.Render(fmt.Sprintf("  "+i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
 		mutedStyle.Render("  "+i18n.T("hint_recycle_warn")) + "\n\n" +
+		mutedStyle.Render("v"+m.version) + "\n" +
 		footer(
 			keyHint("Enter", i18n.T("continue_anyway")),
 			keyHint("Esc", i18n.T("back")),
@@ -206,12 +208,12 @@ func (m model) viewWarnRecycleBin() string {
 
 func (m model) viewDetails() string {
 	head := titleStyle.Render(fmt.Sprintf("%s: %s", i18n.T("details"), m.categories[m.detailCat].cat.Category))
-	return head + "\n\n" + m.detailList.View() + "\n" + footer(keyHint("Esc", i18n.T("back")))
+	return head + "\n\n" + m.detailList.View() + "\n" + mutedStyle.Render("v"+m.version) + "\n" + footer(keyHint("Esc", i18n.T("back")))
 }
 
 func (m model) viewConfirm() string {
 	head := titleStyle.Render(i18n.T("confirm_cleanup"))
-	return head + "\n\n" + m.confirmMsg + "\n\n" + footer(
+	return head + "\n\n" + m.confirmMsg + "\n\n" + mutedStyle.Render("v"+m.version) + "\n" + footer(
 		keyHint("Enter", i18n.T("proceed")),
 		keyHint("Esc", i18n.T("back")),
 	)

@@ -135,6 +135,7 @@ func (m model) viewRestore() string {
 	if m.restoreResult != "" {
 		body += "\n" + safeStyle.Render("  [OK] "+m.restoreResult) + "\n"
 	}
+	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("restore")),
 		keyHint("D", i18n.T("delete")),

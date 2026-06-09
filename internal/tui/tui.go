@@ -13,12 +13,13 @@ import (
 )
 
 // Start запускает TUI
-func Start() error {
+func Start(version string) error {
 	cfg, _ := config.Load()
 	if cfg != nil && cfg.Language != "" {
 		i18n.SetLanguage(cfg.Language)
 	}
 	m := initialModel()
+	m.version = version
 	if !doctor.IsAdmin() {
 		m.screen = ScreenAdminPrompt
 	} else if cfg == nil || cfg.Language == "" {
@@ -33,6 +34,20 @@ func Start() error {
 			}
 		}
 		m.screen = ScreenLanguage
+	} else {
+		// Check for updates on startup
+		m.screen = ScreenUpdating
+		m.updateProgress = i18n.T("checking_updates")
+		return func() error {
+			p := tea.NewProgram(m, tea.WithAltScreen())
+			// Send check update command after program starts
+			go func() {
+				time.Sleep(500 * time.Millisecond)
+				p.Send(checkUpdateCmd{version: version})
+			}()
+			_, err := p.Run()
+			return err
+		}()
 	}
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	_, err := p.Run()
@@ -54,6 +69,16 @@ type errMsg struct {
 type cleanDoneMsg struct {
 	result *types.CleanResult
 	err    error
+}
+
+type checkUpdateMsg struct {
+	release *update.Release
+	err     error
+}
+
+type downloadUpdateMsg struct {
+	path string
+	err  error
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -93,6 +118,39 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.screen = ScreenResult
 		return m, nil
 
+	case checkUpdateMsg:
+		if msg.err != nil {
+			m.updateError = msg.err
+			m.screen = ScreenUpdateAvailable
+			return m, nil
+		}
+		if msg.release != nil {
+			m.updateAvailableRelease = msg.release
+			m.screen = ScreenUpdateAvailable
+		}
+		return m, nil
+
+	case downloadUpdateMsg:
+		if msg.err != nil {
+			m.updateError = msg.err
+			m.updateProgress = i18n.T("download_failed")
+			return m, nil
+		}
+		m.updateProgress = i18n.T("installing_update")
+		return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
+			err := update.InstallUpdate(msg.path)
+			return installUpdateMsg{err}
+		})
+
+	case installUpdateMsg:
+		if msg.err != nil {
+			m.updateError = msg.err
+			m.updateProgress = i18n.T("install_failed")
+		} else {
+			m.updateProgress = i18n.T("update_complete_restart")
+		}
+		return m, nil
+
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -100,6 +158,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		return m.handleKey(msg)
+
+	case checkUpdateCmd:
+		return m, func() tea.Msg {
+			release, err := update.CheckForUpdates(msg.version)
+			return checkUpdateMsg{release, err}
+		}
+
 	}
 
 	if m.screen == ScreenDetails {
@@ -180,6 +245,10 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleKeyAdminPrompt(msg)
 	case ScreenError:
 		return m.handleKeyError(msg)
+	case ScreenUpdateAvailable:
+		return m.handleKeyUpdateAvailable(msg)
+	case ScreenUpdating:
+		return m.handleKeyUpdating(msg)
 	}
 	return m, nil
 }
@@ -222,6 +291,10 @@ func (m model) View() string {
 		return m.viewLanguage()
 	case ScreenAdminPrompt:
 		return m.viewAdminPrompt()
+	case ScreenUpdateAvailable:
+		return m.viewUpdateAvailable()
+	case ScreenUpdating:
+		return m.viewUpdating()
 	}
 	return ""
 }

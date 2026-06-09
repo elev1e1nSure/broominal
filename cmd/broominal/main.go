@@ -24,6 +24,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var Version = "dev"
+
 func init() {
 	cobra.AddTemplateFunc("bold", func(s string) string { return style.Bold + s + style.Reset })
 	cobra.AddTemplateFunc("green", func(s string) string { return style.Green + s + style.Reset })
@@ -94,7 +96,7 @@ func main() {
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := tui.Start(); err != nil {
+			if err := tui.Start(Version); err != nil {
 				fmt.Fprintf(os.Stderr, "TUI error: %v\n", err)
 				os.Exit(1)
 			}
@@ -165,7 +167,7 @@ func uiCmd() *cobra.Command {
 		Use:   "ui",
 		Short: "Launch interactive TUI",
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := tui.Start(); err != nil {
+			if err := tui.Start(Version); err != nil {
 				fmt.Fprintf(os.Stderr, "TUI error: %v\n", err)
 				os.Exit(1)
 			}

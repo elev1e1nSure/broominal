@@ -21,6 +21,7 @@ func (m model) handleKeyError(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) viewError() string {
 	return titleStyle.Render(i18n.T("error")) + "\n\n" +
 		dangerStyle.Render(fmt.Sprintf("  %v", m.err)) + "\n\n" +
+		mutedStyle.Render("v"+m.version) + "\n" +
 		footer(
 			keyHint("Esc", i18n.T("back")),
 		)

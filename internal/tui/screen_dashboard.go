@@ -29,5 +29,6 @@ func (m model) viewDashboard() string {
 		fmt.Sprintf("  %s Safe:       %s\n", safeStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.SafeSize))) +
 		fmt.Sprintf("  %s Review:     %s\n", reviewStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.ReviewSize))) +
 		fmt.Sprintf("  %s Danger:     %s\n\n", dangerStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.DangerSize))) +
+		mutedStyle.Render("v"+m.version) + "\n" +
 		footer(keyHint("Enter", i18n.T("continue")), keyHint("Esc", i18n.T("back")))
 }

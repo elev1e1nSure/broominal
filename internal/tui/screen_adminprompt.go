@@ -52,6 +52,7 @@ func (m model) viewAdminPrompt() string {
 
 	body += "  " + options[0] + "\n"
 	body += "  " + options[1] + "\n\n"
+	body += mutedStyle.Render("v"+m.version) + "\n"
 	body += footer(
 		keyHint("↑↓", i18n.T("toggle")),
 		keyHint("Enter", i18n.T("confirm")),

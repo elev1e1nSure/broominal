@@ -37,6 +37,7 @@ func (m model) viewQuarantineCleanup() string {
 	head := titleStyle.Render(i18n.T("quarantine_cleanup"))
 	return head + "\n\n" +
 		mutedStyle.Render("  "+i18n.T("cleanup_desc")) + "\n\n" +
+		mutedStyle.Render("v"+m.version) + "\n" +
 		footer(
 			keyHint("Enter", i18n.T("proceed")),
 			keyHint("Esc", i18n.T("back")),

@@ -72,6 +72,7 @@ func (m model) viewLanguage() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %s%s", label, marker)) + "\n"
 		}
 	}
+	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("select")),
 		keyHint("Esc", i18n.T("back")),

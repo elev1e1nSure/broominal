@@ -11,6 +11,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/types"
+	"github.com/elev1e1nSure/broominal/pkg/update"
 	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
@@ -36,6 +37,8 @@ const (
 	ScreenQuarantineCleanup
 	ScreenLanguage
 	ScreenAdminPrompt
+	ScreenUpdateAvailable
+	ScreenUpdating
 )
 
 type restoreEntry struct {
@@ -61,6 +64,7 @@ type model struct {
 	height                int
 	conflicts             []string
 	restoreForceOverwrite bool
+	version               string
 	// Restore screen
 	restoreEntries []restoreEntry
 	restoreIdx     int
@@ -78,6 +82,10 @@ type model struct {
 	cleanupResult string
 	// Admin prompt
 	adminPromptIdx int
+	// Update screen
+	updateAvailableRelease *update.Release
+	updateError           error
+	updateProgress        string
 }
 
 type configCategoryItem struct {

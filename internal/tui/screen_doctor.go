@@ -70,6 +70,7 @@ func (m model) viewDoctor() string {
 		hints = append(hints, keyHint("F", i18n.T("fix_issue")))
 	}
 	hints = append(hints, keyHint("Esc", i18n.T("back")))
+	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(hints...)
 	return body
 }

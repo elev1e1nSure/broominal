@@ -25,7 +25,7 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-		if m.selectedIdx < 2 {
+		if m.selectedIdx < 3 {
 			m.selectedIdx++
 		}
 		return m, nil
@@ -54,6 +54,13 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.screen = ScreenLanguage
 			m.selectedIdx = 0
 			return m, nil
+		case 3: // Check for updates
+			m.screen = ScreenUpdating
+			m.updateProgress = i18n.T("checking_updates")
+			return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
+				release, err := update.CheckForUpdates(m.version)
+				return checkUpdateMsg{release, err}
+			})
 		}
 	}
 	return m, nil
@@ -137,6 +144,7 @@ func (m model) viewConfig() string {
 		i18n.T("config_presets"),
 		i18n.T("config_categories"),
 		i18n.T("config_language"),
+		i18n.T("check_updates"),
 	}
 	var body string
 	body += titleStyle.Render(i18n.T("config")) + "\n\n"
@@ -147,6 +155,7 @@ func (m model) viewConfig() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
 		}
 	}
+	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("select")),
 		keyHint("Esc", i18n.T("back")),
@@ -168,6 +177,7 @@ func (m model) viewConfigCategories() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %-30s %s", c.name, marker)) + "\n"
 		}
 	}
+	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("Space", i18n.T("toggle")),
 		keyHint("Enter", i18n.T("save")),
@@ -220,6 +230,7 @@ func (m model) viewConfigPresets() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %s\n", p.desc)) + "\n"
 		}
 	}
+	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("apply")),
 		keyHint("Esc", i18n.T("back")),

@@ -96,7 +96,8 @@ func (m model) handleKeyRestoreConflict(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) viewCleaning() string {
 	return titleStyle.Render(i18n.T("cleaning")) + "\n\n" +
 		fmt.Sprintf("  %s %s\n", m.spinner.View(), i18n.T("moving_files")) +
-		mutedStyle.Render("  "+i18n.T("please_wait"))
+		mutedStyle.Render("  "+i18n.T("please_wait")) + "\n" +
+		mutedStyle.Render("v"+m.version)
 }
 
 func (m model) viewResult() string {
@@ -112,6 +113,7 @@ func (m model) viewResult() string {
 		body += fmt.Sprintf("  Skipped:    %s\n", reviewStyle.Render(fmt.Sprintf("%d", m.cleanResult.Skipped)))
 	}
 	body += fmt.Sprintf("  Restore ID: %s\n\n", mutedStyle.Render(m.cleanResult.RestoreID))
+	body += mutedStyle.Render("v"+m.version) + "\n"
 	body += footer(
 		keyHint("R", i18n.T("restore_last")),
 		keyHint("Esc", i18n.T("back")),
@@ -126,6 +128,7 @@ func (m model) viewRestoreConflict() string {
 	for _, p := range m.conflicts {
 		body += mutedStyle.Render("    "+p) + "\n"
 	}
+	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("O", i18n.T("overwrite_all")),
 		keyHint("S", i18n.T("skip_all")),
