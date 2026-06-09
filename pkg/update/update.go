@@ -110,6 +110,16 @@ func DownloadUpdate(release *Release) (string, error) {
 			break
 		}
 	}
+	// Fallback: any .exe if no "windows"-named asset found
+	if asset == nil {
+		for i := range release.Assets {
+			a := &release.Assets[i]
+			if strings.HasSuffix(a.Name, ".exe") {
+				asset = a
+				break
+			}
+		}
+	}
 	if asset == nil {
 		return "", fmt.Errorf("no Windows binary found in release")
 	}
