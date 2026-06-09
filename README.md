@@ -10,7 +10,7 @@
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![platform](https://img.shields.io/badge/platform-Windows-0078D4?logo=windows\&logoColor=white)](https://github.com/elev1e1nSure/broominal)
 
-[english](README.md) · [русский](README.ru.md) · [releases](../../releases) · [contributing](CONTRIBUTING.md)
+[english](README.md) · [русский](README.ru.md)
 
 </div>
 
