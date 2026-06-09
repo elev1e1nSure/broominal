@@ -118,7 +118,7 @@ func (m model) handleKeyRestore(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) viewRestore() string {
 	var body string
-	body += titleStyle.Render(i18n.T("restore")) + "\n\n"
+	body += m.appTitle(i18n.T("restore")) + "\n\n"
 	if len(m.restoreEntries) == 0 {
 		body += mutedStyle.Render("  "+i18n.T("no_quarantines")) + "\n"
 	} else {
@@ -135,7 +135,6 @@ func (m model) viewRestore() string {
 	if m.restoreResult != "" {
 		body += "\n" + safeStyle.Render("  [OK] "+m.restoreResult) + "\n"
 	}
-	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("restore")),
 		keyHint("D", i18n.T("delete")),

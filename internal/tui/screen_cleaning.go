@@ -94,27 +94,25 @@ func (m model) handleKeyRestoreConflict(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewCleaning() string {
-	return titleStyle.Render(i18n.T("cleaning")) + "\n\n" +
+	return m.appTitle(i18n.T("cleaning")) + "\n\n" +
 		fmt.Sprintf("  %s %s\n", m.spinner.View(), i18n.T("moving_files")) +
-		mutedStyle.Render("  "+i18n.T("please_wait")) + "\n" +
-		mutedStyle.Render("v"+m.version)
+		mutedStyle.Render("  "+i18n.T("please_wait"))
 }
 
 func (m model) viewResult() string {
 	if m.cleanResult == nil {
-		return titleStyle.Render(i18n.T("restored")) + "\n\n" +
+		return m.appTitle(i18n.T("restored")) + "\n\n" +
 			safeStyle.Render("  [OK] "+i18n.T("hint_restored")) + "\n\n" +
 			footer(keyHint("Esc", i18n.T("back")))
 	}
-	body := titleStyle.Render(i18n.T("cleanup_complete")) + "\n\n" +
+	body := m.appTitle(i18n.T("cleanup_complete")) + "\n\n" +
 		fmt.Sprintf("  Freed:      %s\n", safeStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
 		fmt.Sprintf("  Files:      %s\n", valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files)))
 	if m.cleanResult.Skipped > 0 {
 		body += fmt.Sprintf("  Skipped:    %s\n", reviewStyle.Render(fmt.Sprintf("%d", m.cleanResult.Skipped)))
 	}
-	body += fmt.Sprintf("  Restore ID: %s\n\n", mutedStyle.Render(m.cleanResult.RestoreID))
-	body += mutedStyle.Render("v"+m.version) + "\n"
-	body += footer(
+	body += fmt.Sprintf("  Restore ID: %s\n", mutedStyle.Render(m.cleanResult.RestoreID))
+	body += "\n" + footer(
 		keyHint("R", i18n.T("restore_last")),
 		keyHint("Esc", i18n.T("back")),
 	)
@@ -123,12 +121,11 @@ func (m model) viewResult() string {
 
 func (m model) viewRestoreConflict() string {
 	var body string
-	body += titleStyle.Render(i18n.T("restore_conflicts")) + "\n\n"
+	body += m.appTitle(i18n.T("restore_conflicts")) + "\n\n"
 	body += dangerStyle.Render(fmt.Sprintf("  %d %s:", len(m.conflicts), i18n.T("files_already_exist"))) + "\n"
 	for _, p := range m.conflicts {
 		body += mutedStyle.Render("    "+p) + "\n"
 	}
-	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("O", i18n.T("overwrite_all")),
 		keyHint("S", i18n.T("skip_all")),

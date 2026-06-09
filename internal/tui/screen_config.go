@@ -148,7 +148,7 @@ func (m model) viewConfig() string {
 		i18n.T("check_updates"),
 	}
 	var body string
-	body += titleStyle.Render(i18n.T("config")) + "\n\n"
+	body += m.appTitle(i18n.T("config")) + "\n\n"
 	for i, item := range items {
 		if i == m.selectedIdx {
 			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + "\n"
@@ -156,7 +156,6 @@ func (m model) viewConfig() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
 		}
 	}
-	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("select")),
 		keyHint("Esc", i18n.T("back")),
@@ -166,7 +165,7 @@ func (m model) viewConfig() string {
 
 func (m model) viewConfigCategories() string {
 	var body string
-	body += titleStyle.Render(i18n.T("config_categories")) + "\n\n"
+	body += m.appTitle(i18n.T("config_categories")) + "\n\n"
 	for i, c := range m.configCategories {
 		marker := "[ ]"
 		if c.enabled {
@@ -178,7 +177,6 @@ func (m model) viewConfigCategories() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %-30s %s", c.name, marker)) + "\n"
 		}
 	}
-	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("Space", i18n.T("toggle")),
 		keyHint("Enter", i18n.T("save")),
@@ -217,7 +215,7 @@ func (m model) viewConfigPresets() string {
 	}
 
 	var body string
-	body += titleStyle.Render(i18n.T("config_presets")) + "\n\n"
+	body += m.appTitle(i18n.T("config_presets")) + "\n\n"
 	for i, p := range presets {
 		marker := "   "
 		if currentPreset == i {
@@ -231,7 +229,6 @@ func (m model) viewConfigPresets() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %s\n", p.desc)) + "\n"
 		}
 	}
-	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("apply")),
 		keyHint("Esc", i18n.T("back")),

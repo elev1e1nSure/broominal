@@ -35,6 +35,14 @@ func walkDirItems(ctx context.Context, root, category string, risk types.RiskLev
 	var items []types.Item
 	var count int
 
+	var extSet map[string]struct{}
+	if len(matchExt) > 0 {
+		extSet = make(map[string]struct{}, len(matchExt))
+		for _, e := range matchExt {
+			extSet[e] = struct{}{}
+		}
+	}
+
 	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, walkErr error) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -60,16 +68,8 @@ func walkDirItems(ctx context.Context, root, category string, risk types.RiskLev
 		if cfg.IsExcluded(path) {
 			return nil
 		}
-		if len(matchExt) > 0 {
-			ext := strings.ToLower(filepath.Ext(path))
-			found := false
-			for _, me := range matchExt {
-				if ext == me {
-					found = true
-					break
-				}
-			}
-			if !found {
+		if extSet != nil {
+			if _, ok := extSet[strings.ToLower(filepath.Ext(path))]; !ok {
 				return nil
 			}
 		}

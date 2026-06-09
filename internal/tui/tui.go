@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -54,6 +55,10 @@ func (m model) Init() tea.Cmd {
 		}
 	}
 	return nil
+}
+
+func (m model) appTitle(subtitle string) string {
+	return titleStyle.Render(fmt.Sprintf("broominal [%s] %s", m.version, subtitle))
 }
 
 type scanDoneMsg struct {

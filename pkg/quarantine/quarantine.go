@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -61,13 +64,13 @@ func Move(ctx context.Context, items []types.Item) (string, int64, int, int, err
 		if !it.Selected {
 			continue
 		}
-		if _, err := os.Stat(it.Path); os.IsNotExist(err) {
+		// Check for symlinks and existence in one call
+		info, err := os.Lstat(it.Path)
+		if err != nil {
 			skipped++
 			continue
 		}
-
-		// Check for symlinks - refuse to process
-		if info, err := os.Lstat(it.Path); err == nil && info.Mode()&os.ModeSymlink != 0 {
+		if info.Mode()&os.ModeSymlink != 0 {
 			skipped++
 			slog.Warn("quarantine: skipping symlink", "path", it.Path)
 			continue
@@ -266,13 +269,9 @@ func List() ([]string, error) {
 		}
 	}
 	// sort newest first
-	for i := 0; i < len(infos)-1; i++ {
-		for j := i + 1; j < len(infos); j++ {
-			if infos[j].time.After(infos[i].time) {
-				infos[i], infos[j] = infos[j], infos[i]
-			}
-		}
-	}
+	sort.Slice(infos, func(i, j int) bool {
+		return infos[i].time.After(infos[j].time)
+	})
 	var ids []string
 	for _, info := range infos {
 		ids = append(ids, info.id)
@@ -324,8 +323,12 @@ func Cleanup(maxAgeDays int) (int, int64, error) {
 
 		if createdAt.IsZero() || createdAt.Before(cutoff) {
 			var size int64
-			_ = filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
-				if err != nil || info.IsDir() {
+			_ = filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+				if err != nil || d.IsDir() {
+					return nil
+				}
+				info, err := d.Info()
+				if err != nil {
 					return nil
 				}
 				size += info.Size()
@@ -372,8 +375,12 @@ func CleanupAll() (int, int64, error) {
 		dirPath := filepath.Join(qDir, id)
 
 		var size int64
-		_ = filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
-			if err != nil || info.IsDir() {
+		_ = filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return nil
+			}
+			info, err := d.Info()
+			if err != nil {
 				return nil
 			}
 			size += info.Size()
@@ -408,8 +415,12 @@ func Delete(id string) (int64, error) {
 	}
 	var size int64
 	if info.IsDir() {
-		filepath.Walk(dirPath, func(path string, fi os.FileInfo, err error) error {
-			if err != nil || fi.IsDir() {
+		filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return nil
+			}
+			fi, err := d.Info()
+			if err != nil {
 				return nil
 			}
 			size += fi.Size()
@@ -536,33 +547,22 @@ func copyAndDelete(src, dst string) error {
 	if err != nil {
 		return err
 	}
+	defer in.Close()
 
 	out, err := os.Create(dst)
 	if err != nil {
-		in.Close()
 		return err
 	}
+	defer out.Close()
 
-	buf := make([]byte, 64*1024)
-	for {
-		n, err := in.Read(buf)
-		if n > 0 {
-			if _, werr := out.Write(buf[:n]); werr != nil {
-				out.Close()
-				in.Close()
-				return werr
-			}
-		}
-		if err != nil {
-			break
-		}
+	if _, err := io.Copy(out, in); err != nil {
+		return err
 	}
-	if cerr := out.Close(); cerr != nil {
-		in.Close()
-		return cerr
+	if err := out.Close(); err != nil {
+		return err
 	}
-	if cerr := in.Close(); cerr != nil {
-		return cerr
+	if err := in.Close(); err != nil {
+		return err
 	}
 	return os.Remove(src)
 }

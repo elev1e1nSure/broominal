@@ -38,7 +38,7 @@ func (m model) handleKeyAdminPrompt(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) viewAdminPrompt() string {
 	var body string
-	body += titleStyle.Render(i18n.T("admin_required")) + "\n\n"
+	body += m.appTitle(i18n.T("admin_required")) + "\n\n"
 	body += "  " + mutedStyle.Render(i18n.T("admin_required_desc")) + "\n\n"
 
 	options := []string{
@@ -52,7 +52,6 @@ func (m model) viewAdminPrompt() string {
 
 	body += "  " + options[0] + "\n"
 	body += "  " + options[1] + "\n\n"
-	body += mutedStyle.Render("v"+m.version) + "\n"
 	body += footer(
 		keyHint("↑↓", i18n.T("toggle")),
 		keyHint("Enter", i18n.T("confirm")),

@@ -45,10 +45,10 @@ func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) viewUpdateAvailable() string {
 	var body string
-	body += titleStyle.Render(i18n.T("update_available")) + "\n\n"
+	body += m.appTitle(i18n.T("update_available")) + "\n\n"
 
 	if m.updateAvailableRelease != nil {
-		body += fmt.Sprintf("  %s: %s\n", i18n.T("current_version"), mutedStyle.Render("v"+m.version))
+		body += fmt.Sprintf("  %s: %s\n", i18n.T("current_version"), mutedStyle.Render(m.version))
 		body += fmt.Sprintf("  %s: %s\n\n", i18n.T("latest_version"), safeStyle.Render(m.updateAvailableRelease.TagName))
 		body += mutedStyle.Render("  "+i18n.T("update_prompt")) + "\n\n"
 	}
@@ -63,7 +63,7 @@ func (m model) viewUpdateAvailable() string {
 
 func (m model) viewUpdating() string {
 	var body string
-	body += titleStyle.Render(i18n.T("updating")) + "\n\n"
+	body += m.appTitle(i18n.T("updating")) + "\n\n"
 	body += fmt.Sprintf("  %s %s\n", m.spinner.View(), m.updateProgress)
 	if m.updateError != nil {
 		body += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"

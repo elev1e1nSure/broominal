@@ -71,6 +71,14 @@ func scanDir(ctx context.Context, root, category string, risk types.RiskLevel, m
 	var items []types.Item
 	var count int
 
+	var extSet map[string]struct{}
+	if len(matchExt) > 0 {
+		extSet = make(map[string]struct{}, len(matchExt))
+		for _, e := range matchExt {
+			extSet[e] = struct{}{}
+		}
+	}
+
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -97,16 +105,8 @@ func scanDir(ctx context.Context, root, category string, risk types.RiskLevel, m
 			return nil
 		}
 
-		if len(matchExt) > 0 {
-			ext := strings.ToLower(filepath.Ext(path))
-			found := false
-			for _, me := range matchExt {
-				if ext == me {
-					found = true
-					break
-				}
-			}
-			if !found {
+		if extSet != nil {
+			if _, ok := extSet[strings.ToLower(filepath.Ext(path))]; !ok {
 				return nil
 			}
 		}
@@ -209,7 +209,7 @@ func scanOldInstallers(ctx context.Context, root string, cfg *config.Config) ([]
 	var items []types.Item
 	var count int
 
-	match := func(path string, d fs.DirEntry) bool {
+	match := func(path string, d fs.DirEntry, info fs.FileInfo) bool {
 		if d.IsDir() {
 			return false
 		}
@@ -218,10 +218,6 @@ func scanOldInstallers(ctx context.Context, root string, cfg *config.Config) ([]
 		}
 		ext := strings.ToLower(filepath.Ext(path))
 		if ext != ".msi" && ext != ".exe" {
-			return false
-		}
-		info, err := d.Info()
-		if err != nil {
 			return false
 		}
 		if info.ModTime().After(cutoff) {
@@ -248,11 +244,11 @@ func scanOldInstallers(ctx context.Context, root string, cfg *config.Config) ([]
 			}
 			return fmt.Errorf("scan old_installers: walk error at %s: %w", path, err)
 		}
-		if match(path, d) {
-			info, err := d.Info()
-			if err != nil {
-				return nil
-			}
+		info, err := d.Info()
+		if err != nil {
+			return nil
+		}
+		if match(path, d, info) {
 			count++
 			if count > maxScanFiles {
 				slog.Info("scan: max file limit reached, truncating", "category", "old_installers", "limit", maxScanFiles)

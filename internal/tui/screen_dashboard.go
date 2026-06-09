@@ -24,11 +24,10 @@ func (m model) viewDashboard() string {
 	if m.result == nil {
 		return m.spinner.View() + " " + i18n.T("scanning") + "\n"
 	}
-	return titleStyle.Render(i18n.T("dashboard")) + "\n\n" +
+	return m.appTitle(i18n.T("dashboard")) + "\n\n" +
 		fmt.Sprintf("  Total found: %s\n", valueStyle.Render(util.FormatSize(m.result.TotalSize))) +
 		fmt.Sprintf("  %s Safe:       %s\n", safeStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.SafeSize))) +
 		fmt.Sprintf("  %s Review:     %s\n", reviewStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.ReviewSize))) +
-		fmt.Sprintf("  %s Danger:     %s\n\n", dangerStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.DangerSize))) +
-		mutedStyle.Render("v"+m.version) + "\n" +
+		fmt.Sprintf("  %s Danger:     %s\n", dangerStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.DangerSize))) +
 		footer(keyHint("Enter", i18n.T("continue")), keyHint("Esc", i18n.T("back")))
 }

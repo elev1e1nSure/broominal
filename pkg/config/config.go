@@ -173,13 +173,14 @@ func (c *Config) IsCategoryEnabled(name string) bool {
 // IsExcluded reports whether a path matches any exclusion rule.
 func (c *Config) IsExcluded(path string) bool {
 	lp := strings.ToLower(path)
+	segments := strings.Split(lp, string(filepath.Separator))
+	segSet := make(map[string]struct{}, len(segments))
+	for _, seg := range segments {
+		segSet[seg] = struct{}{}
+	}
 	for _, ex := range c.Exclusions {
-		lex := strings.ToLower(ex)
-		// exact segment match to avoid "temp" matching "template"
-		for _, seg := range strings.Split(lp, string(filepath.Separator)) {
-			if seg == lex {
-				return true
-			}
+		if _, ok := segSet[strings.ToLower(ex)]; ok {
+			return true
 		}
 	}
 	return false

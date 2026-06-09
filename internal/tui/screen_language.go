@@ -56,7 +56,7 @@ func (m model) viewLanguage() string {
 	langs := i18n.SupportedLanguages()
 	labels := map[string]string{"en": i18n.T("english"), "ru": i18n.T("russian")}
 	var body string
-	body += titleStyle.Render(i18n.T("select_language")) + "\n\n"
+	body += m.appTitle(i18n.T("select_language")) + "\n\n"
 	for i, lang := range langs {
 		label := labels[lang]
 		if label == "" {
@@ -72,7 +72,6 @@ func (m model) viewLanguage() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %s%s", label, marker)) + "\n"
 		}
 	}
-	body += "\n" + mutedStyle.Render("v"+m.version) + "\n"
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("select")),
 		keyHint("Esc", i18n.T("back")),
