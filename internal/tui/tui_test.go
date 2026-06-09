@@ -370,8 +370,8 @@ func TestViewDoctor(t *testing.T) {
 		{Name: "Test", Status: doctor.StatusPass, Detail: "ok"},
 	}
 	out := m.View()
-	if !strings.Contains(out, "Diagnostics") && !strings.Contains(out, "Диагностика") {
-		t.Error("view should contain 'Diagnostics'")
+	if !strings.Contains(out, "Health Check") && !strings.Contains(out, "Самопроверка") {
+		t.Error("view should contain doctor screen title")
 	}
 	if !strings.Contains(out, "Test") {
 		t.Error("view should contain check name")

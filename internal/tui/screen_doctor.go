@@ -38,7 +38,8 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) viewDoctor() string {
 	var body string
-	body += m.appTitle(i18n.T("doctor")) + "\n\n"
+	body += m.appTitle(i18n.T("doctor")) + "\n"
+	body += mutedStyle.Render("  "+i18n.T("doctor_desc")) + "\n\n"
 	var hasFix bool
 	for _, c := range m.doctorChecks {
 		var marker string
