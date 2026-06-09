@@ -27,56 +27,59 @@ type Config struct {
 func Default() *Config {
 	return &Config{
 		EnabledCategories: map[string]bool{
+			// Safe (default)
 			"Temp":                       true,
-			"Downloads":                  true,
 			"Browser Cache":              true,
-			"Recycle Bin":                true,
-			"Logs":                       true,
-			"Old Installers":             true,
-			"Large Old Files":            true,
 			"Thumbnails Cache":           true,
 			"DirectX Shader Cache":       true,
-			"Delivery Optimization":      true,
-			"Windows Error Reports":      true,
-			"Messenger Cache":            false,
-			"Steam Cache":                true,
-			"VSCode Cache":               true,
-			"Edge Code Cache":            true,
-			"Chrome Code Cache":          true,
-			"Firefox Cache2":             true,
 			"Empty Folders":              true,
-			"npm Cache":                  true,
-			"pip Cache":                  true,
-			"Spotify Cache":              true,
-			"OneDrive Cache":             true,
-			"Visual Studio Cache":        true,
-			"Git Cache":                  true,
-			"Windows Prefetch":           true,
+			"Delivery Optimization":      true,
 			"Icon Cache":                 true,
+			"Windows Error Reports":      true,
+			"Opera Cache":                true,
+			"Brave Cache":                true,
+			"Vivaldi Cache":              true,
+			"Yandex Cache":               true,
+			// Normal
+			"Downloads":                  false,
+			"Recycle Bin":                false,
+			"Logs":                       false,
+			"Old Installers":             false,
+			"Large Old Files":            false,
+			"Messenger Cache":            false,
+			"Steam Cache":                false,
+			"VSCode Cache":               false,
+			"Edge Code Cache":            false,
+			"Chrome Code Cache":          false,
+			"Firefox Cache2":             false,
+			"npm Cache":                  false,
+			"pip Cache":                  false,
+			"Spotify Cache":              false,
+			"OneDrive Cache":             false,
+			"Visual Studio Cache":        false,
+			"Git Cache":                  false,
+			"Windows Prefetch":           false,
 			"Windows Update Cache":       false,
 			"Crash & Memory Dumps":       false,
 			"Nvidia Installer Leftovers": false,
-			"Opera Cache":                false,
-			"Brave Cache":                false,
-			"Vivaldi Cache":              false,
-			"Yandex Cache":               false,
 			"Office Cache":               false,
-			"Adobe Cache":                false,
-			"Docker Cache":               false,
-			"JetBrains Cache":            false,
-			"Go Build Cache":             false,
-			"Rust Cache":                 false,
-			"NuGet Cache":                false,
-			"Unity Cache":                false,
+			"OBS Cache":                  false,
+			"TeamViewer Logs":            false,
 			"Epic Games Cache":           false,
 			"Battle.net Cache":           false,
 			"Rockstar Cache":             false,
 			"EA App Cache":               false,
 			"Ubisoft Cache":              false,
 			"GOG Galaxy Cache":           false,
-			"OBS Cache":                  false,
+			// Hard
+			"Docker Cache":               false,
+			"JetBrains Cache":            false,
+			"Go Build Cache":             false,
+			"Rust Cache":                 false,
+			"NuGet Cache":                false,
+			"Unity Cache":                false,
+			"Adobe Cache":                false,
 			"Windows Defender":           false,
-			"TeamViewer Logs":            false,
 		},
 		Exclusions: []string{},
 		AutoRiskOverrides: map[string]string{
@@ -221,17 +224,15 @@ func containsIgnoreCase(s, substr string) bool {
 type Preset string
 
 const (
-	PresetQuick     Preset = "quick"
-	PresetStandard  Preset = "standard"
-	PresetDeveloper Preset = "developer"
-	PresetGamer     Preset = "gamer"
-	PresetDeep      Preset = "deep"
+	PresetSafe   Preset = "safe"
+	PresetNormal Preset = "normal"
+	PresetHard   Preset = "hard"
 )
 
 func (c *Config) ApplyPreset(p Preset) {
 	c.EnabledCategories = make(map[string]bool)
 
-	quickCategories := []string{
+	safeCategories := []string{
 		"Temp",
 		"Browser Cache",
 		"Thumbnails Cache",
@@ -246,7 +247,7 @@ func (c *Config) ApplyPreset(p Preset) {
 		"Yandex Cache",
 	}
 
-	standardCategories := append(quickCategories,
+	normalCategories := append(safeCategories,
 		"Logs",
 		"Steam Cache",
 		"Messenger Cache",
@@ -271,7 +272,7 @@ func (c *Config) ApplyPreset(p Preset) {
 		"GOG Galaxy Cache",
 	)
 
-	developerCategories := append(standardCategories,
+	hardCategories := append(normalCategories,
 		"Docker Cache",
 		"JetBrains Cache",
 		"Go Build Cache",
@@ -280,28 +281,6 @@ func (c *Config) ApplyPreset(p Preset) {
 		"Unity Cache",
 		"Visual Studio Cache",
 		"Adobe Cache",
-	)
-
-	gamerCategories := append(quickCategories,
-		"Logs",
-		"Steam Cache",
-		"Messenger Cache",
-		"Spotify Cache",
-		"OneDrive Cache",
-		"Windows Prefetch",
-		"Office Cache",
-		"OBS Cache",
-		"TeamViewer Logs",
-		"Epic Games Cache",
-		"Battle.net Cache",
-		"Rockstar Cache",
-		"EA App Cache",
-		"Ubisoft Cache",
-		"GOG Galaxy Cache",
-		"Large Old Files",
-	)
-
-	deepCategories := append(developerCategories,
 		"Downloads",
 		"Old Installers",
 		"Large Old Files",
@@ -314,16 +293,12 @@ func (c *Config) ApplyPreset(p Preset) {
 
 	var categories []string
 	switch p {
-	case PresetQuick:
-		categories = quickCategories
-	case PresetStandard:
-		categories = standardCategories
-	case PresetDeveloper:
-		categories = developerCategories
-	case PresetGamer:
-		categories = gamerCategories
-	case PresetDeep:
-		categories = deepCategories
+	case PresetSafe:
+		categories = safeCategories
+	case PresetNormal:
+		categories = normalCategories
+	case PresetHard:
+		categories = hardCategories
 	}
 
 	for _, cat := range categories {

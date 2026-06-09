@@ -25,8 +25,11 @@ func TestDefault(t *testing.T) {
 	if !cfg.EnabledCategories["Temp"] {
 		t.Error("Temp should be enabled by default")
 	}
-	if !cfg.EnabledCategories["Downloads"] {
-		t.Error("Downloads should be enabled by default")
+	if !cfg.EnabledCategories["Browser Cache"] {
+		t.Error("Browser Cache should be enabled by default")
+	}
+	if cfg.EnabledCategories["Downloads"] {
+		t.Error("Downloads should be disabled by default (Safe preset)")
 	}
 }
 

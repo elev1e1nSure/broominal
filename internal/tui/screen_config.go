@@ -127,7 +127,7 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-		if m.selectedIdx < 4 {
+		if m.selectedIdx < 2 {
 			m.selectedIdx++
 		}
 		return m, nil
@@ -136,15 +136,11 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.configCfg != nil {
 			switch m.selectedIdx {
 			case 0:
-				m.configCfg.ApplyPreset(config.PresetQuick)
+				m.configCfg.ApplyPreset(config.PresetSafe)
 			case 1:
-				m.configCfg.ApplyPreset(config.PresetStandard)
+				m.configCfg.ApplyPreset(config.PresetNormal)
 			case 2:
-				m.configCfg.ApplyPreset(config.PresetDeveloper)
-			case 3:
-				m.configCfg.ApplyPreset(config.PresetGamer)
-			case 4:
-				m.configCfg.ApplyPreset(config.PresetDeep)
+				m.configCfg.ApplyPreset(config.PresetHard)
 			}
 			_ = config.Save(m.configCfg)
 		}
@@ -222,7 +218,7 @@ func groupTitle(group string) string {
 func (m model) viewConfigCategories() string {
 	var body string
 	body += m.appTitle(i18n.T("config_categories")) + "\n\n"
-	visible := m.height - 6
+	visible := m.height - 10
 	if visible < 5 {
 		visible = 5
 	}
@@ -232,16 +228,16 @@ func (m model) viewConfigCategories() string {
 		c := m.configCategories[i]
 		if c.group != lastGroup {
 			lastGroup = c.group
-			body += "\n" + lipgloss.NewStyle().Bold(true).Render("  "+groupTitle(c.group)) + "\n"
+			body += lipgloss.NewStyle().Bold(true).Render("  "+groupTitle(c.group)) + "\n"
 		}
 		marker := "[ ]"
 		if c.enabled {
 			marker = safeStyle.Render("[x]")
 		}
 		if i == m.selectedIdx {
-			body += selectedStyle.Render(fmt.Sprintf("> %-30s %s", c.name, marker)) + "\n"
+			body += selectedStyle.Render(fmt.Sprintf("> %-25s %s", c.name, marker)) + "\n"
 		} else {
-			body += mutedStyle.Render(fmt.Sprintf("  %-30s %s", c.name, marker)) + "\n"
+			body += mutedStyle.Render(fmt.Sprintf("  %-25s %s", c.name, marker)) + "\n"
 		}
 	}
 	body += "\n" + footer(
@@ -260,11 +256,9 @@ func (m model) viewConfigPresets() string {
 		style    lipgloss.Style
 		expected int
 	}{
-		{"Quick", "~5 сек — браузеры, темпы, системный мусор", config.PresetQuick, safeStyle, 12},
-		{"Standard", "Quick + мессенджеры, ланчеры, dev-инструменты", config.PresetStandard, reviewStyle, 34},
-		{"Developer", "Standard + Docker, JetBrains, Go, Rust, Unity", config.PresetDeveloper, reviewStyle, 42},
-		{"Gamer", "Quick + ланчеры, мессенджеры, большие файлы", config.PresetGamer, reviewStyle, 28},
-		{"Deep", "Всё включено — максимальная очистка", config.PresetDeep, dangerStyle, 50},
+		{"Safe", "~5 сек — браузеры, темпы, системный мусор", config.PresetSafe, safeStyle, 12},
+		{"Normal", "Safe + мессенджеры, ланчеры, dev-инструменты", config.PresetNormal, reviewStyle, 34},
+		{"Hard", "Всё включено — максимальная очистка", config.PresetHard, dangerStyle, 50},
 	}
 
 	currentPreset := -1
