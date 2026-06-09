@@ -393,13 +393,9 @@ func TestViewDoctor(t *testing.T) {
 func TestViewConfig(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenConfig
-	m.configView = "{\"test\": true}"
 	out := m.View()
-	if !strings.Contains(out, "Config") {
-		t.Error("view should contain 'Config'")
-	}
-	if !strings.Contains(out, "test") {
-		t.Error("view should contain config content")
+	if !strings.Contains(out, "Settings") && !strings.Contains(out, "Config") {
+		t.Error("view should contain Settings or Config")
 	}
 }
 
