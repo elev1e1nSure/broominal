@@ -24,7 +24,7 @@ func (m model) handleKeyDashboard(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.screen = ScreenConfirm
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("m", "q", "esc"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = 0
 		return m, nil

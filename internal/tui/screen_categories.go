@@ -19,7 +19,11 @@ func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.screen = ScreenDashboard
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "m"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		m.screen = ScreenDashboard
+		return m, nil
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = 0
 		return m, nil
@@ -63,14 +67,14 @@ func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKeyWarnRecycleBin(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
-		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
+		m.screen = ScreenCategories
+		m.selectedIdx = m.detailCat
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
-		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		m.screen = ScreenCategories
+		m.selectedIdx = m.detailCat
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
@@ -81,22 +85,27 @@ func (m model) handleKeyWarnRecycleBin(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKeyCategoryInfo(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenCategories
 		m.selectedIdx = m.detailCat
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
-		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		m.screen = ScreenCategories
+		m.selectedIdx = m.detailCat
 		return m, nil
 	}
 	return m, nil
 }
 
 func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
-		m.screen = ScreenMainMenu
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
+		m.screen = ScreenCategories
+		m.selectedIdx = 0
+		return m, nil
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		m.screen = ScreenCategories
 		m.selectedIdx = 0
 		return m, nil
 	}

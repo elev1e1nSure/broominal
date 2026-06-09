@@ -16,8 +16,8 @@ func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.selectedIdx = 0
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "m"))) {
-		m.screen = ScreenMainMenu
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		m.screen = ScreenConfig
 		m.selectedIdx = 0
 		return m, nil
 	}
@@ -34,7 +34,7 @@ func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys(" "))) {
 		langs := i18n.SupportedLanguages()
 		if m.selectedIdx < len(langs) {
 			lang := langs[m.selectedIdx]
@@ -50,6 +50,11 @@ func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
+		return m, nil
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+		m.screen = ScreenConfig
+		m.selectedIdx = 0
 		return m, nil
 	}
 	return m, nil
@@ -76,7 +81,8 @@ func (m model) viewLanguage() string {
 		}
 	}
 	body += "\n" + footer(
-		keyHint("Enter", i18n.T("apply")),
+		keyHint("Space", i18n.T("apply")),
+		keyHint("Enter", i18n.T("confirm")),
 		keyHint("Esc", i18n.T("back")),
 	)
 	return body

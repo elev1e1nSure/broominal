@@ -28,7 +28,7 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.updateError = nil
 		return m, nil
 	}
-	if s == "q" || s == "m" {
+	if s == "q" {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = 0
 		m.updateAvailableRelease = nil
@@ -78,7 +78,7 @@ func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.updateProgress = ""
 			return m, nil
 		}
-		if s == "q" || s == "m" {
+		if s == "q" {
 			m.screen = ScreenMainMenu
 			m.selectedIdx = 0
 			m.updateError = nil
@@ -114,7 +114,7 @@ func (m model) handleKeyNoUpdate(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.selectedIdx = 0
 		return m, nil
 	}
-	if s == "q" || s == "m" {
+	if s == "q" {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = 0
 		return m, nil

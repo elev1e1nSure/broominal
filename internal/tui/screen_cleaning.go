@@ -11,7 +11,7 @@ import (
 )
 
 func (m model) handleKeyResult(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = 0
 		m.cleanResult = nil
@@ -81,13 +81,8 @@ func (m model) handleKeyRestoreConflict(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.screen = ScreenResult
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "c"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 		m.screen = ScreenResult
-		return m, nil
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
-		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
 		return m, nil
 	}
 	return m, nil
@@ -129,7 +124,7 @@ func (m model) viewRestoreConflict() string {
 	body += "\n" + footer(
 		keyHint("O", i18n.T("overwrite_all")),
 		keyHint("S", i18n.T("skip_all")),
-		keyHint("C/Esc", i18n.T("cancel")),
+		keyHint("Esc", i18n.T("cancel")),
 	)
 	return body
 }

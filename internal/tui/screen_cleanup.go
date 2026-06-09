@@ -12,7 +12,7 @@ import (
 )
 
 func (m model) handleKeyQuarantineCleanup(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = 0
 		return m, nil

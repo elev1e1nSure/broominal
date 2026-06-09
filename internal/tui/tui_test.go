@@ -420,19 +420,23 @@ func TestHandleKeyLanguageSelect(t *testing.T) {
 		t.Errorf("after down: selectedIdx = %d, want 1", mm.selectedIdx)
 	}
 
-	// Select Russian — should stay on language screen (Enter only applies, Esc goes back)
-	newM2, _ := mm.handleKey(tea.KeyMsg{Type: tea.KeyEnter})
+	// Apply Russian with Space — should stay on language screen
+	newM2, _ := mm.handleKey(tea.KeyMsg{Type: tea.KeySpace})
 	mm2 := newM2.(model)
 	if mm2.screen != ScreenLanguage {
-		t.Errorf("after select: screen = %d, want Language", mm2.screen)
+		t.Errorf("after space apply: screen = %d, want Language", mm2.screen)
+	}
+	// Confirm with Enter — should return to Config
+	newM3, _ := mm2.handleKey(tea.KeyMsg{Type: tea.KeyEnter})
+	mm3 := newM3.(model)
+	if mm3.screen != ScreenConfig {
+		t.Errorf("after enter confirm: screen = %d, want Config", mm3.screen)
 	}
 }
 
 func TestHandleKeyMReturnsToMainMenu(t *testing.T) {
-	screens := []Screen{
-		ScreenResult, ScreenError, ScreenRestore, ScreenDoctor,
-		ScreenConfig, ScreenQuarantineCleanup, ScreenLanguage,
-	}
+	// M is a quick-root shortcut only on selection screens (Categories, Confirm)
+	screens := []Screen{ScreenCategories, ScreenConfirm}
 	for _, sc := range screens {
 		m := initialModel()
 		m.screen = sc
