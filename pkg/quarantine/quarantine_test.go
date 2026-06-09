@@ -61,7 +61,7 @@ func TestMoveDryRun(t *testing.T) {
 	_ = os.WriteFile(src, []byte("data"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, freed, files, err := Move(items, true)
+	id, freed, files, _, err := Move(items, true)
 	if err != nil {
 		t.Fatalf("Move dry-run failed: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestMoveReal(t *testing.T) {
 		{Path: src2, Size: 2, Selected: true},
 	}
 
-	id, freed, files, err := Move(items, false)
+	id, freed, files, _, err := Move(items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -131,7 +131,7 @@ func TestMoveMissingFile(t *testing.T) {
 	items := []types.Item{
 		{Path: filepath.Join(tmp, "missing.txt"), Size: 10, Selected: true},
 	}
-	_, freed, files, err := Move(items, false)
+	_, freed, files, _, err := Move(items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -161,7 +161,7 @@ func TestMoveDuplicateNames(t *testing.T) {
 		{Path: f2, Size: 1, Selected: true},
 	}
 
-	id, _, _, err := Move(items, false)
+	id, _, _, _, err := Move(items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -201,7 +201,7 @@ func TestRestoreHappyPath(t *testing.T) {
 	_ = os.WriteFile(src, []byte("data"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, err := Move(items, false)
+	id, _, _, _, err := Move(items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -234,7 +234,7 @@ func TestRestoreConflictSkip(t *testing.T) {
 	_ = os.WriteFile(src, []byte("original"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, err := Move(items, false)
+	id, _, _, _, err := Move(items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -268,7 +268,7 @@ func TestRestoreForceOverwrite(t *testing.T) {
 	_ = os.WriteFile(src, []byte("original"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, err := Move(items, false)
+	id, _, _, _, err := Move(items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -300,7 +300,7 @@ func TestCheckRestoreConflicts(t *testing.T) {
 	_ = os.WriteFile(src, []byte("data"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, err := Move(items, false)
+	id, _, _, _, err := Move(items, false)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -346,10 +346,10 @@ func TestListAndGetLast(t *testing.T) {
 	// Create two quarantine dirs with different mod times
 	qDir := BaseDir()
 	_ = os.MkdirAll(qDir, 0755)
-	_ = os.MkdirAll(filepath.Join(qDir, "id-1"), 0755)
-	_ = os.Chtimes(filepath.Join(qDir, "id-1"), time.Now().Add(-time.Hour), time.Now().Add(-time.Hour))
-	_ = os.MkdirAll(filepath.Join(qDir, "id-2"), 0755)
-	_ = os.Chtimes(filepath.Join(qDir, "id-2"), time.Now(), time.Now())
+	_ = os.MkdirAll(filepath.Join(qDir, "20200101-000000"), 0755)
+	_ = os.Chtimes(filepath.Join(qDir, "20200101-000000"), time.Now().Add(-time.Hour), time.Now().Add(-time.Hour))
+	_ = os.MkdirAll(filepath.Join(qDir, "20200101-010000"), 0755)
+	_ = os.Chtimes(filepath.Join(qDir, "20200101-010000"), time.Now(), time.Now())
 
 	ids, err = List()
 	if err != nil {
@@ -363,8 +363,8 @@ func TestListAndGetLast(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetLast failed: %v", err)
 	}
-	if last != "id-2" {
-		t.Errorf("GetLast = %q, want id-2", last)
+	if last != "20200101-010000" {
+		t.Errorf("GetLast = %q, want 20200101-010000", last)
 	}
 }
 
@@ -389,11 +389,11 @@ func TestCleanupRemovesOld(t *testing.T) {
 	t.Setenv("LOCALAPPDATA", tmp)
 
 	qDir := BaseDir()
-	oldDir := filepath.Join(qDir, "old-id")
+	oldDir := filepath.Join(qDir, "20200101-000000")
 	_ = os.MkdirAll(oldDir, 0755)
 	_ = os.WriteFile(filepath.Join(oldDir, "file.txt"), []byte("data"), 0644)
 	// Write a valid manifest with old date
-	manifest := `{"id":"old-id","created_at":"2020-01-01T00:00:00Z","items":[]}`
+	manifest := `{"id":"20200101-000000","created_at":"2020-01-01T00:00:00Z","items":[]}`
 	_ = os.WriteFile(filepath.Join(oldDir, "manifest.json"), []byte(manifest), 0644)
 
 	deleted, freed, err := Cleanup(30, false)
@@ -416,9 +416,9 @@ func TestCleanupDryRun(t *testing.T) {
 	t.Setenv("LOCALAPPDATA", tmp)
 
 	qDir := BaseDir()
-	oldDir := filepath.Join(qDir, "old-id")
+	oldDir := filepath.Join(qDir, "20200101-000000")
 	_ = os.MkdirAll(oldDir, 0755)
-	manifest := `{"id":"old-id","created_at":"2020-01-01T00:00:00Z","items":[]}`
+	manifest := `{"id":"20200101-000000","created_at":"2020-01-01T00:00:00Z","items":[]}`
 	_ = os.WriteFile(filepath.Join(oldDir, "manifest.json"), []byte(manifest), 0644)
 
 	deleted, freed, err := Cleanup(30, true)
@@ -440,9 +440,9 @@ func TestCleanupKeepsRecent(t *testing.T) {
 	t.Setenv("LOCALAPPDATA", tmp)
 
 	qDir := BaseDir()
-	recentDir := filepath.Join(qDir, "recent-id")
+	recentDir := filepath.Join(qDir, "20991231-235959")
 	_ = os.MkdirAll(recentDir, 0755)
-	manifest := `{"id":"recent-id","created_at":"` + time.Now().Format(time.RFC3339) + `","items":[]}`
+	manifest := `{"id":"20991231-235959","created_at":"` + time.Now().Format(time.RFC3339) + `","items":[]}`
 	_ = os.WriteFile(filepath.Join(recentDir, "manifest.json"), []byte(manifest), 0644)
 
 	deleted, freed, err := Cleanup(30, false)
@@ -465,9 +465,11 @@ func TestValidateID(t *testing.T) {
 		id    string
 		valid bool
 	}{
-		{"12345678-1234-1234-1234-123456789abc", true},
-		{"simple-name", true},
-		{"foo..bar", true},
+		{"20200101-000000", true},
+		{"20200101-000000-2", true},
+		{"12345678-1234-1234-1234-123456789abc", false},
+		{"simple-name", false},
+		{"foo..bar", false},
 		{"..", false},
 		{`..\foo`, false},
 		{`../foo`, false},
@@ -507,16 +509,16 @@ func TestRestoreManifestPathTraversal(t *testing.T) {
 	secretFile := filepath.Join(tmp, "secret.txt")
 	_ = os.WriteFile(secretFile, []byte("secret"), 0644)
 
-	qDir := filepath.Join(BaseDir(), "test-id")
+	qDir := filepath.Join(BaseDir(), "20200101-000000")
 	_ = os.MkdirAll(qDir, 0755)
 
 	qFile := filepath.Join(qDir, "q.txt")
 	_ = os.WriteFile(qFile, []byte("stolen"), 0644)
 
-	manifest := `{"id":"test-id","created_at":"2020-01-01T00:00:00Z","items":[{"original":"../secret.txt","quarantined":` + fmt.Sprintf("%q", qFile) + `,"size":6}]}`
+	manifest := `{"id":"20200101-000000","created_at":"2020-01-01T00:00:00Z","items":[{"original":"../secret.txt","quarantined":` + fmt.Sprintf("%q", qFile) + `,"size":6}]}`
 	_ = os.WriteFile(filepath.Join(qDir, "manifest.json"), []byte(manifest), 0644)
 
-	restored, _, err := Restore("test-id", false)
+	restored, _, err := Restore("20200101-000000", false)
 	if err != nil {
 		t.Fatalf("Restore failed: %v", err)
 	}
@@ -546,17 +548,17 @@ func TestRestoreManifestDisallowedPath(t *testing.T) {
 	t.Setenv("ProgramFiles(x86)", filepath.Join(tmp, "pf86"))
 	t.Setenv("SYSTEMDRIVE", "Q:")
 
-	qDir := filepath.Join(BaseDir(), "test-id2")
+	qDir := filepath.Join(BaseDir(), "20200101-010000")
 	_ = os.MkdirAll(qDir, 0755)
 
 	qFile := filepath.Join(qDir, "q.txt")
 	_ = os.WriteFile(qFile, []byte("stolen"), 0644)
 
 	outsideFile := `C:\evil\target.txt`
-	manifest := fmt.Sprintf(`{"id":"test-id2","created_at":"2020-01-01T00:00:00Z","items":[{"original":%q,"quarantined":%q,"size":6}]}`, outsideFile, qFile)
+	manifest := fmt.Sprintf(`{"id":"20200101-010000","created_at":"2020-01-01T00:00:00Z","items":[{"original":%q,"quarantined":%q,"size":6}]}`, outsideFile, qFile)
 	_ = os.WriteFile(filepath.Join(qDir, "manifest.json"), []byte(manifest), 0644)
 
-	restored, _, err := Restore("test-id2", false)
+	restored, _, err := Restore("20200101-010000", false)
 	if err != nil {
 		t.Fatalf("Restore failed: %v", err)
 	}

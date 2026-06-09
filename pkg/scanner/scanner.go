@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -30,13 +31,16 @@ var logPatterns = []string{
 
 const maxScanFiles = 50000
 
-func ScanWithConfig(cfg *config.Config) (*types.ScanResult, error) {
+func ScanWithConfig(ctx context.Context, cfg *config.Config) (*types.ScanResult, error) {
 	result := &types.ScanResult{}
 	categories := make(map[string]*types.CategorySummary)
 
 	for _, sc := range allScanners {
 		if !cfg.IsCategoryEnabled(sc.Name()) {
 			continue
+		}
+		if ctx.Err() != nil {
+			return result, ctx.Err()
 		}
 		items, err := sc.Scan(cfg)
 		if err != nil {

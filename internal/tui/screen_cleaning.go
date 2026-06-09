@@ -110,8 +110,11 @@ func (m model) viewResult() string {
 	} else {
 		body = titleStyle.Render(i18n.T("cleanup_complete")) + "\n\n" +
 			fmt.Sprintf("  Freed:      %s\n", safeStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
-			fmt.Sprintf("  Files:      %s\n", valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files))) +
-			fmt.Sprintf("  Restore ID: %s\n\n", mutedStyle.Render(m.cleanResult.RestoreID))
+			fmt.Sprintf("  Files:      %s\n", valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files)))
+		if m.cleanResult.Skipped > 0 {
+			body += fmt.Sprintf("  Skipped:    %s\n", reviewStyle.Render(fmt.Sprintf("%d", m.cleanResult.Skipped)))
+		}
+		body += fmt.Sprintf("  Restore ID: %s\n\n", mutedStyle.Render(m.cleanResult.RestoreID))
 	}
 	body += footer(
 		keyHint("R", i18n.T("restore_last")),

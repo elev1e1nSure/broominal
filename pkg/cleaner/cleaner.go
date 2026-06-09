@@ -2,6 +2,7 @@
 package cleaner
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
@@ -11,8 +12,8 @@ import (
 
 // Run moves selected items to quarantine and optionally persists a report.
 // If dryRun is true, nothing is moved and no report is saved.
-func Run(items []types.Item, dryRun bool, scanResult *types.ScanResult) (*types.CleanResult, error) {
-	id, freed, files, err := quarantine.Move(items, dryRun)
+func Run(ctx context.Context, items []types.Item, dryRun bool, scanResult *types.ScanResult) (*types.CleanResult, error) {
+	id, freed, files, skipped, err := quarantine.Move(ctx, items, dryRun)
 	if err != nil {
 		return nil, err
 	}
@@ -20,6 +21,7 @@ func Run(items []types.Item, dryRun bool, scanResult *types.ScanResult) (*types.
 		RestoreID: id,
 		Freed:     freed,
 		Files:     files,
+		Skipped:   skipped,
 	}
 	if !dryRun && scanResult != nil {
 		if _, err := report.Save(scanResult, result); err != nil {

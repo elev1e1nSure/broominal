@@ -186,7 +186,11 @@ func cleanCmd() *cobra.Command {
 				fmt.Printf("%s Would free %s in %d files\n", style.Yellowf("[dry-run]"), style.Cyanf(util.FormatSize(cleanResult.Freed)), cleanResult.Files)
 				return
 			}
-			fmt.Printf("%s %s in %s files. Restore ID: %s\n", style.Greenf("Cleaned"), style.Cyanf(util.FormatSize(cleanResult.Freed)), style.Boldf("%d", cleanResult.Files), style.Yellowf(cleanResult.RestoreID))
+			msg := fmt.Sprintf("%s %s in %s files", style.Greenf("Cleaned"), style.Cyanf(util.FormatSize(cleanResult.Freed)), style.Boldf("%d", cleanResult.Files))
+			if cleanResult.Skipped > 0 {
+				msg += fmt.Sprintf(" (%s)", style.Yellowf("%d skipped", cleanResult.Skipped))
+			}
+			fmt.Printf("%s. Restore ID: %s\n", msg, style.Yellowf(cleanResult.RestoreID))
 		},
 	}
 	cmd.Flags().BoolVar(&safeOnly, "safe", false, "Only clean safe items")

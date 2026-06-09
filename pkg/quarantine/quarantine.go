@@ -1,6 +1,7 @@
 package quarantine
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -35,7 +36,7 @@ func generateBackupID() string {
 }
 
 // Move перемещает файлы в карантин и возвращает restore ID
-func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
+func Move(ctx context.Context, items []types.Item, dryRun bool) (string, int64, int, int, error) {
 	id := generateBackupID()
 
 	if dryRun {
@@ -51,12 +52,12 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 			freed += it.Size
 			files++
 		}
-		return id, freed, files, nil
+		return id, freed, files, 0, nil
 	}
 
 	qDir := filepath.Join(BaseDir(), id)
 	if err := os.MkdirAll(qDir, 0700); err != nil {
-		return "", 0, 0, fmt.Errorf("create quarantine dir: %w", err)
+		return "", 0, 0, 0, fmt.Errorf("create quarantine dir: %w", err)
 	}
 
 	manifest := types.Manifest{
@@ -68,11 +69,16 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 
 	var freed int64
 	var files int
+	var skipped int
 	for _, it := range items {
+		if ctx.Err() != nil {
+			return id, freed, files, skipped, ctx.Err()
+		}
 		if !it.Selected {
 			continue
 		}
 		if _, err := os.Stat(it.Path); os.IsNotExist(err) {
+			skipped++
 			continue
 		}
 
@@ -83,6 +89,7 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 			// fallback to copy+delete if cross-device or file is locked
 			if err := copyAndDelete(it.Path, qPath); err != nil {
 				moved = false
+				slog.Warn("quarantine: failed to move file", "path", it.Path, "error", err)
 			}
 		}
 
@@ -94,25 +101,19 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 			})
 			freed += it.Size
 			files++
+		} else {
+			skipped++
 		}
 	}
 	manifest.TotalSize = freed
 	manifest.Files = files
 
 	manifestPath := filepath.Join(qDir, "manifest.json")
-	mf, err := os.Create(manifestPath)
-	if err != nil {
-		return "", 0, 0, fmt.Errorf("create manifest: %w", err)
-	}
-	defer mf.Close()
-
-	enc := json.NewEncoder(mf)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(manifest); err != nil {
-		return "", 0, 0, fmt.Errorf("encode manifest: %w", err)
+	if err := writeManifest(manifestPath, &manifest); err != nil {
+		return "", 0, 0, 0, fmt.Errorf("write manifest: %w", err)
 	}
 
-	return id, freed, files, nil
+	return id, freed, files, skipped, nil
 }
 
 // Restore восстанавливает файлы из карантина по ID.
@@ -142,6 +143,11 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 
 	for _, it := range manifest.Items {
 		if _, err := os.Stat(it.Quarantined); os.IsNotExist(err) {
+			continue
+		}
+		if !strings.HasPrefix(strings.ToLower(filepath.Clean(it.Quarantined)), strings.ToLower(filepath.Clean(qDir))) {
+			slog.Warn("restore: quarantined path outside expected dir, skipping", "path", it.Quarantined)
+			remaining = append(remaining, it)
 			continue
 		}
 		if !isAllowedRestorePath(it.Original) {
@@ -177,15 +183,8 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 
 	if len(remaining) > 0 {
 		manifest.Items = remaining
-		mf2, err := os.Create(manifestPath)
-		if err != nil {
+		if err := writeManifest(manifestPath, &manifest); err != nil {
 			return restored, skipped, fmt.Errorf("update manifest: %w", err)
-		}
-		defer mf2.Close()
-		enc := json.NewEncoder(mf2)
-		enc.SetIndent("", "  ")
-		if err := enc.Encode(manifest); err != nil {
-			slog.Warn("restore: failed to update manifest", "path", manifestPath, "error", err)
 		}
 	} else {
 		if err := os.RemoveAll(qDir); err != nil {
@@ -421,11 +420,13 @@ func GetLast() (string, error) {
 }
 
 func validateID(id string) error {
-	clean := filepath.Clean(id)
-	if filepath.IsAbs(clean) {
+	if id == "" {
 		return fmt.Errorf("invalid restore id")
 	}
-	if clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
+	for _, r := range id {
+		if (r >= '0' && r <= '9') || r == '-' {
+			continue
+		}
 		return fmt.Errorf("invalid restore id")
 	}
 	return nil
@@ -467,6 +468,26 @@ func isAllowedRestorePath(path string) bool {
 		return true
 	}
 	return false
+}
+
+func writeManifest(path string, manifest *types.Manifest) error {
+	tmp := path + ".tmp"
+	f, err := os.Create(tmp)
+	if err != nil {
+		return fmt.Errorf("create temp manifest: %w", err)
+	}
+	enc := json.NewEncoder(f)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(manifest); err != nil {
+		f.Close()
+		os.Remove(tmp)
+		return fmt.Errorf("encode manifest: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		os.Remove(tmp)
+		return fmt.Errorf("close temp manifest: %w", err)
+	}
+	return os.Rename(tmp, path)
 }
 
 func uniquePath(dir, name string) string {

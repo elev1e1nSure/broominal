@@ -67,4 +67,5 @@ type CleanResult struct {
 	RestoreID string `json:"restore_id"`
 	Freed     int64  `json:"freed"`
 	Files     int    `json:"files"`
+	Skipped   int    `json:"skipped"`
 }
