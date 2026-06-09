@@ -291,6 +291,23 @@ func List() ([]string, error) {
 // Cleanup removes quarantine entries older than maxAgeDays.
 // Returns number of deleted quarantines and total freed bytes.
 func Cleanup(maxAgeDays int) (int, int64, error) {
+	cutoff := time.Now().AddDate(0, 0, -maxAgeDays)
+	return cleanupQuarantines(func(createdAt time.Time) bool {
+		return createdAt.IsZero() || createdAt.Before(cutoff)
+	})
+}
+
+// CleanupAll removes all quarantine entries regardless of age.
+// Returns number of deleted quarantines and total freed bytes.
+func CleanupAll() (int, int64, error) {
+	return cleanupQuarantines(func(createdAt time.Time) bool {
+		return true
+	})
+}
+
+// cleanupQuarantines removes quarantine entries based on a predicate function.
+// The predicate receives the creation time of a quarantine and returns true if it should be deleted.
+func cleanupQuarantines(shouldDelete func(time.Time) bool) (int, int64, error) {
 	qDir := BaseDir()
 	entries, err := os.ReadDir(qDir)
 	if err != nil {
@@ -300,7 +317,6 @@ func Cleanup(maxAgeDays int) (int, int64, error) {
 		return 0, 0, err
 	}
 
-	cutoff := time.Now().AddDate(0, 0, -maxAgeDays)
 	var deleted int
 	var freed int64
 	var errs []error
@@ -330,7 +346,7 @@ func Cleanup(maxAgeDays int) (int, int64, error) {
 			_ = mf.Close()
 		}
 
-		if createdAt.IsZero() || createdAt.Before(cutoff) {
+		if shouldDelete(createdAt) {
 			var size int64
 			_ = filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
 				if err != nil || d.IsDir() {
@@ -353,57 +369,6 @@ func Cleanup(maxAgeDays int) (int, int64, error) {
 
 	if len(errs) > 0 {
 		slog.Warn("quarantine cleanup: some directories could not be removed", "errors", len(errs))
-	}
-	return deleted, freed, nil
-}
-
-// CleanupAll removes all quarantine entries regardless of age.
-// Returns number of deleted quarantines and total freed bytes.
-func CleanupAll() (int, int64, error) {
-	qDir := BaseDir()
-	entries, err := os.ReadDir(qDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return 0, 0, nil
-		}
-		return 0, 0, err
-	}
-
-	var deleted int
-	var freed int64
-	var errs []error
-
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
-		}
-		id := e.Name()
-		if err := validateID(id); err != nil {
-			continue
-		}
-		dirPath := filepath.Join(qDir, id)
-
-		var size int64
-		_ = filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
-			if err != nil || d.IsDir() {
-				return nil
-			}
-			info, err := d.Info()
-			if err != nil {
-				return nil
-			}
-			size += info.Size()
-			return nil
-		})
-		if err := os.RemoveAll(dirPath); err != nil {
-			errs = append(errs, err)
-		}
-		deleted++
-		freed += size
-	}
-
-	if len(errs) > 0 {
-		slog.Warn("quarantine cleanup all: some directories could not be removed", "errors", len(errs))
 	}
 	return deleted, freed, nil
 }

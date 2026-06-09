@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/Masterminds/semver/v3"
 )
 
 const (
@@ -56,11 +58,26 @@ func CheckForUpdates(currentVersion string) (*Release, error) {
 		return nil, fmt.Errorf("failed to decode release info: %w", err)
 	}
 
-	// Normalize and compare versions (case-insensitive, trim whitespace and 'v' prefix)
-	current := strings.ToLower(strings.TrimSpace(strings.TrimPrefix(currentVersion, "v")))
-	latest := strings.ToLower(strings.TrimSpace(strings.TrimPrefix(release.TagName, "v")))
+	// Normalize and compare versions using semver
+	currentVer := strings.TrimSpace(strings.TrimPrefix(currentVersion, "v"))
+	latestVer := strings.TrimSpace(strings.TrimPrefix(release.TagName, "v"))
 
-	if current == latest || current == "dev" || current == "" {
+	// Parse versions
+	currentSemver, err := semver.NewVersion(currentVer)
+	if err != nil {
+		// If current version is not valid semver (e.g., "dev"), skip update check
+		if currentVer == "dev" || currentVer == "" {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("invalid current version: %w", err)
+	}
+
+	latestSemver, err := semver.NewVersion(latestVer)
+	if err != nil {
+		return nil, fmt.Errorf("invalid latest version: %w", err)
+	}
+
+	if currentSemver.GreaterThanOrEqual(latestSemver) {
 		return nil, nil // No update available
 	}
 

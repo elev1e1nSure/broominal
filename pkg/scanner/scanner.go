@@ -24,11 +24,6 @@ var browserCachePaths = []string{
 	`AppData\Local\Mozilla\Firefox\Profiles`,
 }
 
-var logPatterns = []string{
-	`*.log`,
-	`AppData\Local\Temp\*.log`,
-}
-
 const maxScanFiles = 50000
 
 func ScanWithConfig(ctx context.Context, cfg *config.Config) (*types.ScanResult, error) {
@@ -348,19 +343,6 @@ func mergeItems(cats map[string]*types.CategorySummary, name string, risk types.
 	}
 }
 
-// IsSystemFile проверяет, не является ли файл системным или скрытым
-func IsSystemFile(path string) bool {
-	ptr, err := syscall.UTF16PtrFromString(path)
-	if err != nil {
-		return false
-	}
-	attrs, err := syscall.GetFileAttributes(ptr)
-	if err != nil {
-		return false
-	}
-	return attrs&syscall.FILE_ATTRIBUTE_SYSTEM != 0
-}
-
 func scanThumbnails(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	root := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "Windows", "Explorer")
 	matches, err := filepath.Glob(filepath.Join(root, "thumbcache_*.db"))
@@ -392,20 +374,32 @@ func scanMessengerCache(ctx context.Context, cfg *config.Config) ([]types.Item, 
 	discordRoot := filepath.Join(os.Getenv("APPDATA"), "discord")
 	for _, sub := range []string{"Cache", "Code Cache"} {
 		path := filepath.Join(discordRoot, sub)
-		subItems, _ := scanDir(ctx, path, "messenger_cache", types.RiskSafe, nil, true, cfg)
+		subItems, err := scanDir(ctx, path, "messenger_cache", types.RiskSafe, nil, true, cfg)
+		if err != nil {
+			slog.Warn("scan: failed to scan discord cache subdirectory", "path", path, "error", err)
+		}
 		items = append(items, subItems...)
 	}
 	// Telegram Desktop
 	telePath := filepath.Join(os.Getenv("APPDATA"), "Telegram Desktop", "tdata", "user_data")
-	subItems, _ := scanDir(ctx, telePath, "messenger_cache", types.RiskSafe, nil, true, cfg)
+	subItems, err := scanDir(ctx, telePath, "messenger_cache", types.RiskSafe, nil, true, cfg)
+	if err != nil {
+		slog.Warn("scan: failed to scan telegram cache", "path", telePath, "error", err)
+	}
 	items = append(items, subItems...)
 	// Slack
 	slackPath := filepath.Join(os.Getenv("APPDATA"), "Slack", "storage", "slack-settings")
-	subItems, _ = scanDir(ctx, slackPath, "messenger_cache", types.RiskSafe, nil, true, cfg)
+	subItems, err = scanDir(ctx, slackPath, "messenger_cache", types.RiskSafe, nil, true, cfg)
+	if err != nil {
+		slog.Warn("scan: failed to scan slack cache", "path", slackPath, "error", err)
+	}
 	items = append(items, subItems...)
 	// Teams
 	teamsPath := filepath.Join(os.Getenv("APPDATA"), "Microsoft", "Teams", "Cache")
-	subItems, _ = scanDir(ctx, teamsPath, "messenger_cache", types.RiskSafe, nil, true, cfg)
+	subItems, err = scanDir(ctx, teamsPath, "messenger_cache", types.RiskSafe, nil, true, cfg)
+	if err != nil {
+		slog.Warn("scan: failed to scan teams cache", "path", teamsPath, "error", err)
+	}
 	items = append(items, subItems...)
 	return items, nil
 }
@@ -421,6 +415,7 @@ func scanSteamCache(ctx context.Context, cfg *config.Config) ([]types.Item, erro
 		path := filepath.Join(root, sub)
 		subItems, err := scanDir(ctx, path, "steam_cache", types.RiskSafe, nil, true, cfg)
 		if err != nil {
+			slog.Warn("scan: failed to scan steam cache subdirectory", "path", path, "error", err)
 		}
 		items = append(items, subItems...)
 	}
@@ -436,6 +431,7 @@ func scanCrashMemoryDumps(ctx context.Context, cfg *config.Config) ([]types.Item
 	for _, path := range paths {
 		subItems, err := scanDir(ctx, path, "crash_dumps", types.RiskReview, nil, true, cfg)
 		if err != nil {
+			slog.Warn("scan: failed to scan crash dumps path", "path", path, "error", err)
 		}
 		items = append(items, subItems...)
 	}
@@ -461,6 +457,7 @@ func scanNvidiaInstallerLeftovers(ctx context.Context, cfg *config.Config) ([]ty
 	for _, path := range paths {
 		subItems, err := scanDir(ctx, path, "nvidia_installer_leftovers", types.RiskReview, nil, true, cfg)
 		if err != nil {
+			slog.Warn("scan: failed to scan nvidia leftovers path", "path", path, "error", err)
 		}
 		items = append(items, subItems...)
 	}
@@ -474,6 +471,7 @@ func scanVSCodeCache(ctx context.Context, cfg *config.Config) ([]types.Item, err
 		path := filepath.Join(root, sub)
 		subItems, err := scanDir(ctx, path, "vscode_cache", types.RiskSafe, nil, true, cfg)
 		if err != nil {
+			slog.Warn("scan: failed to scan vscode cache subdirectory", "path", path, "error", err)
 		}
 		items = append(items, subItems...)
 	}
@@ -495,7 +493,10 @@ func scanFirefoxCache2(ctx context.Context, cfg *config.Config) ([]types.Item, e
 			continue
 		}
 		path := filepath.Join(root, e.Name(), "cache2")
-		subItems, _ := scanDir(ctx, path, "firefox_cache2", types.RiskSafe, nil, true, cfg)
+		subItems, err := scanDir(ctx, path, "firefox_cache2", types.RiskSafe, nil, true, cfg)
+		if err != nil {
+			slog.Warn("scan: failed to scan firefox cache2 profile", "path", path, "error", err)
+		}
 		items = append(items, subItems...)
 	}
 	return items, nil
