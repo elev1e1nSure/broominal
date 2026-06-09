@@ -68,11 +68,11 @@ broominal scan
 # preview what would be cleaned (dry-run)
 broominal clean --dry-run
 
-# clean safe items
+# clean safe items only
 broominal clean --safe
 
 # something went wrong? restore the last cleanup
-broominal restore latest
+broominal restore last
 ```
 
 For an interactive experience, run `broominal ui`.
@@ -108,7 +108,7 @@ Files are moved to `%LOCALAPPDATA%\broominal\quarantine\<restore-id>` with a `ma
 - **predictable** — explicit categories, risk levels, and exclusions
 - **interactive** — Bubbletea TUI for scan, preview, dry-run, and restore
 - **multilingual** — English and Russian with first-run auto-detection
-- **25+ categories** — temp, caches, logs, browser data, dev tools, and more
+- **30+ categories** — temp, caches, logs, browser data, dev tools, and more
 - **doctor** — lightweight health checks for permissions, manifests, and state
 
 ---
@@ -117,7 +117,7 @@ Files are moved to `%LOCALAPPDATA%\broominal\quarantine\<restore-id>` with a `ma
 
 ### scan
 
-Scan your system for cleanup candidates across 25+ categories.
+Scan your system for cleanup candidates across 30+ categories.
 
 ```powershell
 broominal scan
@@ -149,7 +149,7 @@ Restore a previous cleanup. Every cleanup gets a unique ID that can be used to r
 broominal restore <id>
 
 # restore the latest cleanup
-broominal restore latest
+broominal restore last
 
 # restore with overwrite if file already exists
 broominal restore <id> --force-overwrite
@@ -167,7 +167,6 @@ The TUI lets you:
 - Browse scan results by category
 - Toggle items for cleanup
 - Preview total size before cleaning
-- Run in dry-run mode to test
 - Handle restore conflicts interactively
 
 ### doctor
@@ -191,9 +190,6 @@ View and edit configuration.
 ```powershell
 # show current config
 broominal config
-
-# edit config in your default editor
-broominal config --edit
 ```
 
 Config options include:
@@ -224,7 +220,7 @@ broominal quarantine-cleanup --max-age-days 7 --force
 Generate a cleanup report from the last scan.
 
 ```powershell
-# generate report from last scan
+# generate report (runs a fresh scan)
 broominal report
 ```
 
@@ -237,14 +233,14 @@ The report is saved as JSON and includes scan results and cleanup statistics.
 You can customize broominal behavior with flags.
 
 ```powershell
-# scan with custom config path
-broominal scan --config "C:\path\to\config.json"
+# clean only safe items
+broominal clean --safe
 
-# clean with specific categories enabled
-broominal clean --categories "temp,cache,logs"
+# allow cleaning danger items
+broominal clean --danger
 
-# run in verbose mode
-broominal scan --verbose
+# preview what would be cleaned
+broominal clean --dry-run
 ```
 
 Config file (`%APPDATA%\broominal\config.json`):
@@ -276,7 +272,7 @@ pkg/
   cleaner/       quarantine move + report save pipeline
   quarantine/    move, restore, cleanup, JSON manifests
   report/        JSON report generation
-  risk/          risk classification from paths, extensions, config
+  update/        check for and install updates
   config/        JSON configuration and defaults
   doctor/        runtime health checks
   i18n/          English/Russian localization

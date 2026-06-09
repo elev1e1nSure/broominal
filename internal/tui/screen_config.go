@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
+	"github.com/elev1e1nSure/broominal/pkg/update"
 )
 
 func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
