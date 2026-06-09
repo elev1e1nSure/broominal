@@ -21,10 +21,10 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if m.doctorChecks[i].FixKey != "" {
 				msg, err := doctor.Fix(m.doctorChecks[i].FixKey)
 				if err != nil {
-					m.doctorFixResult = style.Failf("[FAIL]") + " " + err.Error()
+					m.doctorFixResult = style.Failf(i18n.T("status_fail")) + " " + err.Error()
 					return m, nil
 				}
-				m.doctorFixResult = style.Passf("[OK]") + " " + msg
+				m.doctorFixResult = style.Passf(i18n.T("status_pass")) + " " + msg
 				if m.doctorChecks[i].FixKey == "admin" {
 					return m, tea.Quit
 				}
@@ -45,11 +45,11 @@ func (m model) viewDoctor() string {
 		var marker string
 		switch c.Status {
 		case doctor.StatusPass:
-			marker = safeStyle.Render("[PASS]")
+			marker = safeStyle.Render(i18n.T("status_pass"))
 		case doctor.StatusWarn:
-			marker = reviewStyle.Render("[WARN]")
+			marker = reviewStyle.Render(i18n.T("status_warn"))
 		case doctor.StatusFail:
-			marker = dangerStyle.Render("[FAIL]")
+			marker = dangerStyle.Render(i18n.T("status_fail"))
 		}
 		body += fmt.Sprintf("  %-28s %s  %s\n", c.Name, marker, mutedStyle.Render(c.Detail))
 		if c.Status != doctor.StatusPass && c.Suggestion != "" {
@@ -61,7 +61,7 @@ func (m model) viewDoctor() string {
 	}
 	// Show quarantine stats (lazy loaded)
 	if m.doctorQuarantineStats.Name != "" {
-		body += fmt.Sprintf("  %-28s %s  %s\n", m.doctorQuarantineStats.Name, safeStyle.Render("[PASS]"), mutedStyle.Render(m.doctorQuarantineStats.Detail))
+		body += fmt.Sprintf("  %-28s %s  %s\n", m.doctorQuarantineStats.Name, safeStyle.Render(i18n.T("status_pass")), mutedStyle.Render(m.doctorQuarantineStats.Detail))
 	}
 	if m.doctorFixResult != "" {
 		body += "\n  " + m.doctorFixResult + "\n"

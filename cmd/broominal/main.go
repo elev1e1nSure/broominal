@@ -15,6 +15,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/cleaner"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
+	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/report"
 	"github.com/elev1e1nSure/broominal/pkg/scanner"
@@ -344,11 +345,11 @@ func doctorCmd() *cobra.Command {
 				var marker string
 				switch c.Status {
 				case doctor.StatusPass:
-					marker = style.Passf("[PASS]")
+					marker = style.Passf(i18n.T("status_pass"))
 				case doctor.StatusWarn:
-					marker = style.Warnf("[WARN]")
+					marker = style.Warnf(i18n.T("status_warn"))
 				case doctor.StatusFail:
-					marker = style.Failf("[FAIL]")
+					marker = style.Failf(i18n.T("status_fail"))
 					fail = true
 				}
 				fmt.Printf("%-24s %s  %s\n", style.Boldf(c.Name), marker, style.Grayf(c.Detail))
