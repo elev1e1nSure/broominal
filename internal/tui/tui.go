@@ -36,6 +36,8 @@ const (
 	ScreenRestore
 	ScreenDoctor
 	ScreenConfig
+	ScreenConfigCategories
+	ScreenConfigThresholds
 	ScreenQuarantineCleanup
 	ScreenLanguage
 )
@@ -65,8 +67,15 @@ type model struct {
 	doctorChecks []doctor.Check
 	// Config screen
 	configView string
+	configCategories []configCategoryItem
+	configCfg        *config.Config
 	// Cleanup screen
 	cleanupResult string
+}
+
+type configCategoryItem struct {
+	name     string
+	enabled  bool
 }
 
 type categoryItem struct {
@@ -232,8 +241,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					m.screen = ScreenError
 					return m, nil
 				}
-				data, _ := json.MarshalIndent(cfg, "", "  ")
-				m.configView = string(data)
+				m.configCfg = cfg
+				m.selectedIdx = 0
 				m.screen = ScreenConfig
 				return m, nil
 			case 4: // Quarantine Cleanup
@@ -512,6 +521,80 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.selectedIdx = 0
 			return m, nil
 		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
+			if m.selectedIdx > 0 {
+				m.selectedIdx--
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
+			if m.selectedIdx < 1 {
+				m.selectedIdx++
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+			switch m.selectedIdx {
+			case 0: // Categories
+				if m.configCfg != nil {
+					var items []configCategoryItem
+					for cat, enabled := range m.configCfg.EnabledCategories {
+						items = append(items, configCategoryItem{name: cat, enabled: enabled})
+					}
+					m.configCategories = items
+				}
+				m.selectedIdx = 0
+				m.screen = ScreenConfigCategories
+				return m, nil
+			case 1: // Thresholds
+				m.selectedIdx = 0
+				m.screen = ScreenConfigThresholds
+				return m, nil
+			}
+		}
+
+	case ScreenConfigCategories:
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
+			m.screen = ScreenConfig
+			m.selectedIdx = 0
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
+			if m.selectedIdx > 0 {
+				m.selectedIdx--
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
+			if m.selectedIdx < len(m.configCategories)-1 {
+				m.selectedIdx++
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys(" "))) {
+			if m.selectedIdx < len(m.configCategories) {
+				m.configCategories[m.selectedIdx].enabled = !m.configCategories[m.selectedIdx].enabled
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+			if m.configCfg != nil {
+				for _, item := range m.configCategories {
+					m.configCfg.EnabledCategories[item.name] = item.enabled
+				}
+				_ = config.Save(m.configCfg)
+			}
+			m.screen = ScreenConfig
+			m.selectedIdx = 0
+			return m, nil
+		}
+
+	case ScreenConfigThresholds:
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
+			m.screen = ScreenConfig
+			m.selectedIdx = 0
+			return m, nil
+		}
 
 	case ScreenQuarantineCleanup:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
@@ -621,6 +704,10 @@ func (m model) View() string {
 		return m.viewDoctor()
 	case ScreenConfig:
 		return m.viewConfig()
+	case ScreenConfigCategories:
+		return m.viewConfigCategories()
+	case ScreenConfigThresholds:
+		return m.viewConfigThresholds()
 	case ScreenQuarantineCleanup:
 		return m.viewQuarantineCleanup()
 	case ScreenLanguage:
@@ -912,16 +999,52 @@ func (m model) viewDoctor() string {
 }
 
 func (m model) viewConfig() string {
+	items := []string{
+		i18n.T("config_categories"),
+		i18n.T("config_thresholds"),
+	}
 	var body string
-	body += titleStyle.Render(i18n.T("config")) + "\n"
-	for _, line := range strings.Split(m.configView, "\n") {
-		body += mutedStyle.Render("  " + line) + "\n"
+	body += titleStyle.Render(i18n.T("config")) + "\n\n"
+	for i, item := range items {
+		if i == m.selectedIdx {
+			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + "\n"
+		} else {
+			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
+		}
 	}
 	body += "\n" + footer(
+		keyHint("Enter", i18n.T("select")),
 		keyHint("M", i18n.T("main_menu")),
-		keyHint("Q/Esc", i18n.T("back")),
 	)
 	return body
+}
+
+func (m model) viewConfigCategories() string {
+	var body string
+	body += titleStyle.Render(i18n.T("config_categories")) + "\n\n"
+	for i, c := range m.configCategories {
+		marker := "[ ]"
+		if c.enabled {
+			marker = safeStyle.Render("[x]")
+		}
+		if i == m.selectedIdx {
+			body += selectedStyle.Render(fmt.Sprintf("> %-30s %s", c.name, marker)) + "\n"
+		} else {
+			body += mutedStyle.Render(fmt.Sprintf("  %-30s %s", c.name, marker)) + "\n"
+		}
+	}
+	body += "\n" + footer(
+		keyHint("Space", i18n.T("toggle")),
+		keyHint("Enter", i18n.T("save")),
+		keyHint("M", i18n.T("back")),
+	)
+	return body
+}
+
+func (m model) viewConfigThresholds() string {
+	return titleStyle.Render(i18n.T("config_thresholds")) + "\n\n" +
+		mutedStyle.Render("  [threshold editor placeholder]") + "\n\n" +
+		footer(keyHint("M", i18n.T("back")))
 }
 
 func (m model) viewQuarantineCleanup() string {

@@ -22,7 +22,7 @@ func BaseDir() string {
 
 // Save сохраняет отчёт в JSON и выводит summary в stdout
 func Save(result *types.ScanResult, cleaned *types.CleanResult) (string, error) {
-	if err := os.MkdirAll(BaseDir(), 0755); err != nil {
+	if err := os.MkdirAll(BaseDir(), 0700); err != nil {
 		return "", fmt.Errorf("create reports dir: %w", err)
 	}
 

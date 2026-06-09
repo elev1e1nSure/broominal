@@ -65,7 +65,7 @@ func checkAdmin() Check {
 func checkDir(path, name string) Check {
 	if _, err := os.Stat(path); err != nil {
 		// try to create
-		if err := os.MkdirAll(path, 0755); err != nil {
+		if err := os.MkdirAll(path, 0700); err != nil {
 			return Check{
 				Name:   name + " directory",
 				Status: StatusFail,

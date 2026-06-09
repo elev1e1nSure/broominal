@@ -121,15 +121,19 @@ func Load() (*Config, error) {
 
 // Save writes the config to disk.
 func Save(cfg *Config) error {
-	if err := os.MkdirAll(Dir(), 0755); err != nil {
+	if err := os.MkdirAll(Dir(), 0700); err != nil {
 		return fmt.Errorf("create config dir: %w", err)
 	}
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return fmt.Errorf("encode config: %w", err)
 	}
-	if err := os.WriteFile(Path(), data, 0644); err != nil {
-		return fmt.Errorf("write config: %w", err)
+	tmp := Path() + ".tmp"
+	if err := os.WriteFile(tmp, data, 0644); err != nil {
+		return fmt.Errorf("write temp config: %w", err)
+	}
+	if err := os.Rename(tmp, Path()); err != nil {
+		return fmt.Errorf("rename config: %w", err)
 	}
 	return nil
 }

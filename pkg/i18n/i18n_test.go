@@ -23,12 +23,12 @@ func TestSetLanguage(t *testing.T) {
 
 func TestT(t *testing.T) {
 	SetLanguage("en")
-	if got := T("main_menu"); got != "Broominal — Main Menu" {
+	if got := T("main_menu"); got != "Main Menu" {
 		t.Errorf("en T(main_menu) = %q", got)
 	}
 
 	SetLanguage("ru")
-	if got := T("main_menu"); got != "Broominal — Главное меню" {
+	if got := T("main_menu"); got != "Меню" {
 		t.Errorf("ru T(main_menu) = %q", got)
 	}
 

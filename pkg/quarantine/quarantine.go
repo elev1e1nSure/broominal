@@ -42,7 +42,7 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 	}
 
 	qDir := filepath.Join(BaseDir(), id)
-	if err := os.MkdirAll(qDir, 0755); err != nil {
+	if err := os.MkdirAll(qDir, 0700); err != nil {
 		return "", 0, 0, fmt.Errorf("create quarantine dir: %w", err)
 	}
 
@@ -123,7 +123,7 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 			continue
 		}
 		// ensure original dir exists
-		if err := os.MkdirAll(filepath.Dir(it.Original), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(it.Original), 0700); err != nil {
 			remaining = append(remaining, it)
 			continue
 		}

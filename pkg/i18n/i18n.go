@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -63,7 +64,9 @@ var translations = map[string]map[string]string{
 		"hint_restore":                  "Enter: restore  Q/Esc: back",
 		"restored_n_skipped":            "Restored %d files (%d skipped)",
 		"doctor":                        "Doctor — Health Checks",
-		"config":                        "Current Config",
+		"config":                        "Settings",
+		"config_categories":             "Enabled Categories",
+		"config_thresholds":             "Thresholds",
 		"quarantine_cleanup":            "Quarantine Cleanup",
 		"cleanup_desc":                  "Deletes quarantines older than max age days.",
 		"hint_cleanup":                  "T: toggle dry-run  Enter: proceed  Q/Esc: back",
@@ -141,7 +144,9 @@ var translations = map[string]map[string]string{
 		"hint_restore":                  "Enter: восстановить  Q/Esc: назад",
 		"restored_n_skipped":            "Восстановлено %d файлов (%d пропущено)",
 		"doctor":                        "Доктор — Проверка здоровья",
-		"config":                        "Текущая конфигурация",
+		"config":                        "Настройки",
+		"config_categories":             "Категории",
+		"config_thresholds":             "Пороги",
 		"quarantine_cleanup":            "Очистка карантина",
 		"cleanup_desc":                  "Удаляет карантин старше max age дней.",
 		"hint_cleanup":                  "T: тестовый режим  Enter: запустить  Q/Esc: назад",
@@ -166,9 +171,14 @@ var translations = map[string]map[string]string{
 	},
 }
 
-var currentLang = "en"
+var (
+	currentLang   = "en"
+	currentLangMu sync.RWMutex
+)
 
 func SetLanguage(lang string) {
+	currentLangMu.Lock()
+	defer currentLangMu.Unlock()
 	if _, ok := translations[lang]; ok {
 		currentLang = lang
 	} else {
@@ -177,10 +187,14 @@ func SetLanguage(lang string) {
 }
 
 func CurrentLanguage() string {
+	currentLangMu.RLock()
+	defer currentLangMu.RUnlock()
 	return currentLang
 }
 
 func T(key string) string {
+	currentLangMu.RLock()
+	defer currentLangMu.RUnlock()
 	if tr, ok := translations[currentLang][key]; ok {
 		return tr
 	}
