@@ -200,9 +200,9 @@ func (m model) viewConfigPresets() string {
 		style    lipgloss.Style
 		expected int
 	}{
-		{"Safe", "Кэш браузеров, темпы, системный мусор", config.PresetSafe, safeStyle, 24},
-		{"Normal", "Safe + мессенджеры", config.PresetNormal, reviewStyle, 25},
-		{"Hard", "Всё включено - максимальная очистка", config.PresetHard, dangerStyle, 28},
+		{"Safe", "Кэш браузеров, темпы, системный мусор", config.PresetSafe, safeStyle, 25},
+		{"Normal", "Safe + мессенджеры", config.PresetNormal, reviewStyle, 26},
+		{"Hard", "Всё включено - максимальная очистка", config.PresetHard, dangerStyle, 29},
 	}
 
 	currentPreset := -1
