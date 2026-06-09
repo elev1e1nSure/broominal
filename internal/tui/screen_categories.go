@@ -139,7 +139,7 @@ func (m model) viewCategories() string {
 	body += m.appTitle(i18n.T("categories")) + "\n\n"
 
 	// Build aligned header using same widths as rows
-	catW, sizeW, filesW, riskW, selW := 26, 10, 7, 12, 5
+	catW, sizeW, filesW, riskW, selW := 28, 12, 8, 10, 8
 	head := lipgloss.NewStyle().Width(catW).Render(i18n.T("category")) + " " +
 		lipgloss.NewStyle().Width(sizeW).Align(lipgloss.Right).Render(i18n.T("size")) + " " +
 		lipgloss.NewStyle().Width(filesW).Align(lipgloss.Right).Render(i18n.T("files")) + " " +
