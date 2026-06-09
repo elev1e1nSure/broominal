@@ -22,6 +22,7 @@ Broominal is a **Windows cleanup tool** that never permanently deletes your file
 - **Transparent**: plain JSON reports and manifests
 - **Reversible**: one command to restore your last cleanup
 - **Interactive**: beautiful TUI with category selection and previews
+- **Multilingual**: English and Russian with auto-detection
 
 ---
 
@@ -29,14 +30,15 @@ Broominal is a **Windows cleanup tool** that never permanently deletes your file
 
 | Feature | Description |
 |--------|-------------|
-| 🧹 **Smart Scan** | Temp, Downloads, Browser Cache, Recycle Bin, Logs, Old Installers, Large Old Files, Thumbnails, DirectX Shader Cache, Delivery Optimization, Windows Error Reports, Discord, Steam, Windows Update, Crash Dumps, Nvidia, Telegram |
+| 🧹 **Smart Scan** | Temp, Downloads, Browser Cache, Recycle Bin, Logs, Old Installers, Large Old Files, Thumbnails, DirectX Shader Cache, Delivery Optimization, Windows Error Reports, Discord Cache, Steam Cache, Windows Update, Crash & Memory Dumps, Nvidia Installer Leftovers, Telegram Desktop Cache |
 | 🛡️ **Risk Levels** | `safe` / `review` / `danger` — system paths and `.sys`/`.dll` files are never touched |
-| 🔄 **Undoable** | Every cleanup gets a restore ID; `restore last` brings files back |
+| 🔄 **Undoable** | Every cleanup gets a restore ID; `restore <id>` brings files back |
 | ⚡ **Dry-Run** | `--dry-run` on CLI and `T` key in TUI — see what would be freed without touching files |
-| ⚙️ **Config-Driven** | JSON config for thresholds, exclusions, category toggles, and risk overrides |
+| ⚙️ **Config-Driven** | JSON config for thresholds, exclusions, category toggles, risk overrides, and language |
 | 🩺 **Doctor** | Built-in health checks for permissions, manifests, and disk space |
 | 🗑️ **Quarantine Cleanup** | Auto-delete old quarantines with `--dry-run` preview |
-| 🖥️ **TUI** | Interactive Bubbletea dashboard with per-category file inspection |
+| 🖥️ **TUI** | Interactive Bubbletea interface with Main Menu, per-category inspection, restore picker, doctor, config viewer, language selector |
+| 🌐 **i18n** | English / Russian. Auto-detects language by IP on first launch |
 
 ---
 
@@ -57,7 +59,7 @@ Or download the latest `.exe` from [Releases](../../releases).
 # Scan safe zones
 broominal scan
 
-# Launch interactive TUI
+# Launch interactive TUI (Main Menu → Scan & Clean / Restore / Doctor / Config / Cleanup / Language)
 broominal ui
 
 # Clean safe items only
@@ -66,11 +68,11 @@ broominal clean --safe
 # Simulate cleanup
 broominal clean --dry-run
 
-# Restore last cleanup
-broominal restore last
+# Restore a specific cleanup
+broominal restore <id>
 
 # Restore with overwrite
-broominal restore last --force-overwrite
+broominal restore <id> --force-overwrite
 
 # Run health checks
 broominal doctor
@@ -90,14 +92,17 @@ broominal quarantine-cleanup --force
 ```
 cmd/broominal/      CLI entrypoint (Cobra)
 pkg/
-  scanner/          File discovery by category
+  scanner/          File discovery by category (18+ scan targets)
   quarantine/       Move / Restore / Cleanup with JSON manifests
   report/           JSON report generation
   risk/             Risk classification (path, extension, config)
-  config/           JSON configuration (thresholds, exclusions, overrides)
+  config/           JSON configuration (thresholds, exclusions, overrides, language)
+  doctor/           Health checks (admin, dirs, manifests, stats)
+  i18n/             Localization (EN/RU, auto-detect, T-key lookups)
+  style/            ANSI color helpers for CLI output
   types/            Shared domain types
 internal/
-  tui/              Bubbletea interactive interface
+  tui/              Bubbletea interactive interface (Main Menu → multiple screens)
 ```
 
 ## License

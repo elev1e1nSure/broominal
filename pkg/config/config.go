@@ -14,6 +14,8 @@ type Config struct {
 	OldInstallerMonths   int               `json:"old_installer_months"`
 	LargeFileMinSizeMB   int               `json:"large_file_min_size_mb"`
 	LargeFileMonths      int               `json:"large_file_months"`
+	OldTempDays          int               `json:"old_temp_days"`
+	OldExtensionDays     int               `json:"old_extension_days"`
 	Exclusions           []string          `json:"exclusions"`
 	AutoRiskOverrides    map[string]string `json:"auto_risk_overrides"`
 	QuarantineMaxAgeDays int               `json:"quarantine_max_age_days"`
@@ -37,14 +39,27 @@ func Default() *Config {
 			"Windows Error Reports":   true,
 			"Discord Cache":           true,
 			"Steam Cache":             true,
+			"VSCode Cache":            true,
+			"Edge Code Cache":         true,
+			"Chrome Code Cache":       true,
+			"Firefox Cache2":          true,
+			"Old Temp Files":          true,
+			"Empty Folders":           true,
+			"npm Cache":               true,
+			"pip Cache":               true,
 			"Windows Update Cache":    false,
 			"Crash & Memory Dumps":    false,
 			"Nvidia Installer Leftovers": false,
 			"Telegram Desktop Cache":  false,
+			"Old .tmp Files":          false,
+			"Old .log Files":          false,
+			"Old .bak Files":          false,
 		},
 		OldInstallerMonths: 6,
 		LargeFileMinSizeMB: 100,
 		LargeFileMonths:    6,
+		OldTempDays:        7,
+		OldExtensionDays:   30,
 		Exclusions:         []string{},
 		AutoRiskOverrides: map[string]string{
 			".git":          "review",

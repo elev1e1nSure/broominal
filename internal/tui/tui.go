@@ -358,6 +358,13 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 			return m, tea.Quit
 		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			m.cleanResult = nil
+			m.restoreResult = ""
+			return m, nil
+		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("r"))) {
 			if m.dryRun || m.cleanResult == nil {
 				return m, nil
@@ -418,6 +425,11 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "c"))) {
 			m.screen = ScreenResult
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
 			return m, nil
 		}
 
@@ -548,6 +560,12 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 			return m, tea.Quit
 		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			m.err = nil
+			return m, nil
+		}
 	}
 	return m, nil
 }
@@ -590,131 +608,185 @@ func (m model) View() string {
 
 // Styles
 var (
-	titleStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#60a5fa"))
-	safeStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#4ade80"))
-	reviewStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#fbbf24"))
-	dangerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#f87171"))
-	mutedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#9ca3af"))
-	selectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("#374151"))
+	// Palette
+	cAccent   = lipgloss.Color("#60a5fa")
+	cSafe     = lipgloss.Color("#4ade80")
+	cWarn     = lipgloss.Color("#fbbf24")
+	cDanger   = lipgloss.Color("#f87171")
+	cMuted    = lipgloss.Color("#9ca3af")
+	cFg       = lipgloss.Color("#e5e7eb")
+	cBgBox    = lipgloss.Color("#1f2937")
+	cBgSel    = lipgloss.Color("#2563eb")
+	cBorder   = lipgloss.Color("#374151")
+	cHeaderBg = lipgloss.Color("#111827")
+
+	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(cAccent).Padding(0, 1)
+	headerStyle   = lipgloss.NewStyle().Bold(true).Foreground(cFg).Background(cHeaderBg).Padding(0, 2).MarginBottom(1)
+	boxStyle      = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(cBorder).Background(cBgBox).Padding(1, 2)
+	activeItemStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ffffff")).Background(cBgSel).Padding(0, 1)
+	mutedItemStyle  = lipgloss.NewStyle().Foreground(cMuted).Padding(0, 1)
+	safeStyle     = lipgloss.NewStyle().Bold(true).Foreground(cSafe)
+	reviewStyle   = lipgloss.NewStyle().Bold(true).Foreground(cWarn)
+	dangerStyle   = lipgloss.NewStyle().Bold(true).Foreground(cDanger)
+	mutedStyle    = lipgloss.NewStyle().Foreground(cMuted)
+	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(cWarn)
+	valueStyle    = lipgloss.NewStyle().Bold(true).Foreground(cFg)
+	statLabelStyle= lipgloss.NewStyle().Foreground(cMuted)
+	footerStyle   = lipgloss.NewStyle().Foreground(cMuted).MarginTop(1)
+	separatorStyle= lipgloss.NewStyle().Foreground(cBorder)
 )
+
+func keyHint(k, desc string) string {
+	return keyStyle.Render("["+k+"]") + " " + desc
+}
+
+func footer(hints ...string) string {
+	return footerStyle.Render(strings.Join(hints, "  "))
+}
 
 func (m model) viewDashboard() string {
 	if m.result == nil {
-		return i18n.T("scanning") + "\n"
+		return boxStyle.Render(m.spinner.View()+" "+i18n.T("scanning")) + "\n"
 	}
-	return fmt.Sprintf(
-		"%s\n\n%s\n%s\n%s\n%s\n\n%s\n",
-		titleStyle.Render(" "+i18n.T("dashboard")+" "),
-		fmt.Sprintf("  %s:  %s", i18n.T("total_found"), scanner.FormatSize(m.result.TotalSize)),
-		fmt.Sprintf("  %s %s:       %s", safeStyle.Render("●"), i18n.T("safe"), scanner.FormatSize(m.result.SafeSize)),
-		fmt.Sprintf("  %s %s:     %s", reviewStyle.Render("●"), i18n.T("review"), scanner.FormatSize(m.result.ReviewSize)),
-		fmt.Sprintf("  %s %s:     %s", dangerStyle.Render("●"), i18n.T("danger"), scanner.FormatSize(m.result.DangerSize)),
-		mutedStyle.Render("  "+i18n.T("hint_continue")),
-	)
+	return boxStyle.Render(
+		headerStyle.Render(i18n.T("dashboard")) + "\n" +
+		fmt.Sprintf("  %s  %s\n", statLabelStyle.Render(i18n.T("total_found")+":"), valueStyle.Render(scanner.FormatSize(m.result.TotalSize))) +
+		separatorStyle.Render("  "+strings.Repeat("─", 36)) + "\n" +
+		fmt.Sprintf("  %s  %s\n", safeStyle.Render("● "+i18n.T("safe")), valueStyle.Render(scanner.FormatSize(m.result.SafeSize))) +
+		fmt.Sprintf("  %s  %s\n", reviewStyle.Render("● "+i18n.T("review")), valueStyle.Render(scanner.FormatSize(m.result.ReviewSize))) +
+		fmt.Sprintf("  %s  %s", dangerStyle.Render("● "+i18n.T("danger")), valueStyle.Render(scanner.FormatSize(m.result.DangerSize))),
+	) + "\n" + footer(keyHint("Enter", i18n.T("continue")))
 }
 
 func (m model) viewCategories() string {
-	var s string
-	s += titleStyle.Render(" "+i18n.T("categories")+" ") + "\n\n"
-	s += fmt.Sprintf("  %-20s %10s %8s %8s  %s\n", i18n.T("category"), i18n.T("size"), i18n.T("files"), i18n.T("risk"), i18n.T("select"))
-	s += "  " + strings.Repeat("-", 60) + "\n"
+	var body string
+	body += headerStyle.Render(i18n.T("categories")) + "\n"
+	head := fmt.Sprintf("  %-18s %10s %7s %8s  %s", i18n.T("category"), i18n.T("size"), i18n.T("files"), i18n.T("risk"), i18n.T("select"))
+	body += lipgloss.NewStyle().Foreground(cMuted).Render(head) + "\n"
+	body += separatorStyle.Render("  "+strings.Repeat("─", 56)) + "\n"
 	for i, c := range m.categories {
 		marker := "[ ]"
 		if c.selected {
-			marker = "[x]"
+			marker = safeStyle.Render("[x]")
 		}
-		style := mutedStyle
+		var rowStyle lipgloss.Style
 		if i == m.selectedIdx {
-			style = selectedStyle
+			rowStyle = activeItemStyle
+		} else {
+			rowStyle = mutedItemStyle
 		}
 		riskStr := string(c.cat.Risk)
-		riskColor := "#9ca3af"
+		var riskCol lipgloss.Color
 		switch c.cat.Risk {
 		case types.RiskSafe:
-			riskColor = "#4ade80"
+			riskCol = cSafe
 		case types.RiskReview:
-			riskColor = "#fbbf24"
+			riskCol = cWarn
 		case types.RiskDanger:
-			riskColor = "#f87171"
+			riskCol = cDanger
+		default:
+			riskCol = cMuted
 		}
-		riskRendered := lipgloss.NewStyle().Width(8).Foreground(lipgloss.Color(riskColor)).Render(riskStr)
-		line := fmt.Sprintf("  %-20s %10s %8d %s  %s",
+		riskRendered := lipgloss.NewStyle().Width(8).Bold(true).Foreground(riskCol).Render(riskStr)
+		line := fmt.Sprintf("%-18s %10s %7d %s  %s",
 			c.cat.Category,
 			scanner.FormatSize(c.cat.Size),
 			c.cat.Files,
 			riskRendered,
 			marker,
 		)
-		s += style.Render(line) + "\n"
+		body += rowStyle.Render(line) + "\n"
 	}
-	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_categories"))
-	return s
+	return boxStyle.Render(body) + "\n" + footer(
+		keyHint("Space", i18n.T("toggle")),
+		keyHint("Enter", i18n.T("confirm")),
+		keyHint("D", i18n.T("details")),
+		keyHint("Q", i18n.T("quit")),
+	)
 }
 
 func (m model) viewDetails() string {
-	return titleStyle.Render(fmt.Sprintf(" %s: %s ", i18n.T("details"), m.categories[m.detailCat].cat.Category)) + "\n\n" +
-		m.detailList.View() + "\n" +
-		mutedStyle.Render("  "+i18n.T("hint_back"))
+	head := headerStyle.Render(fmt.Sprintf("%s: %s", i18n.T("details"), m.categories[m.detailCat].cat.Category))
+	return boxStyle.Render(head+"\n"+m.detailList.View()) + "\n" + footer(keyHint("Q/Esc", i18n.T("back")))
 }
 
 func (m model) viewConfirm() string {
-	dryLabel := ""
+	head := headerStyle.Render(i18n.T("confirm_cleanup"))
 	if m.dryRun {
-		dryLabel = reviewStyle.Render(" " + i18n.T("dry_run") + " ")
+		head += " " + reviewStyle.Render(i18n.T("dry_run"))
 	}
-	return titleStyle.Render(" "+i18n.T("confirm_cleanup")+" ") + dryLabel + "\n\n" +
-		m.confirmMsg + "\n\n" +
-		mutedStyle.Render("  "+i18n.T("hint_confirm"))
+	body := head + "\n\n" + m.confirmMsg
+	return boxStyle.Render(body) + "\n" + footer(
+		keyHint("Enter", i18n.T("proceed")),
+		keyHint("T", i18n.T("toggle_dry_run")),
+		keyHint("Esc", i18n.T("back")),
+	)
 }
 
 func (m model) viewResult() string {
 	if m.cleanResult == nil {
-		return titleStyle.Render(" "+i18n.T("restored")+" ") + "\n\n" +
-			mutedStyle.Render("  "+i18n.T("hint_restored")) + "\n\n" +
-			mutedStyle.Render("  Q: "+i18n.T("quit"))
+		return boxStyle.Render(
+			headerStyle.Render(i18n.T("restored")) + "\n\n" +
+				safeStyle.Render("  ✓ "+i18n.T("hint_restored")),
+		) + "\n" + footer(keyHint("M", i18n.T("main_menu")), keyHint("Q", i18n.T("quit")))
 	}
+	var body string
 	if m.dryRun {
-		return titleStyle.Render(" "+i18n.T("dry_run_complete")+" ") + "\n\n" +
-			fmt.Sprintf("  %s: %s\n", i18n.T("would_free"), scanner.FormatSize(m.cleanResult.Freed)) +
-			fmt.Sprintf("  %s:      %d\n\n", i18n.T("files"), m.cleanResult.Files) +
-			mutedStyle.Render("  Q: "+i18n.T("quit"))
+		body = headerStyle.Render(i18n.T("dry_run_complete")) + "\n\n" +
+			fmt.Sprintf("  %s  %s\n", statLabelStyle.Render(i18n.T("would_free")+":"), valueStyle.Render(scanner.FormatSize(m.cleanResult.Freed))) +
+			fmt.Sprintf("  %s  %s", statLabelStyle.Render(i18n.T("files")+":"), valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files)))
+	} else {
+		body = headerStyle.Render(i18n.T("cleanup_complete")) + "\n\n" +
+			fmt.Sprintf("  %s  %s\n", statLabelStyle.Render(i18n.T("freed")+":"), safeStyle.Render(scanner.FormatSize(m.cleanResult.Freed))) +
+			fmt.Sprintf("  %s  %s\n", statLabelStyle.Render(i18n.T("files")+":"), valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files))) +
+			fmt.Sprintf("  %s  %s", statLabelStyle.Render(i18n.T("restore_id")+":"), mutedStyle.Render(m.cleanResult.RestoreID))
 	}
-	return titleStyle.Render(" "+i18n.T("cleanup_complete")+" ") + "\n\n" +
-		fmt.Sprintf("  %s:     %s\n", i18n.T("freed"), scanner.FormatSize(m.cleanResult.Freed)) +
-		fmt.Sprintf("  %s:     %d\n", i18n.T("files"), m.cleanResult.Files) +
-		fmt.Sprintf("  %s:   %s\n\n", i18n.T("restore_id"), m.cleanResult.RestoreID) +
-		mutedStyle.Render("  "+i18n.T("hint_result"))
+	return boxStyle.Render(body) + "\n" + footer(
+		keyHint("R", i18n.T("restore_last")),
+		keyHint("M", i18n.T("main_menu")),
+		keyHint("Q", i18n.T("quit")),
+	)
 }
 
 func (m model) viewRestoreConflict() string {
-	var s string
-	s += titleStyle.Render(" "+i18n.T("restore_conflicts")+" ") + "\n\n"
-	s += dangerStyle.Render(fmt.Sprintf("  %d %s:", len(m.conflicts), i18n.T("files_already_exist"))) + "\n"
+	var body string
+	body += headerStyle.Render(i18n.T("restore_conflicts")) + "\n\n"
+	body += dangerStyle.Render(fmt.Sprintf("  ⚠ %d %s", len(m.conflicts), i18n.T("files_already_exist"))) + "\n"
 	for _, p := range m.conflicts {
-		s += mutedStyle.Render(fmt.Sprintf("    %s", p)) + "\n"
+		body += mutedStyle.Render("    → " + p) + "\n"
 	}
-	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_conflicts"))
-	return s
+	return boxStyle.Render(body) + "\n" + footer(
+		keyHint("O", i18n.T("overwrite_all")),
+		keyHint("S", i18n.T("skip_all")),
+		keyHint("C/Esc", i18n.T("cancel")),
+	)
 }
 
 func (m model) viewWarnRecycleBin() string {
 	cat := m.categories[m.detailCat].cat
-	return titleStyle.Render(" "+i18n.T("warning")+" ") + "\n\n" +
-		dangerStyle.Render(fmt.Sprintf("  "+i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
-		mutedStyle.Render("  "+i18n.T("hint_recycle_warn")) + "\n\n" +
-		mutedStyle.Render("  "+i18n.T("hint_recycle_continue"))
+	body := headerStyle.Render(i18n.T("warning")) + "\n\n" +
+		dangerStyle.Render(fmt.Sprintf("  ⚠ "+i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
+		mutedStyle.Render("  "+i18n.T("hint_recycle_warn"))
+	return boxStyle.Render(body) + "\n" + footer(
+		keyHint("Enter", i18n.T("continue_anyway")),
+		keyHint("Esc", i18n.T("back")),
+	)
 }
 
 func (m model) viewCleaning() string {
-	return titleStyle.Render(" "+i18n.T("cleaning")+" ") + "\n\n" +
-		fmt.Sprintf("  %s %s\n", m.spinner.View(), i18n.T("moving_files")) +
-		mutedStyle.Render("  "+i18n.T("please_wait"))
+	body := headerStyle.Render(i18n.T("cleaning")) + "\n\n"
+	body += fmt.Sprintf("  %s  %s\n", m.spinner.View(), mutedStyle.Render(i18n.T("moving_files")))
+	body += mutedStyle.Render("  " + i18n.T("please_wait"))
+	return boxStyle.Render(body)
 }
 
 func (m model) viewError() string {
-	return titleStyle.Render(" "+i18n.T("error")+" ") + "\n\n" +
-		dangerStyle.Render(fmt.Sprintf("  %v", m.err)) + "\n\n" +
-		mutedStyle.Render("  "+i18n.T("hint_error_quit"))
+	body := headerStyle.Render(i18n.T("error")) + "\n\n"
+	body += dangerStyle.Render(fmt.Sprintf("  ✗ %v", m.err))
+	return boxStyle.Render(body) + "\n" + footer(
+		keyHint("M", i18n.T("main_menu")),
+		keyHint("Q/Esc", i18n.T("quit")),
+	)
 }
 
 func buildDetailList(items []types.Item, w, h int) list.Model {
@@ -769,6 +841,7 @@ func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
 }
 
 func (m model) viewMainMenu() string {
+	icons := []string{"🔍", "↩", "🩺", "⚙", "🗑", "🌐"}
 	items := []string{
 		i18n.T("menu_scan_clean"),
 		i18n.T("menu_restore"),
@@ -777,107 +850,118 @@ func (m model) viewMainMenu() string {
 		i18n.T("menu_cleanup"),
 		i18n.T("menu_settings"),
 	}
-	var s string
-	s += titleStyle.Render(" "+i18n.T("main_menu")+" ") + "\n\n"
+	var body string
+	body += lipgloss.NewStyle().Bold(true).Foreground(cAccent).MarginBottom(1).Render("  ┌─ "+i18n.T("main_menu")+" ─┐") + "\n"
 	for i, item := range items {
-		style := mutedStyle
-		prefix := "  "
+		var line string
 		if i == m.selectedIdx {
-			style = selectedStyle
-			prefix = "> "
+			line = activeItemStyle.Render(fmt.Sprintf(" → %s %s", icons[i], item))
+		} else {
+			line = mutedItemStyle.Render(fmt.Sprintf("   %s %s", icons[i], item))
 		}
-		s += style.Render(fmt.Sprintf("%s%s", prefix, item)) + "\n"
+		body += line + "\n"
 	}
-	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_select"))
-	return s
+	return boxStyle.Render(body) + "\n" + footer(keyHint("Enter", i18n.T("select")), keyHint("Q", i18n.T("quit")))
 }
 
 func (m model) viewRestore() string {
-	var s string
-	s += titleStyle.Render(" "+i18n.T("restore")+" ") + "\n\n"
+	var body string
+	body += headerStyle.Render(i18n.T("restore")) + "\n\n"
 	if len(m.restoreIDs) == 0 {
-		s += mutedStyle.Render("  "+i18n.T("no_quarantines")) + "\n"
+		body += mutedStyle.Render("  "+i18n.T("no_quarantines")) + "\n"
 	} else {
 		for i, id := range m.restoreIDs {
-			style := mutedStyle
-			prefix := "  "
+			var line string
 			if i == m.restoreIdx {
-				style = selectedStyle
-				prefix = "> "
+				line = activeItemStyle.Render(fmt.Sprintf(" → %s", id))
+			} else {
+				line = mutedItemStyle.Render(fmt.Sprintf("   %s", id))
 			}
-			s += style.Render(fmt.Sprintf("%s%s", prefix, id)) + "\n"
+			body += line + "\n"
 		}
 	}
 	if m.restoreResult != "" {
-		s += "\n" + safeStyle.Render("  "+m.restoreResult) + "\n"
+		body += "\n" + safeStyle.Render("  ✓ "+m.restoreResult) + "\n"
 	}
-	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_restore"))
-	return s
+	return boxStyle.Render(body) + "\n" + footer(
+		keyHint("Enter", i18n.T("restore")),
+		keyHint("M", i18n.T("main_menu")),
+		keyHint("Q/Esc", i18n.T("back")),
+	)
 }
 
 func (m model) viewDoctor() string {
-	var s string
-	s += titleStyle.Render(" "+i18n.T("doctor")+" ") + "\n\n"
+	var body string
+	body += headerStyle.Render(i18n.T("doctor")) + "\n\n"
 	for _, c := range m.doctorChecks {
 		var marker string
 		switch c.Status {
 		case doctor.StatusPass:
-			marker = safeStyle.Render("[PASS]")
+			marker = safeStyle.Render("✓ PASS")
 		case doctor.StatusWarn:
-			marker = reviewStyle.Render("[WARN]")
+			marker = reviewStyle.Render("⚠ WARN")
 		case doctor.StatusFail:
-			marker = dangerStyle.Render("[FAIL]")
+			marker = dangerStyle.Render("✗ FAIL")
 		}
-		s += fmt.Sprintf("  %-28s %s  %s\n", c.Name, marker, mutedStyle.Render(c.Detail))
+		body += fmt.Sprintf("  %-26s %s  %s\n", c.Name, marker, mutedStyle.Render(c.Detail))
 	}
-	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_back"))
-	return s
+	return boxStyle.Render(body) + "\n" + footer(
+		keyHint("M", i18n.T("main_menu")),
+		keyHint("Q/Esc", i18n.T("back")),
+	)
 }
 
 func (m model) viewConfig() string {
-	var s string
-	s += titleStyle.Render(" "+i18n.T("config")+" ") + "\n\n"
+	var body string
+	body += headerStyle.Render(i18n.T("config")) + "\n"
 	for _, line := range strings.Split(m.configView, "\n") {
-		s += mutedStyle.Render("  "+line) + "\n"
+		body += lipgloss.NewStyle().Foreground(cMuted).Render("  "+line) + "\n"
 	}
-	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_back"))
-	return s
+	return boxStyle.Render(body) + "\n" + footer(
+		keyHint("M", i18n.T("main_menu")),
+		keyHint("Q/Esc", i18n.T("back")),
+	)
 }
 
 func (m model) viewQuarantineCleanup() string {
-	var s string
-	dryLabel := ""
+	head := headerStyle.Render(i18n.T("quarantine_cleanup"))
 	if m.dryRun {
-		dryLabel = reviewStyle.Render(" " + i18n.T("dry_run") + " ")
+		head += " " + reviewStyle.Render(i18n.T("dry_run"))
 	}
-	s += titleStyle.Render(" "+i18n.T("quarantine_cleanup")+" ") + dryLabel + "\n\n"
-	s += mutedStyle.Render("  "+i18n.T("cleanup_desc")) + "\n\n"
-	s += mutedStyle.Render("  "+i18n.T("hint_cleanup"))
-	return s
+	body := head + "\n\n" + mutedStyle.Render("  "+i18n.T("cleanup_desc"))
+	return boxStyle.Render(body) + "\n" + footer(
+		keyHint("T", i18n.T("toggle_dry_run")),
+		keyHint("Enter", i18n.T("proceed")),
+		keyHint("M", i18n.T("main_menu")),
+		keyHint("Q/Esc", i18n.T("back")),
+	)
 }
 
 func (m model) viewLanguage() string {
 	langs := i18n.SupportedLanguages()
 	labels := map[string]string{"en": i18n.T("english"), "ru": i18n.T("russian")}
-	var s string
-	s += titleStyle.Render(" "+i18n.T("select_language")+" ") + "\n\n"
+	var body string
+	body += headerStyle.Render(i18n.T("select_language")) + "\n\n"
 	for i, lang := range langs {
-		style := mutedStyle
-		prefix := "  "
-		if i == m.selectedIdx {
-			style = selectedStyle
-			prefix = "> "
-		}
+		var line string
 		label := labels[lang]
 		if label == "" {
 			label = lang
 		}
 		marker := ""
 		if lang == i18n.CurrentLanguage() {
-			marker = safeStyle.Render(" [✓]")
+			marker = safeStyle.Render(" ✓")
 		}
-		s += style.Render(fmt.Sprintf("%s%s%s", prefix, label, marker)) + "\n"
+		if i == m.selectedIdx {
+			line = activeItemStyle.Render(fmt.Sprintf(" → %s%s", label, marker))
+		} else {
+			line = mutedItemStyle.Render(fmt.Sprintf("   %s%s", label, marker))
+		}
+		body += line + "\n"
 	}
-	s += "\n" + mutedStyle.Render("  "+i18n.T("hint_language"))
-	return s
+	return boxStyle.Render(body) + "\n" + footer(
+		keyHint("Enter", i18n.T("select")),
+		keyHint("M", i18n.T("main_menu")),
+		keyHint("Q/Esc", i18n.T("back")),
+	)
 }

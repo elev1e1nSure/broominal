@@ -166,6 +166,74 @@ func ScanWithConfig(cfg *config.Config) (*types.ScanResult, error) {
 		mergeItems(categories, "Telegram Desktop Cache", types.RiskReview, items)
 	}
 
+	// VSCode Cache
+	if cfg.IsCategoryEnabled("VSCode Cache") {
+		items, _ := scanVSCodeCache(cfg)
+		mergeItems(categories, "VSCode Cache", types.RiskSafe, items)
+	}
+
+	// Edge Code Cache
+	if cfg.IsCategoryEnabled("Edge Code Cache") {
+		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "Edge", "User Data", "Default", "Code Cache")
+		items, _ := scanDir(path, "edge_code_cache", types.RiskSafe, nil, true, cfg)
+		mergeItems(categories, "Edge Code Cache", types.RiskSafe, items)
+	}
+
+	// Chrome Code Cache
+	if cfg.IsCategoryEnabled("Chrome Code Cache") {
+		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Google", "Chrome", "User Data", "Default", "Code Cache")
+		items, _ := scanDir(path, "chrome_code_cache", types.RiskSafe, nil, true, cfg)
+		mergeItems(categories, "Chrome Code Cache", types.RiskSafe, items)
+	}
+
+	// Firefox Cache2
+	if cfg.IsCategoryEnabled("Firefox Cache2") {
+		items, _ := scanFirefoxCache2(cfg)
+		mergeItems(categories, "Firefox Cache2", types.RiskSafe, items)
+	}
+
+	// Old Temp Files
+	if cfg.IsCategoryEnabled("Old Temp Files") {
+		items, _ := scanOldTempFiles(cfg)
+		mergeItems(categories, "Old Temp Files", types.RiskSafe, items)
+	}
+
+	// Old .tmp Files
+	if cfg.IsCategoryEnabled("Old .tmp Files") {
+		items, _ := scanOldExtensions(".tmp", cfg)
+		mergeItems(categories, "Old .tmp Files", types.RiskReview, items)
+	}
+
+	// Old .log Files
+	if cfg.IsCategoryEnabled("Old .log Files") {
+		items, _ := scanOldExtensions(".log", cfg)
+		mergeItems(categories, "Old .log Files", types.RiskReview, items)
+	}
+
+	// Old .bak Files
+	if cfg.IsCategoryEnabled("Old .bak Files") {
+		items, _ := scanOldExtensions(".bak", cfg)
+		mergeItems(categories, "Old .bak Files", types.RiskReview, items)
+	}
+
+	// Empty Folders
+	if cfg.IsCategoryEnabled("Empty Folders") {
+		items, _ := scanEmptyFolders(cfg)
+		mergeItems(categories, "Empty Folders", types.RiskSafe, items)
+	}
+
+	// npm Cache
+	if cfg.IsCategoryEnabled("npm Cache") {
+		items, _ := scanNpmCache(cfg)
+		mergeItems(categories, "npm Cache", types.RiskSafe, items)
+	}
+
+	// pip Cache
+	if cfg.IsCategoryEnabled("pip Cache") {
+		items, _ := scanPipCache(cfg)
+		mergeItems(categories, "pip Cache", types.RiskSafe, items)
+	}
+
 	for _, cat := range categories {
 		result.Categories = append(result.Categories, *cat)
 		result.TotalSize += cat.Size
@@ -531,4 +599,165 @@ func scanNvidiaInstallerLeftovers(cfg *config.Config) ([]types.Item, error) {
 		items = append(items, subItems...)
 	}
 	return items, nil
+}
+
+func scanVSCodeCache(cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	root := filepath.Join(os.Getenv("APPDATA"), "Code")
+	for _, sub := range []string{"Cache", "Code Cache"} {
+		path := filepath.Join(root, sub)
+		subItems, _ := scanDir(path, "vscode_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanFirefoxCache2(cfg *config.Config) ([]types.Item, error) {
+	root := filepath.Join(os.Getenv("LOCALAPPDATA"), "Mozilla", "Firefox", "Profiles")
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return nil, err
+	}
+	var items []types.Item
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		path := filepath.Join(root, e.Name(), "cache2")
+		subItems, _ := scanDir(path, "firefox_cache2", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanOldTempFiles(cfg *config.Config) ([]types.Item, error) {
+	days := cfg.OldTempDays
+	if days <= 0 {
+		days = 7
+	}
+	cutoff := time.Now().AddDate(0, 0, -days)
+	var items []types.Item
+	paths := []string{
+		os.Getenv("TEMP"),
+		filepath.Join(os.Getenv("WINDIR"), "Temp"),
+	}
+	for _, root := range paths {
+		if root == "" {
+			continue
+		}
+		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return nil
+			}
+			if isExcluded(path, cfg) {
+				return nil
+			}
+			info, err := d.Info()
+			if err != nil {
+				return nil
+			}
+			if info.ModTime().Before(cutoff) {
+				items = append(items, types.Item{
+					Category: "old_temp_files",
+					Path:     path,
+					Size:     info.Size(),
+					Risk:     types.RiskSafe,
+				})
+			}
+			return nil
+		})
+		_ = err
+	}
+	return items, nil
+}
+
+func scanOldExtensions(ext string, cfg *config.Config) ([]types.Item, error) {
+	days := cfg.OldExtensionDays
+	if days <= 0 {
+		days = 30
+	}
+	cutoff := time.Now().AddDate(0, 0, -days)
+	var items []types.Item
+	paths := []string{
+		os.Getenv("TEMP"),
+		filepath.Join(os.Getenv("USERPROFILE"), "Downloads"),
+		os.Getenv("USERPROFILE"),
+	}
+	for _, root := range paths {
+		if root == "" {
+			continue
+		}
+		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return nil
+			}
+			if isExcluded(path, cfg) {
+				return nil
+			}
+			if !strings.EqualFold(filepath.Ext(path), ext) {
+				return nil
+			}
+			info, err := d.Info()
+			if err != nil {
+				return nil
+			}
+			if info.ModTime().Before(cutoff) {
+				items = append(items, types.Item{
+					Category: "old_" + strings.TrimPrefix(ext, ".") + "_files",
+					Path:     path,
+					Size:     info.Size(),
+					Risk:     types.RiskReview,
+				})
+			}
+			return nil
+		})
+		_ = err
+	}
+	return items, nil
+}
+
+func scanEmptyFolders(cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	paths := []string{
+		os.Getenv("TEMP"),
+		filepath.Join(os.Getenv("USERPROFILE"), "Downloads"),
+	}
+	for _, root := range paths {
+		if root == "" {
+			continue
+		}
+		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if err != nil || !d.IsDir() || path == root {
+				return nil
+			}
+			if isExcluded(path, cfg) {
+				return nil
+			}
+			entries, err := os.ReadDir(path)
+			if err != nil {
+				return nil
+			}
+			if len(entries) == 0 {
+				items = append(items, types.Item{
+					Category: "empty_folders",
+					Path:     path,
+					Size:     0,
+					Risk:     types.RiskSafe,
+				})
+			}
+			return nil
+		})
+		_ = err
+	}
+	return items, nil
+}
+
+func scanNpmCache(cfg *config.Config) ([]types.Item, error) {
+	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "npm-cache")
+	return scanDir(path, "npm_cache", types.RiskSafe, nil, true, cfg)
+}
+
+func scanPipCache(cfg *config.Config) ([]types.Item, error) {
+	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "pip", "cache")
+	return scanDir(path, "pip_cache", types.RiskSafe, nil, true, cfg)
 }
