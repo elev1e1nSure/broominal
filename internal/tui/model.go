@@ -1,18 +1,15 @@
 package tui
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	lipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 	"github.com/elev1e1nSure/broominal/pkg/update"
-	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
 // Screen — текущий экран
@@ -23,7 +20,7 @@ const (
 	ScreenDashboard
 	ScreenCategories
 	ScreenWarnRecycleBin
-	ScreenDetails
+	ScreenCategoryInfo
 	ScreenConfirm
 	ScreenCleaning
 	ScreenResult
@@ -55,7 +52,6 @@ type model struct {
 	categories            []categoryItem
 	selectedIdx           int
 	detailCat             int
-	detailList            list.Model
 	confirmMsg            string
 	cleanResult           *types.CleanResult
 	spinner               spinner.Model
@@ -131,13 +127,3 @@ func initialModel() model {
 	}
 }
 
-type detailItem struct {
-	item types.Item
-}
-
-func (d detailItem) FilterValue() string { return d.item.Path }
-
-func (d detailItem) Title() string { return d.item.Path }
-func (d detailItem) Description() string {
-	return fmt.Sprintf("%s  %s", util.FormatSize(d.item.Size), d.item.Risk)
-}

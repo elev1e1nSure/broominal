@@ -58,7 +58,7 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) appTitle(subtitle string) string {
-	return titleStyle.Render(fmt.Sprintf("broominal [%s] %s", m.version, subtitle))
+	return titleStyle.Render(fmt.Sprintf("broominal [%s] | %s", m.version, subtitle))
 }
 
 type scanDoneMsg struct {
@@ -89,10 +89,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		if m.screen == ScreenDetails && m.height > 4 {
-			m.detailList.SetWidth(msg.Width)
-			m.detailList.SetHeight(msg.Height - 4)
-		}
 		return m, nil
 
 	case scanDoneMsg:
@@ -161,12 +157,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleKey(msg)
 	}
 
-	if m.screen == ScreenDetails {
-		var cmd tea.Cmd
-		m.detailList, cmd = m.detailList.Update(msg)
-		return m, cmd
-	}
-
 	return m, nil
 }
 
@@ -213,8 +203,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleKeyCategories(msg)
 	case ScreenWarnRecycleBin:
 		return m.handleKeyWarnRecycleBin(msg)
-	case ScreenDetails:
-		return m.handleKeyDetails(msg)
+	case ScreenCategoryInfo:
+		return m.handleKeyCategoryInfo(msg)
 	case ScreenConfirm:
 		return m.handleKeyConfirm(msg)
 	case ScreenResult:
@@ -257,8 +247,8 @@ func (m model) View() string {
 		return m.viewCategories()
 	case ScreenWarnRecycleBin:
 		return m.viewWarnRecycleBin()
-	case ScreenDetails:
-		return m.viewDetails()
+	case ScreenCategoryInfo:
+		return m.viewCategoryInfo()
 	case ScreenConfirm:
 		return m.viewConfirm()
 	case ScreenCleaning:

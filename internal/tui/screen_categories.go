@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	lipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/cleaner"
@@ -52,8 +51,7 @@ func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				m.screen = ScreenWarnRecycleBin
 				return m, nil
 			}
-			m.detailList = buildDetailList(cat.Items, m.width, m.height)
-			m.screen = ScreenDetails
+			m.screen = ScreenCategoryInfo
 		}
 		return m, nil
 	}
@@ -77,14 +75,13 @@ func (m model) handleKeyWarnRecycleBin(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
-		m.detailList = buildDetailList(m.categories[m.detailCat].cat.Items, m.width, m.height)
-		m.screen = ScreenDetails
+		m.screen = ScreenCategoryInfo
 		return m, nil
 	}
 	return m, nil
 }
 
-func (m model) handleKeyDetails(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m model) handleKeyCategoryInfo(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 		m.screen = ScreenCategories
 		m.selectedIdx = m.detailCat
@@ -95,10 +92,7 @@ func (m model) handleKeyDetails(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.selectedIdx = 0
 		return m, nil
 	}
-	// list handles its own keys
-	var cmd tea.Cmd
-	m.detailList, cmd = m.detailList.Update(msg)
-	return m, cmd
+	return m, nil
 }
 
 func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -204,9 +198,32 @@ func (m model) viewWarnRecycleBin() string {
 		)
 }
 
-func (m model) viewDetails() string {
-	head := m.appTitle(fmt.Sprintf("%s: %s", i18n.T("details"), m.categories[m.detailCat].cat.Category))
-	return head + "\n\n" + m.detailList.View() + "\n" + footer(keyHint("Esc", i18n.T("back")))
+func (m model) viewCategoryInfo() string {
+	if m.detailCat >= len(m.categories) {
+		return ""
+	}
+	cat := m.categories[m.detailCat].cat
+	desc := i18n.CategoryDescription(cat.Category)
+
+	var body string
+	body += m.appTitle(i18n.T("details")) + "\n\n"
+
+	// Category name and basic stats
+	body += "  " + selectedStyle.Render(i18n.CategoryName(cat.Category)) + "\n"
+	body += "  " + mutedStyle.Render(fmt.Sprintf("  %s: %s  |  %s: %d  |  %s: %s",
+		i18n.T("size"), util.FormatSize(cat.Size),
+		i18n.T("files"), cat.Files,
+		i18n.T("risk"), i18n.T("risk_"+strings.ToLower(string(cat.Risk))))) + "\n\n"
+
+	// Description box
+	if desc != "" {
+		body += "  " + mutedStyle.Render(desc) + "\n\n"
+	}
+
+	body += footer(
+		keyHint("Esc", i18n.T("back")),
+	)
+	return body
 }
 
 func (m model) viewConfirm() string {
@@ -234,25 +251,4 @@ func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
 		"  Will free: %s\n  Files:     %d\n  Safe:      %s\n  Review:    %s\n",
 		util.FormatSize(safe+review), files, util.FormatSize(safe), util.FormatSize(review),
 	)
-}
-
-func buildDetailList(items []types.Item, w, h int) list.Model {
-	var entries []list.Item
-	for _, it := range items {
-		entries = append(entries, detailItem{it})
-	}
-	listHeight := h - 4
-	if listHeight < 4 {
-		listHeight = 4
-	}
-	listWidth := w
-	if listWidth < 20 {
-		listWidth = 20
-	}
-	l := list.New(entries, list.NewDefaultDelegate(), listWidth, listHeight)
-	l.Title = "Files"
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
-	l.DisableQuitKeybindings()
-	return l
 }

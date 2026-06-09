@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
@@ -87,11 +88,17 @@ type cacheEntry struct {
 	Timestamp int64
 }
 
-var checkCache = make(map[string]cacheEntry)
+var (
+	checkCache   = make(map[string]cacheEntry)
+	checkCacheMu sync.RWMutex
+)
 
 func checkDirCached(path, name string) Check {
 	// Check cache first
-	if entry, ok := checkCache[path]; ok {
+	checkCacheMu.RLock()
+	entry, ok := checkCache[path]
+	checkCacheMu.RUnlock()
+	if ok {
 		// Cache valid for 24 hours
 		if nowUnix()-entry.Timestamp < 86400 {
 			return Check{
@@ -107,11 +114,13 @@ func checkDirCached(path, name string) Check {
 
 	// Cache successful results
 	if result.Status == StatusPass {
+		checkCacheMu.Lock()
 		checkCache[path] = cacheEntry{
 			Path:      path,
 			Name:      name,
 			Timestamp: nowUnix(),
 		}
+		checkCacheMu.Unlock()
 	}
 
 	return result

@@ -297,17 +297,6 @@ func TestBuildConfirmMessage(t *testing.T) {
 	}
 }
 
-func TestBuildDetailList(t *testing.T) {
-	items := []types.Item{
-		{Path: `C:\a.txt`, Size: 100, Risk: types.RiskSafe},
-		{Path: `C:\b.txt`, Size: 200, Risk: types.RiskReview},
-	}
-	l := buildDetailList(items, 80, 20)
-	if l.Title != "Files" {
-		t.Errorf("list title = %q, want 'Files'", l.Title)
-	}
-}
-
 func TestViewMainMenu(t *testing.T) {
 	m := initialModel()
 	out := m.View()
