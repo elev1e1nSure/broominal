@@ -2,6 +2,9 @@ package tui
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
@@ -41,6 +44,11 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	s := msg.String()
 	if m.updateProgress == i18n.T("update_complete_restart") && (s == "enter" || s == "y") {
+		exePath, _ := os.Executable()
+		if strings.HasSuffix(exePath, ".old") {
+			exePath = strings.TrimSuffix(exePath, ".old")
+		}
+		_ = exec.Command(exePath, "ui").Start()
 		return m, tea.Quit
 	}
 	if m.updateError != nil && (s == "esc" || s == "q" || s == "m") {
