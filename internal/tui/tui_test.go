@@ -8,6 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
+	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
@@ -121,8 +122,8 @@ func TestHandleKeyConfirmTransition(t *testing.T) {
 	if mm.screen != ScreenConfirm {
 		t.Errorf("screen = %d, want Confirm", mm.screen)
 	}
-	if !strings.Contains(mm.confirmMsg, "Will free") {
-		t.Error("confirmMsg should contain 'Will free'")
+	if !strings.Contains(mm.confirmMsg, i18n.T("will_free")) {
+		t.Errorf("confirmMsg should contain %q", i18n.T("will_free"))
 	}
 }
 
@@ -283,17 +284,17 @@ func TestBuildConfirmMessage(t *testing.T) {
 	}
 	res := &types.ScanResult{}
 	msg := buildConfirmMessage(cats, res)
-	if !strings.Contains(msg, "Will free") {
-		t.Error("should contain 'Will free'")
+	if !strings.Contains(msg, i18n.T("will_free")) {
+		t.Errorf("should contain %q", i18n.T("will_free"))
 	}
-	if !strings.Contains(msg, "Files") {
-		t.Error("should contain 'Files'")
+	if !strings.Contains(msg, i18n.T("files")) {
+		t.Errorf("should contain %q", i18n.T("files"))
 	}
-	if !strings.Contains(msg, "Safe") {
-		t.Error("should contain 'Safe'")
+	if !strings.Contains(msg, i18n.T("risk_safe")) {
+		t.Errorf("should contain %q", i18n.T("risk_safe"))
 	}
-	if !strings.Contains(msg, "Review") {
-		t.Error("should contain 'Review'")
+	if !strings.Contains(msg, i18n.T("risk_review")) {
+		t.Errorf("should contain %q", i18n.T("risk_review"))
 	}
 }
 

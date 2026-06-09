@@ -262,7 +262,10 @@ func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
 		}
 	}
 	return fmt.Sprintf(
-		"  Will free: %s\n  Files:     %d\n  Safe:      %s\n  Review:    %s\n",
-		util.FormatSize(safe+review), files, util.FormatSize(safe), util.FormatSize(review),
+		"  %s: %s\n  %s:     %d\n  %s:      %s\n  %s:    %s\n",
+		i18n.T("will_free"), util.FormatSize(safe+review),
+		i18n.T("files"), files,
+		i18n.T("risk_safe"), util.FormatSize(safe),
+		i18n.T("risk_review"), util.FormatSize(review),
 	)
 }

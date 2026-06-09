@@ -39,10 +39,10 @@ func (m model) viewDashboard() string {
 
 	// Risk summary
 	body := m.appTitle(i18n.T("dashboard")) + "\n\n" +
-		fmt.Sprintf("  Total found: %s\n", valueStyle.Render(util.FormatSize(m.result.TotalSize))) +
-		fmt.Sprintf("  %s Safe:       %s\n", safeStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.SafeSize))) +
-		fmt.Sprintf("  %s Review:     %s\n", reviewStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.ReviewSize))) +
-		fmt.Sprintf("  %s Danger:     %s\n", dangerStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.DangerSize))) +
+		fmt.Sprintf("  %s: %s\n", i18n.T("total_found"), valueStyle.Render(util.FormatSize(m.result.TotalSize))) +
+		fmt.Sprintf("  %s %s:       %s\n", safeStyle.Render("●"), i18n.T("safe"), valueStyle.Render(util.FormatSize(m.result.SafeSize))) +
+		fmt.Sprintf("  %s %s:       %s\n", reviewStyle.Render("●"), i18n.T("review"), valueStyle.Render(util.FormatSize(m.result.ReviewSize))) +
+		fmt.Sprintf("  %s %s:       %s\n", dangerStyle.Render("●"), i18n.T("danger"), valueStyle.Render(util.FormatSize(m.result.DangerSize))) +
 		"\n"
 
 	// Category list sorted by size desc
