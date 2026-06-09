@@ -404,10 +404,7 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case ScreenResult:
-		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
-			return m, tea.Quit
-		}
-		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
 			m.screen = ScreenMainMenu
 			m.selectedIdx = 0
 			m.cleanResult = nil
@@ -746,10 +743,7 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case ScreenError:
-		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
-			return m, tea.Quit
-		}
-		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
 			m.screen = ScreenMainMenu
 			m.selectedIdx = 0
 			m.err = nil
