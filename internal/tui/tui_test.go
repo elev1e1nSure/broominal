@@ -277,16 +277,16 @@ func TestUpdateCleanDoneMsgErrorShowsScreenError(t *testing.T) {
 	}
 }
 
-func TestHandleKeyErrorScreenQuit(t *testing.T) {
+func TestHandleKeyErrorReturnsToMainMenu(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenError
 	newM, cmd := m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 	mm := newM.(model)
-	if mm.screen != ScreenError {
-		t.Errorf("screen should remain ScreenError, got %d", mm.screen)
+	if mm.screen != ScreenMainMenu {
+		t.Errorf("screen should be MainMenu, got %d", mm.screen)
 	}
-	if cmd == nil {
-		t.Error("expected tea.Quit command")
+	if cmd != nil {
+		t.Error("expected nil command")
 	}
 }
 

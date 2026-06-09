@@ -7,11 +7,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/elev1e1nSure/broominal/internal/tui"
+	"github.com/elev1e1nSure/broominal/pkg/cleaner"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
-	"github.com/elev1e1nSure/broominal/pkg/style"
 	"github.com/elev1e1nSure/broominal/pkg/report"
+	"github.com/elev1e1nSure/broominal/pkg/style"
 	"github.com/elev1e1nSure/broominal/pkg/util"
 	"github.com/elev1e1nSure/broominal/pkg/scanner"
 	"github.com/elev1e1nSure/broominal/pkg/types"
@@ -175,21 +176,16 @@ func cleanCmd() *cobra.Command {
 					selected = append(selected, it)
 				}
 			}
-			id, freed, files, err := quarantine.Move(selected, dryRun)
+			cleanResult, err := cleaner.Run(selected, dryRun, res)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Clean failed: %v\n", err)
 				os.Exit(1)
 			}
 			if dryRun {
-				fmt.Printf("%s Would free %s in %d files\n", style.Yellowf("[dry-run]"), style.Cyanf(util.FormatSize(freed)), files)
+				fmt.Printf("%s Would free %s in %d files\n", style.Yellowf("[dry-run]"), style.Cyanf(util.FormatSize(cleanResult.Freed)), cleanResult.Files)
 				return
 			}
-			_, _ = report.Save(res, &types.CleanResult{
-				RestoreID: id,
-				Freed:     freed,
-				Files:     files,
-			})
-			fmt.Printf("%s %s in %s files. Restore ID: %s\n", style.Greenf("Cleaned"), style.Cyanf(util.FormatSize(freed)), style.Boldf("%d", files), style.Yellowf(id))
+			fmt.Printf("%s %s in %s files. Restore ID: %s\n", style.Greenf("Cleaned"), style.Cyanf(util.FormatSize(cleanResult.Freed)), style.Boldf("%d", cleanResult.Files), style.Yellowf(cleanResult.RestoreID))
 		},
 	}
 	cmd.Flags().BoolVar(&safeOnly, "safe", false, "Only clean safe items")

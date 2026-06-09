@@ -9,11 +9,11 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/elev1e1nSure/broominal/pkg/cleaner"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
-	"github.com/elev1e1nSure/broominal/pkg/report"
 	"github.com/elev1e1nSure/broominal/pkg/scanner"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 	"github.com/elev1e1nSure/broominal/pkg/util"
@@ -387,17 +387,9 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 						}
 					}
 				}
-				id, freed, files, err := quarantine.Move(selected, m.dryRun)
+				res, err := cleaner.Run(selected, m.dryRun, m.result)
 				if err != nil {
 					return cleanDoneMsg{nil, err}
-				}
-				res := &types.CleanResult{
-					RestoreID: id,
-					Freed:     freed,
-					Files:     files,
-				}
-				if !m.dryRun {
-					_, _ = report.Save(m.result, res)
 				}
 				return cleanDoneMsg{res, nil}
 			})
@@ -822,7 +814,7 @@ func (m model) viewDashboard() string {
 		fmt.Sprintf("  %s Safe:       %s\n", safeStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.SafeSize))) +
 		fmt.Sprintf("  %s Review:     %s\n", reviewStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.ReviewSize))) +
 		fmt.Sprintf("  %s Danger:     %s\n\n", dangerStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.DangerSize))) +
-		footer(keyHint("Enter", i18n.T("continue")), keyHint("M", i18n.T("main_menu")))
+		footer(keyHint("Enter", i18n.T("continue")), keyHint("Esc", i18n.T("back")))
 }
 
 func (m model) viewCategories() string {
@@ -868,14 +860,14 @@ func (m model) viewCategories() string {
 		keyHint("Space", i18n.T("toggle")),
 		keyHint("Enter", i18n.T("confirm")),
 		keyHint("D", i18n.T("details")),
-		keyHint("M", i18n.T("main_menu")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
 
 func (m model) viewDetails() string {
 	head := titleStyle.Render(fmt.Sprintf("%s: %s", i18n.T("details"), m.categories[m.detailCat].cat.Category))
-	return head + "\n\n" + m.detailList.View() + "\n" + footer(keyHint("Esc", i18n.T("back")), keyHint("M", i18n.T("main_menu")))
+	return head + "\n\n" + m.detailList.View() + "\n" + footer(keyHint("Esc", i18n.T("back")))
 }
 
 func (m model) viewConfirm() string {
@@ -886,7 +878,6 @@ func (m model) viewConfirm() string {
 	return head + "\n\n" + m.confirmMsg + "\n\n" + footer(
 		keyHint("Enter", i18n.T("proceed")),
 		keyHint("T", i18n.T("toggle_dry_run")),
-		keyHint("M", i18n.T("main_menu")),
 		keyHint("Esc", i18n.T("back")),
 	)
 }
@@ -895,7 +886,7 @@ func (m model) viewResult() string {
 	if m.cleanResult == nil {
 		return titleStyle.Render(i18n.T("restored")) + "\n\n" +
 			safeStyle.Render("  [OK] "+i18n.T("hint_restored")) + "\n\n" +
-			footer(keyHint("M", i18n.T("main_menu")))
+			footer(keyHint("Esc", i18n.T("back")))
 	}
 	var body string
 	if m.dryRun {
@@ -910,7 +901,7 @@ func (m model) viewResult() string {
 	}
 	body += footer(
 		keyHint("R", i18n.T("restore_last")),
-		keyHint("M", i18n.T("main_menu")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
@@ -937,7 +928,6 @@ func (m model) viewWarnRecycleBin() string {
 		mutedStyle.Render("  "+i18n.T("hint_recycle_warn")) + "\n\n" +
 		footer(
 			keyHint("Enter", i18n.T("continue_anyway")),
-			keyHint("M", i18n.T("main_menu")),
 			keyHint("Esc", i18n.T("back")),
 		)
 }
@@ -952,8 +942,7 @@ func (m model) viewError() string {
 	return titleStyle.Render(i18n.T("error")) + "\n\n" +
 		dangerStyle.Render(fmt.Sprintf("  %v", m.err)) + "\n\n" +
 		footer(
-			keyHint("M", i18n.T("main_menu")),
-			keyHint("Esc", i18n.T("quit")),
+			keyHint("Esc", i18n.T("back")),
 		)
 }
 
@@ -1049,7 +1038,7 @@ func (m model) viewRestore() string {
 	}
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("restore")),
-		keyHint("M", i18n.T("main_menu")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
@@ -1070,7 +1059,7 @@ func (m model) viewDoctor() string {
 		body += fmt.Sprintf("  %-28s %s  %s\n", c.Name, marker, mutedStyle.Render(c.Detail))
 	}
 	body += "\n" + footer(
-		keyHint("M", i18n.T("main_menu")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
@@ -1091,7 +1080,7 @@ func (m model) viewConfig() string {
 	}
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("select")),
-		keyHint("M", i18n.T("main_menu")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
@@ -1113,7 +1102,7 @@ func (m model) viewConfigCategories() string {
 	body += "\n" + footer(
 		keyHint("Space", i18n.T("toggle")),
 		keyHint("Enter", i18n.T("save")),
-		keyHint("M", i18n.T("back")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
@@ -1133,7 +1122,7 @@ func (m model) viewConfigThresholds() string {
 	body += "\n" + footer(
 		keyHint("+/-", i18n.T("change")),
 		keyHint("Enter", i18n.T("save")),
-		keyHint("M", i18n.T("back")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
@@ -1156,7 +1145,7 @@ func (m model) viewQuarantineCleanup() string {
 			keyHint("A", i18n.T("toggle_mode")),
 			keyHint("T", i18n.T("toggle_dry_run")),
 			keyHint("Enter", i18n.T("proceed")),
-			keyHint("M", i18n.T("main_menu")),
+			keyHint("Esc", i18n.T("back")),
 		)
 }
 
@@ -1182,8 +1171,7 @@ func (m model) viewLanguage() string {
 	}
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("select")),
-		keyHint("M", i18n.T("main_menu")),
-		keyHint("Q/Esc", i18n.T("back")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
