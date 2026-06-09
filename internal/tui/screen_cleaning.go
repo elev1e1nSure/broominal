@@ -5,8 +5,8 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
+	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
@@ -125,7 +125,7 @@ func (m model) viewRestoreConflict() string {
 	body += titleStyle.Render(i18n.T("restore_conflicts")) + "\n\n"
 	body += dangerStyle.Render(fmt.Sprintf("  %d %s:", len(m.conflicts), i18n.T("files_already_exist"))) + "\n"
 	for _, p := range m.conflicts {
-		body += mutedStyle.Render("    " + p) + "\n"
+		body += mutedStyle.Render("    "+p) + "\n"
 	}
 	body += "\n" + footer(
 		keyHint("O", i18n.T("overwrite_all")),

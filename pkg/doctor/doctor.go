@@ -12,8 +12,8 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/report"
-	"github.com/elev1e1nSure/broominal/pkg/util"
 	"github.com/elev1e1nSure/broominal/pkg/types"
+	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
 // Status indicates the result of a check.
@@ -207,4 +207,3 @@ func checkQuarantineStats() Check {
 		Detail: fmt.Sprintf(i18n.T("backups_files_size"), len(entries), totalFiles, util.FormatSize(totalSize)),
 	}
 }
-

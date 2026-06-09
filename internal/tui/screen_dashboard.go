@@ -1,11 +1,11 @@
 package tui
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
+	"fmt"
 	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/util"
-	"fmt"
 )
 
 func (m model) handleKeyDashboard(msg tea.KeyMsg) (tea.Model, tea.Cmd) {

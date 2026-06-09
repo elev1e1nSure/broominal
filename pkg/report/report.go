@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
-	"github.com/elev1e1nSure/broominal/pkg/util"
 	"github.com/elev1e1nSure/broominal/pkg/types"
+	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
 // BaseDir возвращает директорию отчётов

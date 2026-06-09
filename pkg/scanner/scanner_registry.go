@@ -22,8 +22,8 @@ type catScanner struct {
 	scan func(*config.Config) ([]types.Item, error)
 }
 
-func (c catScanner) Name() string                     { return c.name }
-func (c catScanner) Risk() types.RiskLevel             { return c.risk }
+func (c catScanner) Name() string                                  { return c.name }
+func (c catScanner) Risk() types.RiskLevel                         { return c.risk }
 func (c catScanner) Scan(cfg *config.Config) ([]types.Item, error) { return c.scan(cfg) }
 
 // allScanners registers every supported cleanup category.

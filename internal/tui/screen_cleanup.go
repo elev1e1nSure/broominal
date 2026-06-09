@@ -6,8 +6,8 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/config"
-	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
+	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 	"github.com/elev1e1nSure/broominal/pkg/util"
 )
@@ -71,7 +71,7 @@ func (m model) viewQuarantineCleanup() string {
 	if m.quarantineCleanupAll {
 		modeLine = safeStyle.Render(i18n.T("all_quarantines")) + " " + mutedStyle.Render("/ "+i18n.T("old_only"))
 	} else {
-		modeLine = mutedStyle.Render(i18n.T("all_quarantines") + " /") + " " + safeStyle.Render(i18n.T("old_only"))
+		modeLine = mutedStyle.Render(i18n.T("all_quarantines")+" /") + " " + safeStyle.Render(i18n.T("old_only"))
 	}
 	return head + "\n\n" +
 		mutedStyle.Render("  "+i18n.T("cleanup_desc")) + "\n\n" +
