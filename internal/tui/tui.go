@@ -250,6 +250,11 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if key.Matches(msg, key.NewBinding(key.WithKeys("enter", " "))) {
 			m.screen = ScreenCategories
 		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			return m, nil
+		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
 			return m, tea.Quit
 		}
@@ -257,6 +262,11 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case ScreenCategories:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 			return m, tea.Quit
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
 			if m.selectedIdx > 0 {
@@ -300,6 +310,11 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.screen = ScreenCategories
 			return m, nil
 		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			return m, nil
+		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 			m.detailList = buildDetailList(m.categories[m.detailCat].cat.Items, m.width, m.height)
 			m.screen = ScreenDetails
@@ -311,6 +326,11 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.screen = ScreenCategories
 			return m, nil
 		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			return m, nil
+		}
 		// list handles its own keys
 		var cmd tea.Cmd
 		m.detailList, cmd = m.detailList.Update(msg)
@@ -319,6 +339,11 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case ScreenConfirm:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 			m.screen = ScreenCategories
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
 			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("t"))) {
@@ -655,7 +680,7 @@ func (m model) viewDashboard() string {
 			fmt.Sprintf("  %s  %s\n", safeStyle.Render("● "+i18n.T("safe")), valueStyle.Render(scanner.FormatSize(m.result.SafeSize)))+
 			fmt.Sprintf("  %s  %s\n", reviewStyle.Render("● "+i18n.T("review")), valueStyle.Render(scanner.FormatSize(m.result.ReviewSize)))+
 			fmt.Sprintf("  %s  %s", dangerStyle.Render("● "+i18n.T("danger")), valueStyle.Render(scanner.FormatSize(m.result.DangerSize))),
-	) + "\n" + footer(keyHint("Enter", i18n.T("continue")))
+	) + "\n" + footer(keyHint("Enter", i18n.T("continue")), keyHint("M", i18n.T("main_menu")), keyHint("Q", i18n.T("quit")))
 }
 
 func (m model) viewCategories() string {
@@ -701,13 +726,14 @@ func (m model) viewCategories() string {
 		keyHint("Space", i18n.T("toggle")),
 		keyHint("Enter", i18n.T("confirm")),
 		keyHint("D", i18n.T("details")),
+		keyHint("M", i18n.T("main_menu")),
 		keyHint("Q", i18n.T("quit")),
 	)
 }
 
 func (m model) viewDetails() string {
 	head := headerStyle.Render(fmt.Sprintf("%s: %s", i18n.T("details"), m.categories[m.detailCat].cat.Category))
-	return boxStyle.Render(head+"\n"+m.detailList.View()) + "\n" + footer(keyHint("Q/Esc", i18n.T("back")))
+	return boxStyle.Render(head+"\n"+m.detailList.View()) + "\n" + footer(keyHint("Q/Esc", i18n.T("back")), keyHint("M", i18n.T("main_menu")))
 }
 
 func (m model) viewConfirm() string {
@@ -719,6 +745,7 @@ func (m model) viewConfirm() string {
 	return boxStyle.Render(body) + "\n" + footer(
 		keyHint("Enter", i18n.T("proceed")),
 		keyHint("T", i18n.T("toggle_dry_run")),
+		keyHint("M", i18n.T("main_menu")),
 		keyHint("Esc", i18n.T("back")),
 	)
 }
@@ -769,6 +796,7 @@ func (m model) viewWarnRecycleBin() string {
 		mutedStyle.Render("  "+i18n.T("hint_recycle_warn"))
 	return boxStyle.Render(body) + "\n" + footer(
 		keyHint("Enter", i18n.T("continue_anyway")),
+		keyHint("M", i18n.T("main_menu")),
 		keyHint("Esc", i18n.T("back")),
 	)
 }
