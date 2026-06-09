@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -164,5 +165,26 @@ func TestPathAndDir(t *testing.T) {
 	wantPath := filepath.Join(wantDir, "config.json")
 	if Path() != wantPath {
 		t.Errorf("Path() = %q, want %q", Path(), wantPath)
+	}
+}
+
+func TestDirPermissions(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	cfg := Default()
+	if err := Save(cfg); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	info, err := os.Stat(Dir())
+	if err != nil {
+		t.Fatalf("stat config dir: %v", err)
+	}
+	if runtime.GOOS != "windows" {
+		perm := info.Mode().Perm()
+		if perm != 0700 {
+			t.Errorf("config dir permissions = %04o, want 0700", perm)
+		}
 	}
 }

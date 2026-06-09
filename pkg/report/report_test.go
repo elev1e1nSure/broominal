@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -151,5 +152,27 @@ func TestBaseDir(t *testing.T) {
 	want := filepath.Join(tmp, "broominal", "reports")
 	if BaseDir() != want {
 		t.Errorf("BaseDir() = %q, want %q", BaseDir(), want)
+	}
+}
+
+func TestDirPermissions(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	result := &types.ScanResult{}
+	_, err := Save(result, nil)
+	if err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	info, err := os.Stat(BaseDir())
+	if err != nil {
+		t.Fatalf("stat reports dir: %v", err)
+	}
+	if runtime.GOOS != "windows" {
+		perm := info.Mode().Perm()
+		if perm != 0700 {
+			t.Errorf("reports dir permissions = %04o, want 0700", perm)
+		}
 	}
 }
