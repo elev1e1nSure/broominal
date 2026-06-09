@@ -48,16 +48,25 @@ func scanCmd() *cobra.Command {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Println("Scan complete:")
+			fmt.Println(style.Boldf("Scan complete:"))
 			for _, c := range res.Categories {
-				fmt.Printf("  %-20s %10s  %s\n", c.Category, scanner.FormatSize(c.Size), c.Risk)
+				var riskCol string
+				switch c.Risk {
+				case types.RiskSafe:
+					riskCol = style.Greenf(string(c.Risk))
+				case types.RiskReview:
+					riskCol = style.Yellowf(string(c.Risk))
+				case types.RiskDanger:
+					riskCol = style.Redf(string(c.Risk))
+				}
+				fmt.Printf("  %-20s %10s  %s\n", c.Category, scanner.FormatSize(c.Size), riskCol)
 			}
 			fmt.Println()
 			fmt.Printf("Total: %s | Safe: %s | Review: %s | Danger: %s\n",
-				scanner.FormatSize(res.TotalSize),
-				scanner.FormatSize(res.SafeSize),
-				scanner.FormatSize(res.ReviewSize),
-				scanner.FormatSize(res.DangerSize),
+				style.Cyanf(scanner.FormatSize(res.TotalSize)),
+				style.Greenf(scanner.FormatSize(res.SafeSize)),
+				style.Yellowf(scanner.FormatSize(res.ReviewSize)),
+				style.Redf(scanner.FormatSize(res.DangerSize)),
 			)
 		},
 	}
@@ -104,7 +113,7 @@ func cleanCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			if dryRun {
-				fmt.Printf("[dry-run] Would free %s in %d files\n", scanner.FormatSize(freed), files)
+				fmt.Printf("%s Would free %s in %d files\n", style.Yellowf("[dry-run]"), style.Cyanf(scanner.FormatSize(freed)), files)
 				return
 			}
 			_, _ = report.Save(res, &types.CleanResult{
@@ -112,7 +121,7 @@ func cleanCmd() *cobra.Command {
 				Freed:     freed,
 				Files:     files,
 			})
-			fmt.Printf("Cleaned %s in %d files. Restore ID: %s\n", scanner.FormatSize(freed), files, id)
+			fmt.Printf("%s %s in %s files. Restore ID: %s\n", style.Greenf("Cleaned"), style.Cyanf(scanner.FormatSize(freed)), style.Boldf("%d", files), style.Yellowf(id))
 		},
 	}
 	cmd.Flags().BoolVar(&safeOnly, "safe", false, "Only clean safe items")
@@ -141,9 +150,9 @@ func restoreCmd() *cobra.Command {
 				fmt.Fprintf(os.Stderr, "Restore failed: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("Restored %d files from %s", restored, id)
+			fmt.Printf("%s %s files from %s", style.Greenf("Restored"), style.Boldf("%d", restored), style.Yellowf(id))
 			if skipped > 0 {
-				fmt.Printf(" (%d skipped due to conflicts)", skipped)
+				fmt.Printf(" (%s)", style.Yellowf("%d skipped", skipped))
 			}
 			fmt.Println()
 		},
@@ -167,7 +176,7 @@ func reportCmd() *cobra.Command {
 				fmt.Fprintf(os.Stderr, "Report failed: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("Report saved to: %s\n", path)
+			fmt.Printf("%s %s\n", style.Greenf("Report saved to:"), style.Cyanf(path))
 		},
 	}
 }
@@ -183,7 +192,7 @@ func configCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			data, _ := json.MarshalIndent(cfg, "", "  ")
-			fmt.Printf("Config path: %s\n\n%s\n", config.Path(), string(data))
+			fmt.Printf("%s %s\n\n%s\n", style.Boldf("Config path:"), style.Cyanf(config.Path()), string(data))
 		},
 	}
 }
@@ -196,17 +205,17 @@ func doctorCmd() *cobra.Command {
 			checks := doctor.Run()
 			var fail bool
 			for _, c := range checks {
-				marker := "  "
+				var marker string
 				switch c.Status {
 				case doctor.StatusPass:
-					marker = "[PASS]"
+					marker = style.Passf("[PASS]")
 				case doctor.StatusWarn:
-					marker = "[WARN]"
+					marker = style.Warnf("[WARN]")
 				case doctor.StatusFail:
-					marker = "[FAIL]"
+					marker = style.Failf("[FAIL]")
 					fail = true
 				}
-				fmt.Printf("%-8s %-25s %s\n", marker, c.Name, c.Detail)
+				fmt.Printf("%-24s %s  %s\n", style.Boldf(c.Name), marker, style.Grayf(c.Detail))
 			}
 			if fail {
 				os.Exit(1)
@@ -237,16 +246,16 @@ func quarantineCleanupCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			if deleted == 0 {
-				fmt.Println("No old quarantines to remove.")
+				fmt.Println(style.Greenf("No old quarantines to remove."))
 				return
 			}
-			fmt.Printf("Will remove %d quarantine(s) (%s)\n", deleted, scanner.FormatSize(freed))
+			fmt.Printf("Will remove %s quarantine(s) (%s)\n", style.Boldf("%d", deleted), style.Cyanf(scanner.FormatSize(freed)))
 			if !force && !dryRun {
-				fmt.Println("Use --force to proceed.")
+				fmt.Printf("Use %s to proceed.\n", style.Yellowf("--force"))
 				return
 			}
 			if dryRun {
-				fmt.Println("[dry-run] Nothing removed.")
+				fmt.Println(style.Yellowf("[dry-run] Nothing removed."))
 				return
 			}
 			deleted, freed, err = quarantine.Cleanup(maxAgeDays, false)
@@ -254,7 +263,7 @@ func quarantineCleanupCmd() *cobra.Command {
 				fmt.Fprintf(os.Stderr, "Cleanup failed: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("Removed %d quarantine(s), freed %s\n", deleted, scanner.FormatSize(freed))
+			fmt.Printf("%s %s quarantine(s), freed %s\n", style.Greenf("Removed"), style.Boldf("%d", deleted), style.Cyanf(scanner.FormatSize(freed)))
 		},
 	}
 	cmd.Flags().BoolVar(&force, "force", false, "Confirm deletion without prompt")
