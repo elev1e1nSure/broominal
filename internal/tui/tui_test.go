@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
 func TestInitialModel(t *testing.T) {
 	m := initialModel()
-	if m.screen != ScreenDashboard {
-		t.Errorf("screen = %d, want Dashboard", m.screen)
+	if m.screen != ScreenMainMenu {
+		t.Errorf("screen = %d, want MainMenu", m.screen)
 	}
 	if m.result != nil {
 		t.Error("result should be nil")
@@ -126,6 +127,7 @@ func TestHandleKeyConfirmTransition(t *testing.T) {
 
 func TestViewDashboard(t *testing.T) {
 	m := initialModel()
+	m.screen = ScreenDashboard
 	m.result = &types.ScanResult{
 		TotalSize:  300,
 		SafeSize:   100,
@@ -318,7 +320,94 @@ func TestBuildDetailList(t *testing.T) {
 	if l.Title != "Files" {
 		t.Errorf("list title = %q, want 'Files'", l.Title)
 	}
-	if !l.ShowStatusBar() { // Wait, SetShowStatusBar(false) means ShowStatusBar returns false
-		// buildDetailList calls l.SetShowStatusBar(false)
+}
+
+func TestViewMainMenu(t *testing.T) {
+	m := initialModel()
+	out := m.View()
+	if !strings.Contains(out, "Main Menu") {
+		t.Error("view should contain 'Main Menu'")
+	}
+	if !strings.Contains(out, "Scan & Clean") {
+		t.Error("view should contain 'Scan & Clean'")
+	}
+}
+
+func TestHandleKeyMainMenuNavigation(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenMainMenu
+	m.selectedIdx = 0
+
+	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyDown})
+	mm := newM.(model)
+	if mm.selectedIdx != 1 {
+		t.Errorf("after down: selectedIdx = %d, want 1", mm.selectedIdx)
+	}
+
+	newM2, _ := mm.handleKey(tea.KeyMsg{Type: tea.KeyUp})
+	mm2 := newM2.(model)
+	if mm2.selectedIdx != 0 {
+		t.Errorf("after up: selectedIdx = %d, want 0", mm2.selectedIdx)
+	}
+}
+
+func TestViewRestoreEmpty(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenRestore
+	m.restoreIDs = []string{}
+	out := m.View()
+	if !strings.Contains(out, "No quarantines") {
+		t.Error("view should show empty message")
+	}
+}
+
+func TestViewRestoreWithIDs(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenRestore
+	m.restoreIDs = []string{"id-1", "id-2"}
+	m.restoreIdx = 1
+	out := m.View()
+	if !strings.Contains(out, "id-1") {
+		t.Error("view should contain id-1")
+	}
+	if !strings.Contains(out, "id-2") {
+		t.Error("view should contain id-2")
+	}
+}
+
+func TestViewDoctor(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenDoctor
+	m.doctorChecks = []doctor.Check{
+		{Name: "Test", Status: doctor.StatusPass, Detail: "ok"},
+	}
+	out := m.View()
+	if !strings.Contains(out, "Doctor") {
+		t.Error("view should contain 'Doctor'")
+	}
+	if !strings.Contains(out, "Test") {
+		t.Error("view should contain check name")
+	}
+}
+
+func TestViewConfig(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenConfig
+	m.configView = "{\"test\": true}"
+	out := m.View()
+	if !strings.Contains(out, "Config") {
+		t.Error("view should contain 'Config'")
+	}
+	if !strings.Contains(out, "test") {
+		t.Error("view should contain config content")
+	}
+}
+
+func TestViewQuarantineCleanup(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenQuarantineCleanup
+	out := m.View()
+	if !strings.Contains(out, "Quarantine Cleanup") {
+		t.Error("view should contain 'Quarantine Cleanup'")
 	}
 }

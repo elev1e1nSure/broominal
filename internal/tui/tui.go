@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/elev1e1nSure/broominal/pkg/config"
+	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/report"
 	"github.com/elev1e1nSure/broominal/pkg/scanner"
@@ -19,7 +22,8 @@ import (
 type Screen int
 
 const (
-	ScreenDashboard Screen = iota
+	ScreenMainMenu Screen = iota
+	ScreenDashboard
 	ScreenCategories
 	ScreenWarnRecycleBin
 	ScreenDetails
@@ -28,6 +32,10 @@ const (
 	ScreenResult
 	ScreenRestoreConflict
 	ScreenError
+	ScreenRestore
+	ScreenDoctor
+	ScreenConfig
+	ScreenQuarantineCleanup
 )
 
 // TUI model
@@ -47,6 +55,16 @@ type model struct {
 	dryRun                bool
 	conflicts             []string
 	restoreForceOverwrite bool
+	// Restore screen
+	restoreIDs   []string
+	restoreIdx   int
+	restoreResult string
+	// Doctor screen
+	doctorChecks []doctor.Check
+	// Config screen
+	configView   string
+	// Cleanup screen
+	cleanupResult string
 }
 
 type categoryItem struct {
@@ -68,19 +86,13 @@ func initialModel() model {
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#60a5fa"))
 	return model{
-		screen:  ScreenDashboard,
+		screen:  ScreenMainMenu,
 		spinner: s,
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	return func() tea.Msg {
-		res, err := scanner.Scan()
-		if err != nil {
-			return errMsg{err}
-		}
-		return scanDoneMsg{res}
-	}
+	return nil
 }
 
 type scanDoneMsg struct {
@@ -153,6 +165,65 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch m.screen {
+	case ScreenMainMenu:
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+			return m, tea.Quit
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
+			if m.selectedIdx > 0 {
+				m.selectedIdx--
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
+			if m.selectedIdx < 4 {
+				m.selectedIdx++
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+			switch m.selectedIdx {
+			case 0: // Scan & Clean
+				m.screen = ScreenDashboard
+				return m, func() tea.Msg {
+					res, err := scanner.Scan()
+					if err != nil {
+						return errMsg{err}
+					}
+					return scanDoneMsg{res}
+				}
+			case 1: // Restore
+				ids, err := quarantine.List()
+				if err != nil {
+					m.err = err
+					m.screen = ScreenError
+					return m, nil
+				}
+				m.restoreIDs = ids
+				m.restoreIdx = 0
+				m.screen = ScreenRestore
+				return m, nil
+			case 2: // Doctor
+				m.doctorChecks = doctor.Run()
+				m.screen = ScreenDoctor
+				return m, nil
+			case 3: // Config
+				cfg, err := config.Load()
+				if err != nil {
+					m.err = err
+					m.screen = ScreenError
+					return m, nil
+				}
+				data, _ := json.MarshalIndent(cfg, "", "  ")
+				m.configView = string(data)
+				m.screen = ScreenConfig
+				return m, nil
+			case 4: // Quarantine Cleanup
+				m.screen = ScreenQuarantineCleanup
+				return m, nil
+			}
+		}
+
 	case ScreenDashboard:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("enter", " "))) {
 			m.screen = ScreenCategories
@@ -328,6 +399,94 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+	case ScreenRestore:
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
+			if m.restoreIdx > 0 {
+				m.restoreIdx--
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
+			if m.restoreIdx < len(m.restoreIDs)-1 {
+				m.restoreIdx++
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+			if len(m.restoreIDs) == 0 {
+				return m, nil
+			}
+			id := m.restoreIDs[m.restoreIdx]
+			restored, skipped, err := quarantine.Restore(id, false)
+			if err != nil {
+				m.err = err
+				m.screen = ScreenError
+				return m, nil
+			}
+			m.restoreResult = fmt.Sprintf("Restored %d files (%d skipped)", restored, skipped)
+			// Refresh list
+			m.restoreIDs, _ = quarantine.List()
+			if m.restoreIdx >= len(m.restoreIDs) {
+				m.restoreIdx = len(m.restoreIDs) - 1
+				if m.restoreIdx < 0 {
+					m.restoreIdx = 0
+				}
+			}
+			return m, nil
+		}
+
+	case ScreenDoctor:
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			return m, nil
+		}
+
+	case ScreenConfig:
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			return m, nil
+		}
+
+	case ScreenQuarantineCleanup:
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("t"))) {
+			m.dryRun = !m.dryRun
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+			return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
+				cfg, _ := config.Load()
+				maxAge := 30
+				if cfg != nil && cfg.QuarantineMaxAgeDays > 0 {
+					maxAge = cfg.QuarantineMaxAgeDays
+				}
+				deleted, freed, err := quarantine.Cleanup(maxAge, m.dryRun)
+				if err != nil {
+					return errMsg{err}
+				}
+				label := "Removed"
+				if m.dryRun {
+					label = "Would remove"
+				}
+				return cleanDoneMsg{&types.CleanResult{
+					RestoreID: fmt.Sprintf("%s %d quarantines, freed %s", label, deleted, scanner.FormatSize(freed)),
+					Freed:     freed,
+					Files:     deleted,
+				}, nil}
+			})
+		}
+
 	case ScreenError:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 			return m, tea.Quit
@@ -338,6 +497,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	switch m.screen {
+	case ScreenMainMenu:
+		return m.viewMainMenu()
 	case ScreenDashboard:
 		return m.viewDashboard()
 	case ScreenCategories:
@@ -356,6 +517,14 @@ func (m model) View() string {
 		return m.viewRestoreConflict()
 	case ScreenError:
 		return m.viewError()
+	case ScreenRestore:
+		return m.viewRestore()
+	case ScreenDoctor:
+		return m.viewDoctor()
+	case ScreenConfig:
+		return m.viewConfig()
+	case ScreenQuarantineCleanup:
+		return m.viewQuarantineCleanup()
 	}
 	return ""
 }
@@ -538,4 +707,91 @@ func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
 		"  Will free: %s\n  Files:     %d\n  Safe:      %s\n  Review:    %s\n",
 		scanner.FormatSize(safe+review), files, scanner.FormatSize(safe), scanner.FormatSize(review),
 	)
+}
+
+func (m model) viewMainMenu() string {
+	items := []string{
+		"Scan & Clean",
+		"Restore from Quarantine",
+		"Doctor (Health Checks)",
+		"View Config",
+		"Quarantine Cleanup",
+	}
+	var s string
+	s += titleStyle.Render(" Broominal — Main Menu ") + "\n\n"
+	for i, item := range items {
+		style := mutedStyle
+		prefix := "  "
+		if i == m.selectedIdx {
+			style = selectedStyle
+			prefix = "> "
+		}
+		s += style.Render(fmt.Sprintf("%s%s", prefix, item)) + "\n"
+	}
+	s += "\n" + mutedStyle.Render("  Enter: select  Q: quit")
+	return s
+}
+
+func (m model) viewRestore() string {
+	var s string
+	s += titleStyle.Render(" Restore from Quarantine ") + "\n\n"
+	if len(m.restoreIDs) == 0 {
+		s += mutedStyle.Render("  No quarantines available.") + "\n"
+	} else {
+		for i, id := range m.restoreIDs {
+			style := mutedStyle
+			prefix := "  "
+			if i == m.restoreIdx {
+				style = selectedStyle
+				prefix = "> "
+			}
+			s += style.Render(fmt.Sprintf("%s%s", prefix, id)) + "\n"
+		}
+	}
+	if m.restoreResult != "" {
+		s += "\n" + safeStyle.Render("  "+m.restoreResult) + "\n"
+	}
+	s += "\n" + mutedStyle.Render("  Enter: restore  Q/Esc: back")
+	return s
+}
+
+func (m model) viewDoctor() string {
+	var s string
+	s += titleStyle.Render(" Doctor — Health Checks ") + "\n\n"
+	for _, c := range m.doctorChecks {
+		var marker string
+		switch c.Status {
+		case doctor.StatusPass:
+			marker = safeStyle.Render("[PASS]")
+		case doctor.StatusWarn:
+			marker = reviewStyle.Render("[WARN]")
+		case doctor.StatusFail:
+			marker = dangerStyle.Render("[FAIL]")
+		}
+		s += fmt.Sprintf("  %-28s %s  %s\n", c.Name, marker, mutedStyle.Render(c.Detail))
+	}
+	s += "\n" + mutedStyle.Render("  Q/Esc: back")
+	return s
+}
+
+func (m model) viewConfig() string {
+	var s string
+	s += titleStyle.Render(" Current Config ") + "\n\n"
+	for _, line := range strings.Split(m.configView, "\n") {
+		s += mutedStyle.Render("  "+line) + "\n"
+	}
+	s += "\n" + mutedStyle.Render("  Q/Esc: back")
+	return s
+}
+
+func (m model) viewQuarantineCleanup() string {
+	var s string
+	dryLabel := ""
+	if m.dryRun {
+		dryLabel = reviewStyle.Render(" [DRY-RUN] ")
+	}
+	s += titleStyle.Render(" Quarantine Cleanup ") + dryLabel + "\n\n"
+	s += mutedStyle.Render("  Deletes quarantines older than max age days.") + "\n\n"
+	s += mutedStyle.Render("  T: toggle dry-run  Enter: proceed  Q/Esc: back")
+	return s
 }
