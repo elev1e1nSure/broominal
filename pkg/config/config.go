@@ -83,6 +83,16 @@ func Load() (*Config, error) {
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
 	}
+	// Merge missing categories from defaults
+	defaults := Default()
+	if cfg.EnabledCategories == nil {
+		cfg.EnabledCategories = make(map[string]bool)
+	}
+	for cat, val := range defaults.EnabledCategories {
+		if _, ok := cfg.EnabledCategories[cat]; !ok {
+			cfg.EnabledCategories[cat] = val
+		}
+	}
 	return &cfg, nil
 }
 
