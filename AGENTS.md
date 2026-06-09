@@ -17,12 +17,14 @@ cmd/broominal/     CLI entrypoint (cobra)
                    quarantine-cleanup commands
 
 pkg/
-  scanner/         Scan() walks 25+ safe zones (Temp, Downloads, Browser Cache,
+  scanner/         Scan() walks 30+ safe zones (Temp, Downloads, Browser Cache,
                    Recycle Bin, Logs, Old Installers, Large Old Files,
                    Thumbnails, DirectX Shader Cache, Delivery Optimization,
                    WER, Discord Cache, Steam Cache, VSCode Cache, Edge Code Cache,
                    Chrome Code Cache, Firefox Cache2, Old Temp Files,
-                   Old .tmp/.log/.bak, Empty Folders, npm Cache, pip Cache,
+                   Empty Folders, npm Cache, pip Cache, Spotify Cache,
+                   Slack Cache, Teams Cache, OneDrive Cache, Visual Studio Cache,
+                   Git Cache, Windows Prefetch, Icon Cache,
                    Windows Update Cache, Crash & Memory Dumps,
                    Nvidia Installer Leftovers, Telegram Desktop Cache)
   cleaner/         Run() -> quarantine.Move + report.Save pipeline
@@ -30,7 +32,7 @@ pkg/
                    Restore() -> move back, handles conflicts
                    Cleanup() -> delete old quarantines
   report/          Save() JSON report with scan + optional clean result
-  risk/            Classify() risk level from path/category/config overrides
+  update/          CheckForUpdates(), DownloadUpdate(), InstallUpdate()
   config/          Load/Save JSON config: enabled categories, thresholds
                    (old_installer_months, large_file_min_size_mb, large_file_months,
                    old_temp_days, old_extension_days), exclusions, auto risk
@@ -46,15 +48,16 @@ pkg/
 
 internal/
   tui/             Bubbletea TUI: Main Menu -> Scan & Clean / Restore /
-                   Doctor / Config / Quarantine Cleanup / Language
+                   Doctor / Config / Quarantine Cleanup / Language /
+                   Admin Prompt / Update Available
                    Scan flow: Dashboard -> Categories -> Details ->
-                   Confirm -> Cleaning -> Result (with dry-run toggle,
-                   restore-conflict screen, and error screen)
+                   Confirm -> Cleaning -> Result (with restore-conflict
+                   screen and error screen)
 ```
 
 ## Key design decisions
 1. **Quarantine pattern**: files are renamed/moved to `%LOCALAPPDATA%\broominal\quarantine\<uuid>`. A `manifest.json` records original -> quarantined mappings. Restore reverses the mapping.
-2. **Dry-run everywhere**: `clean --dry-run`, TUI `T` toggle, `quarantine-cleanup --dry-run`.
+2. **Dry-run everywhere**: `clean --dry-run`, `quarantine-cleanup --dry-run`.
 3. **Config-driven scanning**: `config.json` controls which categories are enabled, age/size thresholds, exclusions, risk overrides, and language. Missing config auto-creates with defaults and merges missing categories into existing configs.
 4. **Conflict handling on restore**: if the original file already exists, CLI offers `--force-overwrite`; TUI shows an interactive conflict screen.
 5. **Doctor command**: lightweight health checks (admin rights, directory write access, manifest integrity, quarantine stats) without heavy dependencies.
@@ -64,7 +67,7 @@ internal/
 ## Extension points
 - New scanner categories: add to `scanner.go` + config `EnabledCategories` + TUI auto-select logic
 - New cleanup orchestration: add to `pkg/cleaner` for combined quarantine + report logic
-- New risk rules: add to `risk.Classify()` or `config.AutoRiskOverrides`
+- New risk rules: adjust scanner risk in `scanner_registry.go` or add `config.AutoRiskOverrides`
 - New TUI screens: add to `Screen` enum, `handleKey()`, and `View()`
 - New i18n strings: add to `pkg/i18n/i18n.go` translations map for all supported languages
 

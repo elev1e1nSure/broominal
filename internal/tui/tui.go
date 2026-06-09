@@ -40,16 +40,7 @@ func Start(version string) error {
 		// Check for updates on startup
 		m.screen = ScreenUpdating
 		m.updateProgress = i18n.T("checking_updates")
-		return func() error {
-			p := tea.NewProgram(m, tea.WithAltScreen())
-			// Send check update command after program starts
-			go func() {
-				time.Sleep(500 * time.Millisecond)
-				p.Send(checkUpdateCmd{version: version})
-			}()
-			_, err := p.Run()
-			return err
-		}()
+		m.checkUpdateOnStartup = true
 	}
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	_, err := p.Run()
@@ -57,6 +48,12 @@ func Start(version string) error {
 }
 
 func (m model) Init() tea.Cmd {
+	if m.checkUpdateOnStartup {
+		return func() tea.Msg {
+			release, err := update.CheckForUpdates(m.version)
+			return checkUpdateMsg{release, err}
+		}
+	}
 	return nil
 }
 

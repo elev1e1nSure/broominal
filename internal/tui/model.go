@@ -86,6 +86,7 @@ type model struct {
 	updateAvailableRelease *update.Release
 	updateError           error
 	updateProgress        string
+	checkUpdateOnStartup  bool
 }
 
 type configCategoryItem struct {
