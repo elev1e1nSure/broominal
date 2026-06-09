@@ -106,9 +106,9 @@ var allScanners = []CategoryScanner{
 	catScanner{"Nvidia Installer Leftovers", types.RiskReview, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanNvidiaInstallerLeftovers(ctx, cfg)
 	}},
-	catScanner{"Telegram Desktop Cache", types.RiskReview, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	catScanner{"Telegram Desktop Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		path := filepath.Join(os.Getenv("APPDATA"), "Telegram Desktop", "tdata", "user_data")
-		return scanDir(ctx, path, "telegram_desktop_cache", types.RiskReview, nil, true, cfg)
+		return scanDir(ctx, path, "telegram_desktop_cache", types.RiskSafe, nil, true, cfg)
 	}},
 	catScanner{"VSCode Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanVSCodeCache(ctx, cfg)
