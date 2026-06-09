@@ -13,7 +13,7 @@ lipgloss "github.com/charmbracelet/lipgloss"
 "github.com/elev1e1nSure/broominal/pkg/util"
 )
 
-// Screen � ??????? ?????
+// Screen — текущий экран
 type Screen int
 
 const (
