@@ -3,6 +3,7 @@ package doctor
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -288,8 +289,12 @@ func checkQuarantineStats() Check {
 		if !e.IsDir() {
 			continue
 		}
-		if err := filepath.Walk(filepath.Join(qDir, e.Name()), func(path string, info os.FileInfo, err error) error {
-			if err != nil || info.IsDir() {
+		if err := filepath.WalkDir(filepath.Join(qDir, e.Name()), func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return nil
+			}
+			info, err := d.Info()
+			if err != nil {
 				return nil
 			}
 			totalSize += info.Size()
