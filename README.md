@@ -14,15 +14,19 @@
 
 </div>
 
+---
+
 ## what is it
 
-**broominal** is a windows cleanup cli/tui built around one rule:
+**broominal** — windows cleanup cli/tui built around one rule:
 
-> cleanup must be **reversible**.
+> cleanup must be **reversible**
 
 instead of permanently deleting files, broominal moves selected items into a local **quarantine**, stores json manifests, and makes every cleanup inspectable and restorable.
 
-no fake boost magic. no hidden system tweaking. no “trust me bro” cleanup.
+no fake boost magic. no hidden system tweaking. no "trust me bro" cleanup.
+
+---
 
 ## highlights
 
@@ -33,21 +37,30 @@ no fake boost magic. no hidden system tweaking. no “trust me bro” cleanup.
 - **interactive** — bubbletea tui for scan, preview, dry-run, and restore
 - **multilingual** — english and russian with first-run auto-detection
 - **25+ categories** — temp, caches, logs, browser data, dev tools, and more
-- **dry-run everywhere** — preview before touching a single file
 - **doctor** — lightweight health checks for permissions, manifests, and state
+
+---
 
 ## safety model
 
-> [!IMPORTANT]
-> safe cleanup is selected by default. review cleanup requires manual choice. danger items are never cleaned automatically.
+> **safe** cleanup is selected by default. **review** requires manual choice. **danger** items are never cleaned automatically.
 
-| risk | default behavior | examples |
-|------|------------------|----------|
-| `safe` | selected by default | temp files, thumbnails, shader cache, common app caches |
-| `review` | user must select manually | downloads, dumps, windows update cache, telegram cache |
-| `danger` | never cleaned automatically | system paths, protected extensions, unknown risky locations |
+```
+┌─────────────────────────────────────────────────────────────┐
+│  safe    ▸ selected by default                              │
+│           temp files, thumbnails, shader cache, app caches  │
+├─────────────────────────────────────────────────────────────┤
+│  review  ▸ user must select manually                        │
+│           downloads, dumps, windows update cache, telegram  │
+├─────────────────────────────────────────────────────────────┤
+│  danger  ▸ never cleaned automatically                      │
+│           system paths, protected extensions                │
+└─────────────────────────────────────────────────────────────┘
+```
 
 files are moved to `%LOCALAPPDATA%\broominal\quarantine\<restore-id>` with a `manifest.json` mapping original paths to quarantined paths.
+
+---
 
 ## quick start
 
@@ -57,6 +70,8 @@ go install github.com/elev1e1nSure/broominal/cmd/broominal@latest
 
 # ...or grab the latest .exe from releases
 ```
+
+---
 
 ## usage
 
@@ -70,8 +85,8 @@ broominal ui
 # clean safe items only
 broominal clean --safe
 
-# simulate cleanup without moving files
-broominal clean --dry-run
+# allow cleaning danger items (requires explicit confirmation)
+broominal clean --danger
 
 # restore a specific cleanup
 broominal restore <id>
@@ -85,12 +100,17 @@ broominal doctor
 # show config
 broominal config
 
-# preview old quarantine cleanup
-broominal quarantine-cleanup --dry-run
+# preview old quarantine cleanup (shows what will be removed)
+broominal quarantine-cleanup
 
 # remove quarantines older than 30 days
 broominal quarantine-cleanup --force
+
+# remove quarantines older than N days
+broominal quarantine-cleanup --max-age-days 7 --force
 ```
+
+---
 
 ## build from source
 
@@ -102,10 +122,12 @@ go build -o broominal.exe ./cmd/broominal
 .\broominal.exe ui
 ```
 
+---
+
 ## architecture
 
-```text
-cmd/broominal/   cli entrypoint
+```
+cmd/broominal/   cli entrypoint (cobra)
 
 pkg/
   scanner/       file discovery by cleanup category
@@ -124,38 +146,46 @@ internal/
   tui/           bubbletea interactive interface
 ```
 
+---
+
 ## philosophy
 
 broominal is intentionally boring. it does not promise performance miracles, registry magic, or hidden optimization. it finds cleanup candidates, classifies risk, shows what it found, and moves selected files into quarantine so the operation can be reversed.
 
 small packages. explicit responsibilities. no hidden cleanup magic.
 
+---
+
 ## development
 
-> [!TIP]
 > enable shared githooks before committing:
->
 > ```powershell
 > git config core.hooksPath githooks
 > ```
 
-**hooks:**
+**hooks**
 - `pre-commit` — warns when code changes may need documentation updates
-- `commit-msg` — enforces conventional commits (`feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `build`, `ci`, `perf`, `style`, `revert`)
+- `commit-msg` — enforces conventional commits
 
-**ci on every push / pr to `main`:**
-```text
+**ci on every push / pr to `main`**
+```
 gofmt → go vet → golangci-lint → go test ./... → windows build artifact
 ```
 
-**release workflow:**
-git-cliff release notes → build `broominal.exe` → signed tag → github release + checksums
+**release workflow**
+```
+git-cliff → build broominal.exe → signed tag → github release + checksums
+```
+
+---
 
 ## contributing
 
 bug reports, cleanup-category ideas, safety improvements, and windows edge cases are welcome.
 
 see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
 
 ## license
 
