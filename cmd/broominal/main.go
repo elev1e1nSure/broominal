@@ -16,12 +16,53 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
+func init() {
+	cobra.AddTemplateFunc("bold", func(s string) string { return style.Bold + s + style.Reset })
+	cobra.AddTemplateFunc("green", func(s string) string { return style.Green + s + style.Reset })
+	cobra.AddTemplateFunc("yellow", func(s string) string { return style.Yellow + s + style.Reset })
+	cobra.AddTemplateFunc("red", func(s string) string { return style.Red + s + style.Reset })
+	cobra.AddTemplateFunc("cyan", func(s string) string { return style.Cyan + s + style.Reset })
+	cobra.AddTemplateFunc("gray", func(s string) string { return style.Gray + s + style.Reset })
+}
+
+const helpTemplate = `{{with (or .Long .Short)}}{{bold .}}
+
+{{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
+
+const usageTemplate = `{{bold "Usage:"}}
+{{if .Runnable}}  {{cyan .UseLine}}{{end}}{{if .HasAvailableSubCommands}}
+  {{cyan .CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
+
+{{bold "Aliases:"}}
+  {{.NameAndAliases}}{{end}}{{if .HasExample}}
+
+{{bold "Examples:"}}
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+
+{{bold "Available Commands:"}}{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{cyan (rpad .Name .NamePadding)}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+
+{{bold "Flags:"}}
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
+
+{{bold "Global Flags:"}}
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
+
+{{bold "Additional help topics:"}}{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+
+{{gray "Use"}} {{cyan .CommandPath}} [command] --help {{gray "for more information about a command."}}{{end}}
+`
+
 func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "broominal",
 		Short: "Safe Windows cleanup with undo",
-		Long:  `A safe, transparent, undoable Windows cleanup tool.`,
+		Long:  "A safe, transparent, undoable Windows cleanup tool.",
 	}
+
+	rootCmd.SetHelpTemplate(helpTemplate)
+	rootCmd.SetUsageTemplate(usageTemplate)
 
 	rootCmd.AddCommand(scanCmd())
 	rootCmd.AddCommand(uiCmd())

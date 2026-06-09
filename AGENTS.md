@@ -46,6 +46,25 @@ internal/
 - New risk rules: add to `risk.Classify()` or `config.AutoRiskOverrides`
 - New TUI screens: add to `Screen` enum, `handleKey()`, and `View()`
 
+## CLI style guide
+All terminal output uses ANSI colors via `pkg/style` (`Bold`, `Green`, `Yellow`, `Red`, `Cyan`, `Gray`, `Pass/Warn/Fail`). Cobra help/usage templates are overridden with the same palette.
+
+| Element | Style | Example |
+|---------|-------|---------|
+| Command names in help | Cyan | `clean`, `scan`, `doctor` |
+| Section headers (Usage, Flags, Available Commands) | Bold | **Usage:**, **Flags:** |
+| Positive results / success | Green + Bold | `[PASS]`, `Cleaned`, `Restored` |
+| Warnings / dry-run | Yellow | `[WARN]`, `[dry-run]` |
+| Errors / danger | Red + Bold | `[FAIL]`, `danger` |
+| Quantities (size, count, IDs) | Cyan | `4.6 MB`, `restore-id` |
+| Descriptions / secondary text | Gray | `Scan safe zones and show summary` |
+| Tool name in help | Bold | **broominal** |
+
+Rules:
+- Every new CLI output must go through `pkg/style` helpers.
+- Always append `Reset` after each color block (handled by helpers).
+- Do not add colors to JSON or manifest files.
+
 ## Tech stack
 - Go 1.26
 - Cobra (CLI)
