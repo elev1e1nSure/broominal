@@ -178,11 +178,11 @@ func (m model) viewConfigCategories() string {
 
 func (m model) viewConfigPresets() string {
 	presets := []struct {
-		name        string
-		desc        string
-		preset      config.Preset
-		style       lipgloss.Style
-		expected    int
+		name     string
+		desc     string
+		preset   config.Preset
+		style    lipgloss.Style
+		expected int
 	}{
 		{"Safe", "Кэш браузеров, темпы, системный мусор", config.PresetSafe, safeStyle, 28},
 		{"Normal", "Safe + Telegram", config.PresetNormal, reviewStyle, 29},
