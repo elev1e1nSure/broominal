@@ -198,6 +198,7 @@ func checkManifests() Check {
 			Suggestion: i18n.T("suggest_check_permissions"),
 		}
 	}
+	var valid int
 	var invalid int
 	for _, e := range entries {
 		if !e.IsDir() {
@@ -206,12 +207,18 @@ func checkManifests() Check {
 		mf := filepath.Join(qDir, e.Name(), "manifest.json")
 		data, err := os.ReadFile(mf)
 		if err != nil {
+			if os.IsNotExist(err) {
+				_ = os.RemoveAll(filepath.Join(qDir, e.Name()))
+				continue
+			}
 			invalid++
 			continue
 		}
 		var m types.Manifest
 		if err := json.Unmarshal(data, &m); err != nil {
 			invalid++
+		} else {
+			valid++
 		}
 	}
 	if invalid > 0 {
@@ -222,10 +229,17 @@ func checkManifests() Check {
 			Suggestion: i18n.T("suggest_remove_damaged"),
 		}
 	}
+	if valid == 0 && len(entries) == 0 {
+		return Check{
+			Name:   i18n.T("check_manifests"),
+			Status: StatusPass,
+			Detail: i18n.T("no_backups_yet"),
+		}
+	}
 	return Check{
 		Name:   i18n.T("check_manifests"),
 		Status: StatusPass,
-		Detail: fmt.Sprintf(i18n.T("valid_backups"), len(entries)),
+		Detail: fmt.Sprintf(i18n.T("valid_backups"), valid),
 	}
 }
 

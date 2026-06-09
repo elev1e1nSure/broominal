@@ -124,18 +124,6 @@ var allScanners = []CategoryScanner{
 	catScanner{"Firefox Cache2", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanFirefoxCache2(ctx, cfg)
 	}},
-	catScanner{"Old Temp Files", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		return scanOldTempFiles(ctx, cfg)
-	}},
-	catScanner{"Old .tmp Files", types.RiskReview, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		return scanOldExtensions(ctx, ".tmp", cfg)
-	}},
-	catScanner{"Old .log Files", types.RiskReview, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		return scanOldExtensions(ctx, ".log", cfg)
-	}},
-	catScanner{"Old .bak Files", types.RiskReview, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		return scanOldExtensions(ctx, ".bak", cfg)
-	}},
 	catScanner{"Empty Folders", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanEmptyFolders(ctx, cfg)
 	}},
@@ -144,5 +132,38 @@ var allScanners = []CategoryScanner{
 	}},
 	catScanner{"pip Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanPipCache(ctx, cfg)
+	}},
+	catScanner{"Spotify Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		path := filepath.Join(os.Getenv("APPDATA"), "Spotify", "Data")
+		return scanDir(ctx, path, "spotify_cache", types.RiskSafe, nil, true, cfg)
+	}},
+	catScanner{"Slack Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		path := filepath.Join(os.Getenv("APPDATA"), "Slack", "storage", "slack-settings")
+		return scanDir(ctx, path, "slack_cache", types.RiskSafe, nil, true, cfg)
+	}},
+	catScanner{"Teams Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		path := filepath.Join(os.Getenv("APPDATA"), "Microsoft", "Teams", "Cache")
+		return scanDir(ctx, path, "teams_cache", types.RiskSafe, nil, true, cfg)
+	}},
+	catScanner{"OneDrive Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "OneDrive", "cache")
+		return scanDir(ctx, path, "onedrive_cache", types.RiskSafe, nil, true, cfg)
+	}},
+	catScanner{"Visual Studio Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "VisualStudio")
+		return scanDir(ctx, path, "vs_cache", types.RiskSafe, nil, true, cfg)
+	}},
+	catScanner{"Git Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Git", "CredentialManager", "cache")
+		return scanDir(ctx, path, "git_cache", types.RiskSafe, nil, true, cfg)
+	}},
+	catScanner{"Windows Prefetch", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		path := filepath.Join(os.Getenv("SystemRoot"), "Prefetch")
+		return scanDir(ctx, path, "windows_prefetch", types.RiskSafe, nil, false, cfg)
+	}},
+	catScanner{"Icon Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "IconCache.db")
+		items, _ := scanDir(ctx, path, "icon_cache", types.RiskSafe, nil, false, cfg)
+		return items, nil
 	}},
 }

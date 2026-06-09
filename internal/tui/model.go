@@ -31,8 +31,8 @@ const (
 	ScreenRestore
 	ScreenDoctor
 	ScreenConfig
+	ScreenConfigPresets
 	ScreenConfigCategories
-	ScreenConfigThresholds
 	ScreenQuarantineCleanup
 	ScreenLanguage
 	ScreenAdminPrompt
@@ -72,7 +72,7 @@ type model struct {
 	// Config screen
 	configView       string
 	configCategories []configCategoryItem
-	configThresholds []configThresholdItem
+	configPreset     config.Preset
 	configCfg        *config.Config
 	// Cleanup screen
 	cleanupResult string
@@ -83,13 +83,6 @@ type model struct {
 type configCategoryItem struct {
 	name    string
 	enabled bool
-}
-
-type configThresholdItem struct {
-	labelKey string
-	value    int
-	min      int
-	step     int
 }
 
 type categoryItem struct {

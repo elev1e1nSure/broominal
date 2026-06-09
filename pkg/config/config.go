@@ -44,24 +44,23 @@ func Default() *Config {
 			"Edge Code Cache":            true,
 			"Chrome Code Cache":          true,
 			"Firefox Cache2":             true,
-			"Old Temp Files":             true,
 			"Empty Folders":              true,
 			"npm Cache":                  true,
 			"pip Cache":                  true,
+			"Spotify Cache":              true,
+			"Slack Cache":                true,
+			"Teams Cache":                true,
+			"OneDrive Cache":             true,
+			"Visual Studio Cache":        true,
+			"Git Cache":                  true,
+			"Windows Prefetch":           true,
+			"Icon Cache":                 true,
 			"Windows Update Cache":       false,
 			"Crash & Memory Dumps":       false,
 			"Nvidia Installer Leftovers": false,
 			"Telegram Desktop Cache":     false,
-			"Old .tmp Files":             false,
-			"Old .log Files":             false,
-			"Old .bak Files":             false,
 		},
-		OldInstallerMonths: 6,
-		LargeFileMinSizeMB: 100,
-		LargeFileMonths:    6,
-		OldTempDays:        7,
-		OldExtensionDays:   30,
-		Exclusions:         []string{},
+		Exclusions: []string{},
 		AutoRiskOverrides: map[string]string{
 			".git":         "review",
 			"node_modules": "review",
@@ -193,4 +192,71 @@ func (c *Config) RiskOverrideFor(path string) string {
 
 func containsIgnoreCase(s, substr string) bool {
 	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
+}
+
+type Preset string
+
+const (
+	PresetSafe   Preset = "safe"
+	PresetNormal Preset = "normal"
+	PresetHard   Preset = "hard"
+)
+
+func (c *Config) ApplyPreset(p Preset) {
+	c.EnabledCategories = make(map[string]bool)
+
+	safeCategories := []string{
+		"Temp",
+		"Downloads",
+		"Browser Cache",
+		"Recycle Bin",
+		"Logs",
+		"Old Installers",
+		"Large Old Files",
+		"Thumbnails Cache",
+		"DirectX Shader Cache",
+		"Delivery Optimization",
+		"Windows Error Reports",
+		"Discord Cache",
+		"Steam Cache",
+		"VSCode Cache",
+		"Edge Code Cache",
+		"Chrome Code Cache",
+		"Firefox Cache2",
+		"Empty Folders",
+		"npm Cache",
+		"pip Cache",
+		"Spotify Cache",
+		"Slack Cache",
+		"Teams Cache",
+		"OneDrive Cache",
+		"Visual Studio Cache",
+		"Git Cache",
+		"Windows Prefetch",
+		"Icon Cache",
+	}
+
+	normalCategories := append(safeCategories,
+		"Telegram Desktop Cache",
+	)
+
+	hardCategories := append(normalCategories,
+		"Windows Update Cache",
+		"Crash & Memory Dumps",
+		"Nvidia Installer Leftovers",
+	)
+
+	var categories []string
+	switch p {
+	case PresetSafe:
+		categories = safeCategories
+	case PresetNormal:
+		categories = normalCategories
+	case PresetHard:
+		categories = hardCategories
+	}
+
+	for _, cat := range categories {
+		c.EnabledCategories[cat] = true
+	}
 }

@@ -44,7 +44,6 @@ func Save(result *types.ScanResult, cleaned *types.CleanResult) (string, error) 
 		return "", fmt.Errorf("encode report: %w", err)
 	}
 
-	PrintSummary(result, cleaned)
 	return path, nil
 }
 

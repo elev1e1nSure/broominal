@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 
+	lipgloss "github.com/charmbracelet/lipgloss"
+
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/config"
@@ -23,14 +25,18 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-		if m.selectedIdx < 1 {
+		if m.selectedIdx < 2 {
 			m.selectedIdx++
 		}
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		switch m.selectedIdx {
-		case 0: // Categories
+		case 0: // Presets
+			m.selectedIdx = 0
+			m.screen = ScreenConfigPresets
+			return m, nil
+		case 1: // Categories
 			if m.configCfg != nil {
 				var items []configCategoryItem
 				for cat, enabled := range m.configCfg.EnabledCategories {
@@ -44,19 +50,9 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.selectedIdx = 0
 			m.screen = ScreenConfigCategories
 			return m, nil
-		case 1: // Thresholds
-			if m.configCfg != nil {
-				m.configThresholds = []configThresholdItem{
-					{labelKey: "old_installer_months", value: m.configCfg.OldInstallerMonths, min: 1, step: 1},
-					{labelKey: "large_file_min_size_mb", value: m.configCfg.LargeFileMinSizeMB, min: 1, step: 10},
-					{labelKey: "large_file_months", value: m.configCfg.LargeFileMonths, min: 1, step: 1},
-					{labelKey: "old_temp_days", value: m.configCfg.OldTempDays, min: 1, step: 1},
-					{labelKey: "old_extension_days", value: m.configCfg.OldExtensionDays, min: 1, step: 1},
-					{labelKey: "quarantine_max_age_days", value: m.configCfg.QuarantineMaxAgeDays, min: 1, step: 1},
-				}
-			}
+		case 2: // Language
+			m.screen = ScreenLanguage
 			m.selectedIdx = 0
-			m.screen = ScreenConfigThresholds
 			return m, nil
 		}
 	}
@@ -101,7 +97,7 @@ func (m model) handleKeyConfigCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) handleKeyConfigThresholds(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
 		m.screen = ScreenConfig
 		m.selectedIdx = 0
@@ -114,40 +110,23 @@ func (m model) handleKeyConfigThresholds(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-		if m.selectedIdx < len(m.configThresholds)-1 {
+		if m.selectedIdx < 2 {
 			m.selectedIdx++
 		}
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("+", "="))) {
-		if m.selectedIdx < len(m.configThresholds) {
-			it := &m.configThresholds[m.selectedIdx]
-			it.value += it.step
-		}
-		return m, nil
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("-"))) {
-		if m.selectedIdx < len(m.configThresholds) {
-			it := &m.configThresholds[m.selectedIdx]
-			it.value -= it.step
-			if it.value < it.min {
-				it.value = it.min
-			}
-		}
-		return m, nil
-	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
-		if m.configCfg != nil && len(m.configThresholds) >= 6 {
-			m.configCfg.OldInstallerMonths = m.configThresholds[0].value
-			m.configCfg.LargeFileMinSizeMB = m.configThresholds[1].value
-			m.configCfg.LargeFileMonths = m.configThresholds[2].value
-			m.configCfg.OldTempDays = m.configThresholds[3].value
-			m.configCfg.OldExtensionDays = m.configThresholds[4].value
-			m.configCfg.QuarantineMaxAgeDays = m.configThresholds[5].value
+		if m.configCfg != nil {
+			switch m.selectedIdx {
+			case 0:
+				m.configCfg.ApplyPreset(config.PresetSafe)
+			case 1:
+				m.configCfg.ApplyPreset(config.PresetNormal)
+			case 2:
+				m.configCfg.ApplyPreset(config.PresetHard)
+			}
 			_ = config.Save(m.configCfg)
 		}
-		m.screen = ScreenConfig
-		m.selectedIdx = 0
 		return m, nil
 	}
 	return m, nil
@@ -155,8 +134,9 @@ func (m model) handleKeyConfigThresholds(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) viewConfig() string {
 	items := []string{
+		i18n.T("config_presets"),
 		i18n.T("config_categories"),
-		i18n.T("config_thresholds"),
+		i18n.T("config_language"),
 	}
 	var body string
 	body += titleStyle.Render(i18n.T("config")) + "\n\n"
@@ -196,34 +176,52 @@ func (m model) viewConfigCategories() string {
 	return body
 }
 
-func thresholdUnit(labelKey string) string {
-	switch labelKey {
-	case "large_file_min_size_mb":
-		return "MB"
-	case "old_temp_days", "old_extension_days", "quarantine_max_age_days":
-		return i18n.T("days")
-	case "old_installer_months", "large_file_months":
-		return i18n.T("months")
+func (m model) viewConfigPresets() string {
+	presets := []struct {
+		name        string
+		desc        string
+		preset      config.Preset
+		style       lipgloss.Style
+		expected    int
+	}{
+		{"Safe", "Кэш браузеров, темпы, системный мусор", config.PresetSafe, safeStyle, 28},
+		{"Normal", "Safe + Telegram", config.PresetNormal, reviewStyle, 29},
+		{"Hard", "Всё включено - максимальная очистка", config.PresetHard, dangerStyle, 32},
 	}
-	return ""
-}
 
-func (m model) viewConfigThresholds() string {
+	currentPreset := -1
+	if m.configCfg != nil {
+		enabledCount := 0
+		for _, v := range m.configCfg.EnabledCategories {
+			if v {
+				enabledCount++
+			}
+		}
+		for i, p := range presets {
+			if enabledCount == p.expected {
+				currentPreset = i
+				break
+			}
+		}
+	}
+
 	var body string
-	body += titleStyle.Render(i18n.T("config_thresholds")) + "\n\n"
-	for i, c := range m.configThresholds {
-		label := i18n.T(c.labelKey)
-		unit := thresholdUnit(c.labelKey)
-		val := fmt.Sprintf("%d %s", c.value, unit)
+	body += titleStyle.Render(i18n.T("config_presets")) + "\n\n"
+	for i, p := range presets {
+		marker := "   "
+		if currentPreset == i {
+			marker = safeStyle.Render("[x]")
+		}
 		if i == m.selectedIdx {
-			body += selectedStyle.Render(fmt.Sprintf("> %-35s %s", label, val)) + "\n"
+			body += selectedStyle.Render("> ") + p.style.Render(p.name) + " " + marker + "\n"
+			body += selectedStyle.Render(fmt.Sprintf("  %s\n", p.desc)) + "\n"
 		} else {
-			body += mutedStyle.Render(fmt.Sprintf("  %-35s %s", label, val)) + "\n"
+			body += mutedStyle.Render("  ") + p.style.Render(p.name) + " " + marker + "\n"
+			body += mutedStyle.Render(fmt.Sprintf("  %s\n", p.desc)) + "\n"
 		}
 	}
 	body += "\n" + footer(
-		keyHint("+/-", i18n.T("change")),
-		keyHint("Enter", i18n.T("save")),
+		keyHint("Enter", i18n.T("apply")),
 		keyHint("Esc", i18n.T("back")),
 	)
 	return body
