@@ -30,7 +30,7 @@ Broominal — это **утилита очистки Windows**, которая �
 
 | Возможность | Описание |
 |------------|----------|
-| 🧹 **Умное сканирование** | Temp, Downloads, кэш браузеров, Корзина, логи, старые установщики, большие старые файлы, миниатюры (Thumbnails), DirectX Shader Cache, Delivery Optimization, WER, кэш Discord, кэш Steam, Windows Update, дампы памяти, остатки установщика Nvidia, кэш Telegram Desktop |
+| 🧹 **Умное сканирование** | Temp, Downloads, кэш браузеров, Корзина, логи, старые установщики, большие старые файлы, миниатюры (Thumbnails), DirectX Shader Cache, Delivery Optimization, WER, кэш Discord, кэш Steam, кэш VSCode, кэш Edge Code, кэш Chrome Code, Firefox Cache2, старые Temp, .tmp/.log/.bak, пустые папки, npm, pip, Windows Update, дампы, Nvidia, Telegram |
 | 🛡️ **Уровни риска** | `safe` / `review` / `danger` — системные пути и `.sys`/`.dll` никогда не трогаются |
 | 🔄 **Отмена** | У каждой очистки есть ID восстановления; `restore <id>` возвращает файлы |
 | ⚡ **Dry-Run** | `--dry-run` в CLI и клавиша `T` в TUI — посмотреть, что освободится, не трогая файлы |

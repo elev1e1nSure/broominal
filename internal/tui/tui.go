@@ -58,13 +58,13 @@ type model struct {
 	conflicts             []string
 	restoreForceOverwrite bool
 	// Restore screen
-	restoreIDs   []string
-	restoreIdx   int
+	restoreIDs    []string
+	restoreIdx    int
 	restoreResult string
 	// Doctor screen
 	doctorChecks []doctor.Check
 	// Config screen
-	configView   string
+	configView string
 	// Cleanup screen
 	cleanupResult string
 }
@@ -620,20 +620,20 @@ var (
 	cBorder   = lipgloss.Color("#374151")
 	cHeaderBg = lipgloss.Color("#111827")
 
-	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(cAccent).Padding(0, 1)
-	headerStyle   = lipgloss.NewStyle().Bold(true).Foreground(cFg).Background(cHeaderBg).Padding(0, 2).MarginBottom(1)
-	boxStyle      = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(cBorder).Background(cBgBox).Padding(1, 2)
+	titleStyle      = lipgloss.NewStyle().Bold(true).Foreground(cAccent).Padding(0, 1)
+	headerStyle     = lipgloss.NewStyle().Bold(true).Foreground(cFg).Background(cHeaderBg).Padding(0, 2).MarginBottom(1)
+	boxStyle        = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(cBorder).Background(cBgBox).Padding(1, 2)
 	activeItemStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ffffff")).Background(cBgSel).Padding(0, 1)
 	mutedItemStyle  = lipgloss.NewStyle().Foreground(cMuted).Padding(0, 1)
-	safeStyle     = lipgloss.NewStyle().Bold(true).Foreground(cSafe)
-	reviewStyle   = lipgloss.NewStyle().Bold(true).Foreground(cWarn)
-	dangerStyle   = lipgloss.NewStyle().Bold(true).Foreground(cDanger)
-	mutedStyle    = lipgloss.NewStyle().Foreground(cMuted)
-	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(cWarn)
-	valueStyle    = lipgloss.NewStyle().Bold(true).Foreground(cFg)
-	statLabelStyle= lipgloss.NewStyle().Foreground(cMuted)
-	footerStyle   = lipgloss.NewStyle().Foreground(cMuted).MarginTop(1)
-	separatorStyle= lipgloss.NewStyle().Foreground(cBorder)
+	safeStyle       = lipgloss.NewStyle().Bold(true).Foreground(cSafe)
+	reviewStyle     = lipgloss.NewStyle().Bold(true).Foreground(cWarn)
+	dangerStyle     = lipgloss.NewStyle().Bold(true).Foreground(cDanger)
+	mutedStyle      = lipgloss.NewStyle().Foreground(cMuted)
+	keyStyle        = lipgloss.NewStyle().Bold(true).Foreground(cWarn)
+	valueStyle      = lipgloss.NewStyle().Bold(true).Foreground(cFg)
+	statLabelStyle  = lipgloss.NewStyle().Foreground(cMuted)
+	footerStyle     = lipgloss.NewStyle().Foreground(cMuted).MarginTop(1)
+	separatorStyle  = lipgloss.NewStyle().Foreground(cBorder)
 )
 
 func keyHint(k, desc string) string {
@@ -649,12 +649,12 @@ func (m model) viewDashboard() string {
 		return boxStyle.Render(m.spinner.View()+" "+i18n.T("scanning")) + "\n"
 	}
 	return boxStyle.Render(
-		headerStyle.Render(i18n.T("dashboard")) + "\n" +
-		fmt.Sprintf("  %s  %s\n", statLabelStyle.Render(i18n.T("total_found")+":"), valueStyle.Render(scanner.FormatSize(m.result.TotalSize))) +
-		separatorStyle.Render("  "+strings.Repeat("─", 36)) + "\n" +
-		fmt.Sprintf("  %s  %s\n", safeStyle.Render("● "+i18n.T("safe")), valueStyle.Render(scanner.FormatSize(m.result.SafeSize))) +
-		fmt.Sprintf("  %s  %s\n", reviewStyle.Render("● "+i18n.T("review")), valueStyle.Render(scanner.FormatSize(m.result.ReviewSize))) +
-		fmt.Sprintf("  %s  %s", dangerStyle.Render("● "+i18n.T("danger")), valueStyle.Render(scanner.FormatSize(m.result.DangerSize))),
+		headerStyle.Render(i18n.T("dashboard"))+"\n"+
+			fmt.Sprintf("  %s  %s\n", statLabelStyle.Render(i18n.T("total_found")+":"), valueStyle.Render(scanner.FormatSize(m.result.TotalSize)))+
+			separatorStyle.Render("  "+strings.Repeat("─", 36))+"\n"+
+			fmt.Sprintf("  %s  %s\n", safeStyle.Render("● "+i18n.T("safe")), valueStyle.Render(scanner.FormatSize(m.result.SafeSize)))+
+			fmt.Sprintf("  %s  %s\n", reviewStyle.Render("● "+i18n.T("review")), valueStyle.Render(scanner.FormatSize(m.result.ReviewSize)))+
+			fmt.Sprintf("  %s  %s", dangerStyle.Render("● "+i18n.T("danger")), valueStyle.Render(scanner.FormatSize(m.result.DangerSize))),
 	) + "\n" + footer(keyHint("Enter", i18n.T("continue")))
 }
 
@@ -726,7 +726,7 @@ func (m model) viewConfirm() string {
 func (m model) viewResult() string {
 	if m.cleanResult == nil {
 		return boxStyle.Render(
-			headerStyle.Render(i18n.T("restored")) + "\n\n" +
+			headerStyle.Render(i18n.T("restored"))+"\n\n"+
 				safeStyle.Render("  ✓ "+i18n.T("hint_restored")),
 		) + "\n" + footer(keyHint("M", i18n.T("main_menu")), keyHint("Q", i18n.T("quit")))
 	}
@@ -753,7 +753,7 @@ func (m model) viewRestoreConflict() string {
 	body += headerStyle.Render(i18n.T("restore_conflicts")) + "\n\n"
 	body += dangerStyle.Render(fmt.Sprintf("  ⚠ %d %s", len(m.conflicts), i18n.T("files_already_exist"))) + "\n"
 	for _, p := range m.conflicts {
-		body += mutedStyle.Render("    → " + p) + "\n"
+		body += mutedStyle.Render("    → "+p) + "\n"
 	}
 	return boxStyle.Render(body) + "\n" + footer(
 		keyHint("O", i18n.T("overwrite_all")),
@@ -816,7 +816,7 @@ type detailItem struct {
 
 func (d detailItem) FilterValue() string { return d.item.Path }
 
-func (d detailItem) Title() string       { return d.item.Path }
+func (d detailItem) Title() string { return d.item.Path }
 func (d detailItem) Description() string {
 	return fmt.Sprintf("%s  %s", scanner.FormatSize(d.item.Size), d.item.Risk)
 }

@@ -30,7 +30,7 @@ Broominal is a **Windows cleanup tool** that never permanently deletes your file
 
 | Feature | Description |
 |--------|-------------|
-| 🧹 **Smart Scan** | Temp, Downloads, Browser Cache, Recycle Bin, Logs, Old Installers, Large Old Files, Thumbnails, DirectX Shader Cache, Delivery Optimization, Windows Error Reports, Discord Cache, Steam Cache, Windows Update, Crash & Memory Dumps, Nvidia Installer Leftovers, Telegram Desktop Cache |
+| 🧹 **Smart Scan** | Temp, Downloads, Browser Cache, Recycle Bin, Logs, Old Installers, Large Old Files, Thumbnails, DirectX Shader Cache, Delivery Optimization, Windows Error Reports, Discord Cache, Steam Cache, VSCode Cache, Edge Code Cache, Chrome Code Cache, Firefox Cache2, Old Temp Files, Old .tmp/.log/.bak, Empty Folders, npm Cache, pip Cache, Windows Update Cache, Crash & Memory Dumps, Nvidia Installer Leftovers, Telegram Desktop Cache |
 | 🛡️ **Risk Levels** | `safe` / `review` / `danger` — system paths and `.sys`/`.dll` files are never touched |
 | 🔄 **Undoable** | Every cleanup gets a restore ID; `restore <id>` brings files back |
 | ⚡ **Dry-Run** | `--dry-run` on CLI and `T` key in TUI — see what would be freed without touching files |
