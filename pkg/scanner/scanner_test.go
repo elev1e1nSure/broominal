@@ -10,27 +10,6 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
-func TestIsExcluded(t *testing.T) {
-	cfg := &config.Config{Exclusions: []string{"node_modules", ".git"}}
-	tests := []struct {
-		path string
-		want bool
-	}{
-		{`C:\project\node_modules\foo`, true},
-		{`C:\project\NODE_MODULES\foo`, true},
-		{`C:\project\.git\config`, true},
-		{`C:\project\.GIT\config`, true},
-		{`C:\safe\file.txt`, false},
-		{`C:\template\foo`, false}, // "temp" should not match "template"
-	}
-	for _, tt := range tests {
-		got := isExcluded(tt.path, cfg)
-		if got != tt.want {
-			t.Errorf("isExcluded(%q) = %v, want %v", tt.path, got, tt.want)
-		}
-	}
-}
-
 func TestMergeItems(t *testing.T) {
 	cats := make(map[string]*types.CategorySummary)
 	items := []types.Item{

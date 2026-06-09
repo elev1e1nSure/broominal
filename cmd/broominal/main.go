@@ -91,7 +91,11 @@ func scanCmd() *cobra.Command {
 		Use:   "scan",
 		Short: "Scan safe zones and show summary",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := scanner.Scan()
+			cfg, _ := config.Load()
+			if cfg == nil {
+				cfg = config.Default()
+			}
+			res, err := scanner.ScanWithConfig(cfg)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
 				os.Exit(1)
@@ -141,7 +145,11 @@ func cleanCmd() *cobra.Command {
 		Use:   "clean",
 		Short: "Clean selected items",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := scanner.Scan()
+			cfg, _ := config.Load()
+			if cfg == nil {
+				cfg = config.Default()
+			}
+			res, err := scanner.ScanWithConfig(cfg)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
 				os.Exit(1)
@@ -227,7 +235,11 @@ func reportCmd() *cobra.Command {
 		Use:   "report",
 		Short: "Generate a cleanup report",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := scanner.Scan()
+			cfg, _ := config.Load()
+			if cfg == nil {
+				cfg = config.Default()
+			}
+			res, err := scanner.ScanWithConfig(cfg)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
 				os.Exit(1)

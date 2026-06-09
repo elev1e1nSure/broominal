@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elev1e1nSure/broominal/pkg/scanner"
 	"github.com/elev1e1nSure/broominal/pkg/types"
+	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
 func TestSave(t *testing.T) {
@@ -114,7 +114,7 @@ func TestPrintSummary(t *testing.T) {
 	if !strings.Contains(out, "Broominal Report") {
 		t.Error("output should contain 'Broominal Report'")
 	}
-	if !strings.Contains(out, scanner.FormatSize(2048)) {
+	if !strings.Contains(out, util.FormatSize(2048)) {
 		t.Errorf("output should contain total size")
 	}
 	if !strings.Contains(out, "id-1") {
