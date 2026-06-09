@@ -16,6 +16,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/report"
 	"github.com/elev1e1nSure/broominal/pkg/scanner"
 	"github.com/elev1e1nSure/broominal/pkg/types"
+	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
 // Screen — текущий экран
@@ -71,6 +72,7 @@ type model struct {
 	configCfg        *config.Config
 	// Cleanup screen
 	cleanupResult string
+	quarantineCleanupAll bool
 }
 
 type configCategoryItem struct {
@@ -684,7 +686,7 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					label = "Would remove"
 				}
 				return cleanDoneMsg{&types.CleanResult{
-					RestoreID: fmt.Sprintf("%s %d quarantines, freed %s", label, deleted, scanner.FormatSize(freed)),
+					RestoreID: fmt.Sprintf("%s %d quarantines, freed %s", label, deleted, util.FormatSize(freed)),
 					Freed:     freed,
 					Files:     deleted,
 				}, nil}
@@ -803,10 +805,10 @@ func (m model) viewDashboard() string {
 		return m.spinner.View() + " " + i18n.T("scanning") + "\n"
 	}
 	return titleStyle.Render(i18n.T("dashboard")) + "\n\n" +
-		fmt.Sprintf("  Total found: %s\n", valueStyle.Render(scanner.FormatSize(m.result.TotalSize))) +
-		fmt.Sprintf("  %s Safe:       %s\n", safeStyle.Render("●"), valueStyle.Render(scanner.FormatSize(m.result.SafeSize))) +
-		fmt.Sprintf("  %s Review:     %s\n", reviewStyle.Render("●"), valueStyle.Render(scanner.FormatSize(m.result.ReviewSize))) +
-		fmt.Sprintf("  %s Danger:     %s\n\n", dangerStyle.Render("●"), valueStyle.Render(scanner.FormatSize(m.result.DangerSize))) +
+		fmt.Sprintf("  Total found: %s\n", valueStyle.Render(util.FormatSize(m.result.TotalSize))) +
+		fmt.Sprintf("  %s Safe:       %s\n", safeStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.SafeSize))) +
+		fmt.Sprintf("  %s Review:     %s\n", reviewStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.ReviewSize))) +
+		fmt.Sprintf("  %s Danger:     %s\n\n", dangerStyle.Render("●"), valueStyle.Render(util.FormatSize(m.result.DangerSize))) +
 		footer(keyHint("Enter", i18n.T("continue")), keyHint("M", i18n.T("main_menu")))
 }
 
@@ -843,7 +845,7 @@ func (m model) viewCategories() string {
 		riskSt := lipgloss.NewStyle().Width(8).Bold(true).Foreground(riskCol)
 		line := prefix +
 			nameSt.Width(20).Render(c.cat.Category) + " " +
-			sizeSt.Width(10).Render(scanner.FormatSize(c.cat.Size)) + " " +
+			sizeSt.Width(10).Render(util.FormatSize(c.cat.Size)) + " " +
 			filesSt.Width(8).Render(fmt.Sprintf("%d", c.cat.Files)) + "  " +
 			riskSt.Render(string(c.cat.Risk)) + "  " +
 			marker
@@ -885,11 +887,11 @@ func (m model) viewResult() string {
 	var body string
 	if m.dryRun {
 		body = titleStyle.Render(i18n.T("dry_run_complete")) + "\n\n" +
-			fmt.Sprintf("  Would free: %s\n", valueStyle.Render(scanner.FormatSize(m.cleanResult.Freed))) +
+			fmt.Sprintf("  Would free: %s\n", valueStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
 			fmt.Sprintf("  Files:      %s\n\n", valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files)))
 	} else {
 		body = titleStyle.Render(i18n.T("cleanup_complete")) + "\n\n" +
-			fmt.Sprintf("  Freed:      %s\n", safeStyle.Render(scanner.FormatSize(m.cleanResult.Freed))) +
+			fmt.Sprintf("  Freed:      %s\n", safeStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
 			fmt.Sprintf("  Files:      %s\n", valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files))) +
 			fmt.Sprintf("  Restore ID: %s\n\n", mutedStyle.Render(m.cleanResult.RestoreID))
 	}
@@ -971,7 +973,7 @@ func (d detailItem) FilterValue() string { return d.item.Path }
 
 func (d detailItem) Title() string { return d.item.Path }
 func (d detailItem) Description() string {
-	return fmt.Sprintf("%s  %s", scanner.FormatSize(d.item.Size), d.item.Risk)
+	return fmt.Sprintf("%s  %s", util.FormatSize(d.item.Size), d.item.Risk)
 }
 
 func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
@@ -989,7 +991,7 @@ func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
 	}
 	return fmt.Sprintf(
 		"  Will free: %s\n  Files:     %d\n  Safe:      %s\n  Review:    %s\n",
-		scanner.FormatSize(safe+review), files, scanner.FormatSize(safe), scanner.FormatSize(review),
+		util.FormatSize(safe+review), files, util.FormatSize(safe), util.FormatSize(review),
 	)
 }
 

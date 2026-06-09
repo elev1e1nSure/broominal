@@ -280,6 +280,49 @@ func Cleanup(maxAgeDays int, dryRun bool) (int, int64, error) {
 	return deleted, freed, nil
 }
 
+// CleanupAll removes all quarantine entries regardless of age.
+// Returns number of deleted quarantines and total freed bytes.
+func CleanupAll(dryRun bool) (int, int64, error) {
+	qDir := BaseDir()
+	entries, err := os.ReadDir(qDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, 0, nil
+		}
+		return 0, 0, err
+	}
+
+	var deleted int
+	var freed int64
+
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		id := e.Name()
+		if err := validateID(id); err != nil {
+			continue
+		}
+		dirPath := filepath.Join(qDir, id)
+
+		var size int64
+		_ = filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() {
+				return nil
+			}
+			size += info.Size()
+			return nil
+		})
+		if !dryRun {
+			_ = os.RemoveAll(dirPath)
+		}
+		deleted++
+		freed += size
+	}
+
+	return deleted, freed, nil
+}
+
 // GetLast возвращает последний restore ID
 func GetLast() (string, error) {
 	ids, err := List()

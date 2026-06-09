@@ -12,6 +12,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/style"
 	"github.com/elev1e1nSure/broominal/pkg/report"
+	"github.com/elev1e1nSure/broominal/pkg/util"
 	"github.com/elev1e1nSure/broominal/pkg/scanner"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
@@ -106,14 +107,14 @@ func scanCmd() *cobra.Command {
 				case types.RiskDanger:
 					riskCol = style.Redf(string(c.Risk))
 				}
-				fmt.Printf("  %-20s %10s  %s\n", c.Category, scanner.FormatSize(c.Size), riskCol)
+				fmt.Printf("  %-20s %10s  %s\n", c.Category, util.FormatSize(c.Size), riskCol)
 			}
 			fmt.Println()
 			fmt.Printf("Total: %s | Safe: %s | Review: %s | Danger: %s\n",
-				style.Cyanf(scanner.FormatSize(res.TotalSize)),
-				style.Greenf(scanner.FormatSize(res.SafeSize)),
-				style.Yellowf(scanner.FormatSize(res.ReviewSize)),
-				style.Redf(scanner.FormatSize(res.DangerSize)),
+				style.Cyanf(util.FormatSize(res.TotalSize)),
+				style.Greenf(util.FormatSize(res.SafeSize)),
+				style.Yellowf(util.FormatSize(res.ReviewSize)),
+				style.Redf(util.FormatSize(res.DangerSize)),
 			)
 		},
 	}
@@ -172,7 +173,7 @@ func cleanCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			if dryRun {
-				fmt.Printf("%s Would free %s in %d files\n", style.Yellowf("[dry-run]"), style.Cyanf(scanner.FormatSize(freed)), files)
+				fmt.Printf("%s Would free %s in %d files\n", style.Yellowf("[dry-run]"), style.Cyanf(util.FormatSize(freed)), files)
 				return
 			}
 			_, _ = report.Save(res, &types.CleanResult{
@@ -180,7 +181,7 @@ func cleanCmd() *cobra.Command {
 				Freed:     freed,
 				Files:     files,
 			})
-			fmt.Printf("%s %s in %s files. Restore ID: %s\n", style.Greenf("Cleaned"), style.Cyanf(scanner.FormatSize(freed)), style.Boldf("%d", files), style.Yellowf(id))
+			fmt.Printf("%s %s in %s files. Restore ID: %s\n", style.Greenf("Cleaned"), style.Cyanf(util.FormatSize(freed)), style.Boldf("%d", files), style.Yellowf(id))
 		},
 	}
 	cmd.Flags().BoolVar(&safeOnly, "safe", false, "Only clean safe items")
@@ -309,7 +310,7 @@ func quarantineCleanupCmd() *cobra.Command {
 				fmt.Println(style.Greenf("No old quarantines to remove."))
 				return
 			}
-			fmt.Printf("Will remove %s quarantine(s) (%s)\n", style.Boldf("%d", deleted), style.Cyanf(scanner.FormatSize(freed)))
+			fmt.Printf("Will remove %s quarantine(s) (%s)\n", style.Boldf("%d", deleted), style.Cyanf(util.FormatSize(freed)))
 			if !force && !dryRun {
 				fmt.Printf("Use %s to proceed.\n", style.Yellowf("--force"))
 				return
@@ -323,7 +324,7 @@ func quarantineCleanupCmd() *cobra.Command {
 				fmt.Fprintf(os.Stderr, "Cleanup failed: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("%s %s quarantine(s), freed %s\n", style.Greenf("Removed"), style.Boldf("%d", deleted), style.Cyanf(scanner.FormatSize(freed)))
+			fmt.Printf("%s %s quarantine(s), freed %s\n", style.Greenf("Removed"), style.Boldf("%d", deleted), style.Cyanf(util.FormatSize(freed)))
 		},
 	}
 	cmd.Flags().BoolVar(&force, "force", false, "Confirm deletion without prompt")

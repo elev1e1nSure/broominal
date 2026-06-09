@@ -1,7 +1,6 @@
 package scanner
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -485,20 +484,6 @@ func mergeItems(cats map[string]*types.CategorySummary, name string, risk types.
 		cat.Files++
 		cat.Items = append(cat.Items, it)
 	}
-}
-
-// FormatSize форматирует байты в человекочитаемый вид
-func FormatSize(b int64) string {
-	const unit = 1024
-	if b < unit {
-		return fmt.Sprintf("%d B", b)
-	}
-	div, exp := int64(unit), 0
-	for n := b / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
 // IsSystemFile проверяет, не является ли файл системным или скрытым

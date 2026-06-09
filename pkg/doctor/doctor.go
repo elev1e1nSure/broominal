@@ -10,7 +10,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/report"
-	"github.com/elev1e1nSure/broominal/pkg/scanner"
+	"github.com/elev1e1nSure/broominal/pkg/util"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
@@ -200,7 +200,7 @@ func checkQuarantineStats() Check {
 	return Check{
 		Name:   "Quarantine stats",
 		Status: StatusPass,
-		Detail: fmt.Sprintf("%d quarantines, %d files, %s", len(entries), totalFiles, scanner.FormatSize(totalSize)),
+		Detail: fmt.Sprintf("%d quarantines, %d files, %s", len(entries), totalFiles, util.FormatSize(totalSize)),
 	}
 }
 

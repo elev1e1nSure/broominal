@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/elev1e1nSure/broominal/pkg/scanner"
+	"github.com/elev1e1nSure/broominal/pkg/util"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
@@ -55,13 +55,13 @@ func Save(result *types.ScanResult, cleaned *types.CleanResult) (string, error) 
 func PrintSummary(result *types.ScanResult, cleaned *types.CleanResult) {
 	fmt.Println()
 	fmt.Println("═ Broominal Report ════════════════════════")
-	fmt.Printf("  Total found:    %s\n", scanner.FormatSize(result.TotalSize))
-	fmt.Printf("  Safe:           %s\n", scanner.FormatSize(result.SafeSize))
-	fmt.Printf("  Review:         %s\n", scanner.FormatSize(result.ReviewSize))
-	fmt.Printf("  Danger:         %s\n", scanner.FormatSize(result.DangerSize))
+	fmt.Printf("  Total found:    %s\n", util.FormatSize(result.TotalSize))
+	fmt.Printf("  Safe:           %s\n", util.FormatSize(result.SafeSize))
+	fmt.Printf("  Review:         %s\n", util.FormatSize(result.ReviewSize))
+	fmt.Printf("  Danger:         %s\n", util.FormatSize(result.DangerSize))
 	if cleaned != nil {
 		fmt.Println()
-		fmt.Printf("  Freed:          %s\n", scanner.FormatSize(cleaned.Freed))
+		fmt.Printf("  Freed:          %s\n", util.FormatSize(cleaned.Freed))
 		fmt.Printf("  Files removed:  %d\n", cleaned.Files)
 		fmt.Printf("  Restore ID:     %s\n", cleaned.RestoreID)
 	}
