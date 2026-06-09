@@ -74,6 +74,7 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case 2: // Doctor
 			m.doctorChecks = doctor.Run()
+			m.doctorQuarantineStats = doctor.QuarantineStats()
 			m.screen = ScreenDoctor
 			return m, nil
 		case 3: // Quarantine Cleanup

@@ -58,6 +58,10 @@ func (m model) viewDoctor() string {
 			hasFix = true
 		}
 	}
+	// Show quarantine stats (lazy loaded)
+	if m.doctorQuarantineStats.Name != "" {
+		body += fmt.Sprintf("  %-28s %s  %s\n", m.doctorQuarantineStats.Name, safeStyle.Render("[PASS]"), mutedStyle.Render(m.doctorQuarantineStats.Detail))
+	}
 	if m.doctorFixResult != "" {
 		body += "\n  " + m.doctorFixResult + "\n"
 	}

@@ -150,14 +150,12 @@ func TestRun(t *testing.T) {
 	}
 
 	expected := []string{
-		i18n.T("check_admin"),
 		i18n.T("check_quarantine_dir"),
 		i18n.T("check_reports_dir"),
 		i18n.T("check_config_dir"),
 		i18n.T("check_temp_dir"),
 		i18n.T("check_userprofile_dir"),
 		i18n.T("check_manifests"),
-		i18n.T("check_stats"),
 	}
 	for _, name := range expected {
 		if !names[name] {

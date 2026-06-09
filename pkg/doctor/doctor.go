@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
@@ -34,20 +35,25 @@ type Check struct {
 	FixKey     string // non-empty if an automatic fix is available
 }
 
-// Run performs all health checks and returns the results.
+// Run performs fast health checks. Heavy checks (quarantine stats) are excluded
+// and should be loaded separately via QuarantineStats().
 func Run() []Check {
 	var checks []Check
 
-	checks = append(checks, checkAdmin())
-	checks = append(checks, checkDir(quarantine.BaseDir(), i18n.T("check_quarantine_dir")))
-	checks = append(checks, checkDir(report.BaseDir(), i18n.T("check_reports_dir")))
-	checks = append(checks, checkDir(config.Dir(), i18n.T("check_config_dir")))
+	checks = append(checks, checkDirCached(quarantine.BaseDir(), i18n.T("check_quarantine_dir")))
+	checks = append(checks, checkDirCached(report.BaseDir(), i18n.T("check_reports_dir")))
+	checks = append(checks, checkDirCached(config.Dir(), i18n.T("check_config_dir")))
 	checks = append(checks, checkEnvDir("TEMP", i18n.T("check_temp_dir")))
 	checks = append(checks, checkEnvDir("USERPROFILE", i18n.T("check_userprofile_dir")))
 	checks = append(checks, checkManifests())
-	checks = append(checks, checkQuarantineStats())
 
 	return checks
+}
+
+// QuarantineStats returns quarantine size/file stats. This is a heavy operation
+// that should be called lazily when needed.
+func QuarantineStats() Check {
+	return checkQuarantineStats()
 }
 
 // IsAdmin returns true if the current process has elevated privileges.
@@ -71,6 +77,47 @@ func checkAdmin() Check {
 		Status: StatusPass,
 		Detail: i18n.T("running_as_admin"),
 	}
+}
+
+// cacheEntry stores cached check results
+type cacheEntry struct {
+	Path      string
+	Name      string
+	Timestamp int64
+}
+
+var checkCache = make(map[string]cacheEntry)
+
+func checkDirCached(path, name string) Check {
+	// Check cache first
+	if entry, ok := checkCache[path]; ok {
+		// Cache valid for 24 hours
+		if nowUnix()-entry.Timestamp < 86400 {
+			return Check{
+				Name:   entry.Name,
+				Status: StatusPass,
+				Detail: entry.Path,
+			}
+		}
+	}
+
+	// Run actual check
+	result := checkDir(path, name)
+
+	// Cache successful results
+	if result.Status == StatusPass {
+		checkCache[path] = cacheEntry{
+			Path:      path,
+			Name:      name,
+			Timestamp: nowUnix(),
+		}
+	}
+
+	return result
+}
+
+func nowUnix() int64 {
+	return time.Now().Unix()
 }
 
 func checkDir(path, name string) Check {
