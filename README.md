@@ -49,7 +49,12 @@ Or grab the latest `.exe` from [releases][releases].
 git clone https://github.com/elev1e1nSure/broominal.git
 cd broominal
 
+# build without version info
 go build -o broominal.exe ./cmd/broominal
+
+# build with embedded version (used for update checks)
+go build -ldflags "-X main.Version=v1.2.0" -o broominal.exe ./cmd/broominal
+
 .\broominal.exe ui
 ```
 

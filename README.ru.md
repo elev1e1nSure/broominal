@@ -49,7 +49,12 @@ go install github.com/elev1e1nSure/broominal/cmd/broominal@latest
 git clone https://github.com/elev1e1nSure/broominal.git
 cd broominal
 
+# сборка без версии
 go build -o broominal.exe ./cmd/broominal
+
+# сборка с версией (нужно для проверки обновлений)
+go build -ldflags "-X main.Version=v1.2.0" -o broominal.exe ./cmd/broominal
+
 .\broominal.exe ui
 ```
 
