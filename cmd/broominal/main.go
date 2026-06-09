@@ -134,6 +134,7 @@ func uiCmd() *cobra.Command {
 
 func cleanCmd() *cobra.Command {
 	var safeOnly bool
+	var danger bool
 	var dryRun bool
 	cmd := &cobra.Command{
 		Use:   "clean",
@@ -142,6 +143,17 @@ func cleanCmd() *cobra.Command {
 			res, err := scanner.Scan()
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
+				os.Exit(1)
+			}
+			var hasDanger bool
+			for _, cat := range res.Categories {
+				if cat.Risk == types.RiskDanger && len(cat.Items) > 0 {
+					hasDanger = true
+					break
+				}
+			}
+			if hasDanger && !danger {
+				fmt.Fprintf(os.Stderr, "%s Danger items found. Use %s to confirm.\n", style.Failf("[BLOCKED]"), style.Yellowf("--danger"))
 				os.Exit(1)
 			}
 			var selected []types.Item
@@ -172,6 +184,7 @@ func cleanCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&safeOnly, "safe", false, "Only clean safe items")
+	cmd.Flags().BoolVar(&danger, "danger", false, "Allow cleaning danger items")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Simulate cleaning without moving files")
 	return cmd
 }
