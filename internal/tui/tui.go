@@ -8,10 +8,10 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/elev1e1nSure/pclean/pkg/quarantine"
-	"github.com/elev1e1nSure/pclean/pkg/report"
-	"github.com/elev1e1nSure/pclean/pkg/scanner"
-	"github.com/elev1e1nSure/pclean/pkg/types"
+	"github.com/elev1e1nSure/broominal/pkg/quarantine"
+	"github.com/elev1e1nSure/broominal/pkg/report"
+	"github.com/elev1e1nSure/broominal/pkg/scanner"
+	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
 // Screen — текущий экран
@@ -260,7 +260,7 @@ func (m model) viewDashboard() string {
 	}
 	return fmt.Sprintf(
 		"%s\n\n%s\n%s\n%s\n%s\n\n%s\n",
-		titleStyle.Render(" PClean — Dashboard "),
+		titleStyle.Render(" Broominal — Dashboard "),
 		fmt.Sprintf("  Total found:  %s", scanner.FormatSize(m.result.TotalSize)),
 		fmt.Sprintf("  %s Safe:       %s", safeStyle.Render("●"), scanner.FormatSize(m.result.SafeSize)),
 		fmt.Sprintf("  %s Review:     %s", reviewStyle.Render("●"), scanner.FormatSize(m.result.ReviewSize)),
@@ -284,20 +284,21 @@ func (m model) viewCategories() string {
 			style = selectedStyle
 		}
 		riskStr := string(c.cat.Risk)
-		riskStyle := mutedStyle
+		riskColor := "#9ca3af"
 		switch c.cat.Risk {
 		case types.RiskSafe:
-			riskStyle = safeStyle
+			riskColor = "#4ade80"
 		case types.RiskReview:
-			riskStyle = reviewStyle
+			riskColor = "#fbbf24"
 		case types.RiskDanger:
-			riskStyle = dangerStyle
+			riskColor = "#f87171"
 		}
+		riskRendered := lipgloss.NewStyle().Width(8).Foreground(lipgloss.Color(riskColor)).Render(riskStr)
 		line := fmt.Sprintf("  %-20s %10s %8d %s  %s",
 			c.cat.Category,
 			scanner.FormatSize(c.cat.Size),
 			c.cat.Files,
-			riskStyle.Render(riskStr),
+			riskRendered,
 			marker,
 		)
 		s += style.Render(line) + "\n"

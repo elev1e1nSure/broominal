@@ -3,7 +3,7 @@ package risk
 import (
 	"strings"
 
-	"github.com/elev1e1nSure/pclean/pkg/types"
+	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
 // Classify классифицирует файл по риску на основе пути и категории

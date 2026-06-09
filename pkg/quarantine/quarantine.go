@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/elev1e1nSure/pclean/pkg/types"
+	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
 // BaseDir возвращает базовую директорию карантина
@@ -17,7 +17,7 @@ func BaseDir() string {
 	if localAppData == "" {
 		localAppData = os.Getenv("USERPROFILE")
 	}
-	return filepath.Join(localAppData, "pclean", "quarantine")
+	return filepath.Join(localAppData, "broominal", "quarantine")
 }
 
 // Move перемещает файлы в карантин и возвращает restore ID

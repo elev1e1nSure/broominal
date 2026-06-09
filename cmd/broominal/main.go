@@ -5,16 +5,16 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/elev1e1nSure/pclean/internal/tui"
-	"github.com/elev1e1nSure/pclean/pkg/quarantine"
-	"github.com/elev1e1nSure/pclean/pkg/report"
-	"github.com/elev1e1nSure/pclean/pkg/scanner"
-	"github.com/elev1e1nSure/pclean/pkg/types"
+	"github.com/elev1e1nSure/broominal/internal/tui"
+	"github.com/elev1e1nSure/broominal/pkg/quarantine"
+	"github.com/elev1e1nSure/broominal/pkg/report"
+	"github.com/elev1e1nSure/broominal/pkg/scanner"
+	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
 func main() {
 	var rootCmd = &cobra.Command{
-		Use:   "pclean",
+		Use:   "broominal",
 		Short: "Safe Windows cleanup with undo",
 		Long:  `A safe, transparent, undoable Windows cleanup tool.`,
 	}

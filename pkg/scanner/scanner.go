@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/elev1e1nSure/pclean/pkg/types"
+	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
 var browserCachePaths = []string{

@@ -1,4 +1,4 @@
-module github.com/elev1e1nSure/pclean
+module github.com/elev1e1nSure/broominal
 
 go 1.26.3
 

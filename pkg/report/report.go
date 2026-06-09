@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/elev1e1nSure/pclean/pkg/scanner"
-	"github.com/elev1e1nSure/pclean/pkg/types"
+	"github.com/elev1e1nSure/broominal/pkg/scanner"
+	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
 // BaseDir возвращает директорию отчётов
@@ -17,7 +17,7 @@ func BaseDir() string {
 	if localAppData == "" {
 		localAppData = os.Getenv("USERPROFILE")
 	}
-	return filepath.Join(localAppData, "pclean", "reports")
+	return filepath.Join(localAppData, "broominal", "reports")
 }
 
 // Save сохраняет отчёт в JSON и выводит summary в stdout
@@ -54,7 +54,7 @@ func Save(result *types.ScanResult, cleaned *types.CleanResult) (string, error) 
 // PrintSummary выводит краткую сводку в stdout
 func PrintSummary(result *types.ScanResult, cleaned *types.CleanResult) {
 	fmt.Println()
-	fmt.Println("═ PClean Report ════════════════════════")
+	fmt.Println("═ Broominal Report ════════════════════════")
 	fmt.Printf("  Total found:    %s\n", scanner.FormatSize(result.TotalSize))
 	fmt.Printf("  Safe:           %s\n", scanner.FormatSize(result.SafeSize))
 	fmt.Printf("  Review:         %s\n", scanner.FormatSize(result.ReviewSize))
