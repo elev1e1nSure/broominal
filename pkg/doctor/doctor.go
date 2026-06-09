@@ -50,9 +50,14 @@ func Run() []Check {
 	return checks
 }
 
-func checkAdmin() Check {
+// IsAdmin returns true if the current process has elevated privileges.
+func IsAdmin() bool {
 	cmd := exec.Command("cmd", "/c", "net", "session")
-	if err := cmd.Run(); err != nil {
+	return cmd.Run() == nil
+}
+
+func checkAdmin() Check {
+	if !IsAdmin() {
 		return Check{
 			Name:       i18n.T("check_admin"),
 			Status:     StatusWarn,

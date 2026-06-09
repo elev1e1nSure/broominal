@@ -35,6 +35,7 @@ const (
 	ScreenConfigThresholds
 	ScreenQuarantineCleanup
 	ScreenLanguage
+	ScreenAdminPrompt
 )
 
 type restoreEntry struct {
@@ -75,6 +76,8 @@ type model struct {
 	// Cleanup screen
 	cleanupResult        string
 	quarantineCleanupAll bool
+	// Admin prompt
+	adminPromptIdx int
 }
 
 type configCategoryItem struct {

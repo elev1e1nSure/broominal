@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/config"
+	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
@@ -18,7 +19,9 @@ func Start() error {
 		i18n.SetLanguage(cfg.Language)
 	}
 	m := initialModel()
-	if cfg == nil || cfg.Language == "" {
+	if !doctor.IsAdmin() {
+		m.screen = ScreenAdminPrompt
+	} else if cfg == nil || cfg.Language == "" {
 		// first run: try to auto-detect, then show language picker
 		if lang, err := i18n.DetectFromIP(); err == nil {
 			i18n.SetLanguage(lang)
@@ -173,6 +176,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleKeyQuarantineCleanup(msg)
 	case ScreenLanguage:
 		return m.handleKeyLanguage(msg)
+	case ScreenAdminPrompt:
+		return m.handleKeyAdminPrompt(msg)
 	case ScreenError:
 		return m.handleKeyError(msg)
 	}
@@ -215,6 +220,8 @@ func (m model) View() string {
 		return m.viewQuarantineCleanup()
 	case ScreenLanguage:
 		return m.viewLanguage()
+	case ScreenAdminPrompt:
+		return m.viewAdminPrompt()
 	}
 	return ""
 }
