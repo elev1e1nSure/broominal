@@ -70,8 +70,8 @@ func Default() *Config {
 	}
 }
 
-// Dir returns the directory where config and other app data live.
-func Dir() string {
+// AppDir returns the root application data directory.
+func AppDir() string {
 	localAppData := os.Getenv("LOCALAPPDATA")
 	if localAppData == "" {
 		localAppData = os.Getenv("USERPROFILE")
@@ -79,9 +79,14 @@ func Dir() string {
 	return filepath.Join(localAppData, "broominal")
 }
 
+// Dir returns the directory where config and other app data live.
+func Dir() string {
+	return AppDir()
+}
+
 // Path returns the full path to config.json.
 func Path() string {
-	return filepath.Join(Dir(), "config.json")
+	return filepath.Join(AppDir(), "config.json")
 }
 
 // Load reads the config from disk or returns defaults if missing.

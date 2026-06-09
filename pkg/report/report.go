@@ -7,17 +7,14 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/util"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
 // BaseDir возвращает директорию отчётов
 func BaseDir() string {
-	localAppData := os.Getenv("LOCALAPPDATA")
-	if localAppData == "" {
-		localAppData = os.Getenv("USERPROFILE")
-	}
-	return filepath.Join(localAppData, "broominal", "reports")
+	return filepath.Join(config.AppDir(), "reports")
 }
 
 // Save сохраняет отчёт в JSON и выводит summary в stdout
