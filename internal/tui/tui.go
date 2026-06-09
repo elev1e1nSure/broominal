@@ -10,6 +10,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
+	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 	"github.com/elev1e1nSure/broominal/pkg/update"
 )
@@ -19,6 +20,11 @@ func Start(version string) error {
 	cfg, _ := config.Load()
 	if cfg != nil && cfg.Language != "" {
 		i18n.SetLanguage(cfg.Language)
+	}
+	if cfg != nil && cfg.QuarantineMaxAgeDays > 0 {
+		if deleted, freed, err := quarantine.Cleanup(cfg.QuarantineMaxAgeDays); err == nil && deleted > 0 {
+			slog.Info("auto quarantine cleanup", "deleted", deleted, "freed", freed)
+		}
 	}
 	m := initialModel()
 	m.version = version
