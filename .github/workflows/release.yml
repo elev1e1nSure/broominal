@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -40,6 +43,7 @@ jobs:
         shell: pwsh
 
       - name: Create and push tag
+        if: github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -52,7 +56,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body_path: RELEASE_BODY.md
-          tag_name: v${{ github.event.inputs.version }}
+          tag_name: ${{ github.event.inputs.version != '' && format('v{0}', github.event.inputs.version) || github.ref_name }}
           files: |
             broominal.exe
             checksums.txt
