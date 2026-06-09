@@ -307,7 +307,7 @@ var translations = map[string]map[string]string{
 		"error":                          "Ошибка",
 		"hint_error_quit":                "Нажмите Esc для возврата в меню",
 		"scanning":                       "Сканирование...",
-		"moving_files":                   "Перемещение файлов в резервную копию...",
+		"moving_files":                   "Перемещение файлов в корзину...",
 		"please_wait":                    "Пожалуйста, подождите, это может занять некоторое время.",
 		"quit":                           "выйти",
 		"restore":                        "Восстановить файлы",
