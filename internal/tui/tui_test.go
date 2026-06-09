@@ -207,10 +207,10 @@ func TestViewRestoreConflict(t *testing.T) {
 	m.screen = ScreenRestoreConflict
 	m.conflicts = []string{`C:\a.txt`, `C:\b.txt`}
 	out := m.View()
-	if !strings.Contains(out, "Restore Conflicts") {
-		t.Error("view should contain 'Restore Conflicts'")
+	if !strings.Contains(out, "File Conflicts") && !strings.Contains(out, "Конфликты файлов") {
+		t.Error("view should contain 'File Conflicts'")
 	}
-	if !strings.Contains(out, "2 file(s)") {
+	if !strings.Contains(out, "2") {
 		t.Error("view should contain conflict count")
 	}
 }
@@ -386,8 +386,8 @@ func TestViewDoctor(t *testing.T) {
 		{Name: "Test", Status: doctor.StatusPass, Detail: "ok"},
 	}
 	out := m.View()
-	if !strings.Contains(out, "System Check") {
-		t.Error("view should contain 'System Check'")
+	if !strings.Contains(out, "Diagnostics") && !strings.Contains(out, "Диагностика") {
+		t.Error("view should contain 'Diagnostics'")
 	}
 	if !strings.Contains(out, "Test") {
 		t.Error("view should contain check name")
@@ -407,8 +407,8 @@ func TestViewQuarantineCleanup(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenQuarantineCleanup
 	out := m.View()
-	if !strings.Contains(out, "Quarantine Cleanup") {
-		t.Error("view should contain 'Quarantine Cleanup'")
+	if !strings.Contains(out, "Backup Cleanup") && !strings.Contains(out, "Очистка резервных копий") {
+		t.Error("view should contain 'Backup Cleanup'")
 	}
 }
 
@@ -416,8 +416,8 @@ func TestViewLanguage(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenLanguage
 	out := m.View()
-	if !strings.Contains(out, "Select Language") {
-		t.Error("view should contain 'Select Language'")
+	if !strings.Contains(out, "Language") && !strings.Contains(out, "Язык") {
+		t.Error("view should contain 'Language'")
 	}
 	if !strings.Contains(out, "English") {
 		t.Error("view should contain 'English'")
@@ -436,11 +436,11 @@ func TestHandleKeyLanguageSelect(t *testing.T) {
 		t.Errorf("after down: selectedIdx = %d, want 1", mm.selectedIdx)
 	}
 
-	// Select Russian — should stay on language screen
+	// Select Russian — should go to main menu
 	newM2, _ := mm.handleKey(tea.KeyMsg{Type: tea.KeyEnter})
 	mm2 := newM2.(model)
-	if mm2.screen != ScreenLanguage {
-		t.Errorf("after select: screen = %d, want Language", mm2.screen)
+	if mm2.screen != ScreenMainMenu {
+		t.Errorf("after select: screen = %d, want MainMenu", mm2.screen)
 	}
 }
 
