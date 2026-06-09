@@ -167,7 +167,13 @@ func (m model) viewConfig() string {
 func (m model) viewConfigCategories() string {
 	var body string
 	body += m.appTitle(i18n.T("config_categories")) + "\n\n"
-	for i, c := range m.configCategories {
+	visible := m.height - 6
+	if visible < 5 {
+		visible = 5
+	}
+	start, end := clampWindow(m.selectedIdx, len(m.configCategories), visible)
+	for i := start; i < end; i++ {
+		c := m.configCategories[i]
 		marker := "[ ]"
 		if c.enabled {
 			marker = safeStyle.Render("[x]")

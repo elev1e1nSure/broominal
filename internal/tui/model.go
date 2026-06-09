@@ -119,6 +119,26 @@ func footer(hints ...string) string {
 	return mutedStyle.Render(strings.Join(hints, "  "))
 }
 
+// clampWindow returns start/end indices so that idx is visible within a window of size visible.
+func clampWindow(idx, total, visible int) (int, int) {
+	if total <= visible || visible <= 0 {
+		return 0, total
+	}
+	start := idx - visible/2
+	if start < 0 {
+		start = 0
+	}
+	end := start + visible
+	if end > total {
+		end = total
+		start = end - visible
+		if start < 0 {
+			start = 0
+		}
+	}
+	return start, end
+}
+
 func initialModel() model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot

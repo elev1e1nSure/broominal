@@ -136,7 +136,13 @@ func (m model) viewCategories() string {
 	body += mutedStyle.Render("  "+head) + "\n"
 	body += mutedStyle.Render("  "+strings.Repeat("─", catW+sizeW+filesW+riskW+selW+4)) + "\n"
 
-	for i, c := range m.categories {
+	visible := m.height - 9
+	if visible < 5 {
+		visible = 5
+	}
+	start, end := clampWindow(m.selectedIdx, len(m.categories), visible)
+	for i := start; i < end; i++ {
+		c := m.categories[i]
 		marker := "[ ]"
 		if c.selected {
 			marker = safeStyle.Render("[x]")

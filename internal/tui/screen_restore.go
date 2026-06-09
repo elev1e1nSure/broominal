@@ -122,7 +122,13 @@ func (m model) viewRestore() string {
 	if len(m.restoreEntries) == 0 {
 		body += mutedStyle.Render("  "+i18n.T("no_quarantines")) + "\n"
 	} else {
-		for i, e := range m.restoreEntries {
+		visible := m.height - 8
+		if visible < 5 {
+			visible = 5
+		}
+		start, end := clampWindow(m.restoreIdx, len(m.restoreEntries), visible)
+		for i := start; i < end; i++ {
+			e := m.restoreEntries[i]
 			dateStr := e.createdAt.Format("2006-01-02 15:04")
 			line := fmt.Sprintf("%s  %s  %s, %d files", e.id, dateStr, util.FormatSize(e.totalSize), e.files)
 			if i == m.restoreIdx {

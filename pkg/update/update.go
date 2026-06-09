@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -58,6 +59,8 @@ func CheckForUpdates(currentVersion string) (*Release, error) {
 		return nil, fmt.Errorf("failed to decode release info: %w", err)
 	}
 
+	slog.Info("update check debug", "latest_tag", release.TagName, "current_version", currentVersion)
+
 	// Normalize and compare versions using semver
 	currentVer := strings.TrimSpace(strings.TrimPrefix(currentVersion, "v"))
 	latestVer := strings.TrimSpace(strings.TrimPrefix(release.TagName, "v"))
@@ -77,10 +80,12 @@ func CheckForUpdates(currentVersion string) (*Release, error) {
 		return nil, fmt.Errorf("invalid latest version: %w", err)
 	}
 
-	if currentSemver.GreaterThanOrEqual(latestSemver) {
+	if !currentSemver.LessThan(latestSemver) {
+		slog.Info("update check: no update available", "current", currentVer, "latest", latestVer)
 		return nil, nil // No update available
 	}
 
+	slog.Info("update check: update available", "latest", release.TagName)
 	return &release, nil
 }
 

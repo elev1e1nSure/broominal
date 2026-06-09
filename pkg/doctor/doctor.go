@@ -64,23 +64,6 @@ func IsAdmin() bool {
 	return cmd.Run() == nil
 }
 
-func checkAdmin() Check {
-	if !IsAdmin() {
-		return Check{
-			Name:       i18n.T("check_admin"),
-			Status:     StatusWarn,
-			Detail:     i18n.T("not_running_as_admin"),
-			Suggestion: i18n.T("suggest_admin"),
-			FixKey:     "admin",
-		}
-	}
-	return Check{
-		Name:   i18n.T("check_admin"),
-		Status: StatusPass,
-		Detail: i18n.T("running_as_admin"),
-	}
-}
-
 // cacheEntry stores cached check results
 type cacheEntry struct {
 	Path      string
