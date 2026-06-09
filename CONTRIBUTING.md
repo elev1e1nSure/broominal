@@ -61,4 +61,4 @@ Before opening a PR, check:
 - changed code is formatted with `gofmt`
 - user-facing behavior is documented
 - new cleanup logic has a clear risk level
-- destructive operations have dry-run or quarantine behavior
+- destructive operations always use quarantine behavior

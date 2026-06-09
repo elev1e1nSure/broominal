@@ -57,7 +57,7 @@ internal/
 
 ## Key design decisions
 1. **Quarantine pattern**: files are renamed/moved to `%LOCALAPPDATA%\broominal\quarantine\<uuid>`. A `manifest.json` records original -> quarantined mappings. Restore reverses the mapping.
-2. **Dry-run everywhere**: `clean --dry-run`, `quarantine-cleanup --dry-run`.
+2. **Safety first**: every cleanup moves files to quarantine instead of permanent deletion.
 3. **Config-driven scanning**: `config.json` controls which categories are enabled, age/size thresholds, exclusions, risk overrides, and language. Missing config auto-creates with defaults and merges missing categories into existing configs.
 4. **Conflict handling on restore**: if the original file already exists, CLI offers `--force-overwrite`; TUI shows an interactive conflict screen.
 5. **Doctor command**: lightweight health checks (admin rights, directory write access, manifest integrity, quarantine stats) without heavy dependencies.
@@ -79,7 +79,7 @@ All terminal output uses ANSI colors via `pkg/style` (`Bold`, `Green`, `Yellow`,
 | Command names in help | Cyan | `clean`, `scan`, `doctor` |
 | Section headers (Usage, Flags, Available Commands) | Bold | **Usage:**, **Flags:** |
 | Positive results / success | Green + Bold | `[PASS]`, `Cleaned`, `Restored` |
-| Warnings / dry-run | Yellow | `[WARN]`, `[dry-run]` |
+| Warnings | Yellow | `[WARN]` |
 | Errors / danger | Red + Bold | `[FAIL]`, `danger` |
 | Quantities (size, count, IDs) | Cyan | `4.6 MB`, `restore-id` |
 | Descriptions / secondary text | Gray | `Scan safe zones and show summary` |

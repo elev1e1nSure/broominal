@@ -70,9 +70,6 @@ go build -ldflags "-X main.Version=v1.2.0" -o broominal.exe ./cmd/broominal
 # найти кандидатов на очистку
 broominal scan
 
-# посмотреть, что будет очищено (dry-run)
-broominal clean --dry-run
-
 # очистить только безопасные элементы
 broominal clean --safe
 
@@ -143,9 +140,6 @@ broominal clean --danger
 
 # очистить только безопасные элементы
 broominal clean --safe
-
-# показать, что будет очищено, без реальной очистки
-broominal clean --dry-run
 ```
 
 ### restore
@@ -246,9 +240,6 @@ broominal clean --safe
 
 # разрешить очистку опасных элементов
 broominal clean --danger
-
-# показать, что будет очищено, без реальной очистки
-broominal clean --dry-run
 ```
 
 Конфиг-файл (`%LOCALAPPDATA%\broominal\config.json`):

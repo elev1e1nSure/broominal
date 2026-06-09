@@ -70,9 +70,6 @@ Typical workflow: scan → preview → clean → restore if needed.
 # find cleanup candidates
 broominal scan
 
-# preview what would be cleaned (dry-run)
-broominal clean --dry-run
-
 # clean safe items only
 broominal clean --safe
 
@@ -143,9 +140,6 @@ broominal clean --danger
 
 # clean only safe items
 broominal clean --safe
-
-# preview what would be cleaned without actually cleaning
-broominal clean --dry-run
 ```
 
 ### restore
@@ -246,9 +240,6 @@ broominal clean --safe
 
 # allow cleaning danger items
 broominal clean --danger
-
-# preview what would be cleaned
-broominal clean --dry-run
 ```
 
 Config file (`%LOCALAPPDATA%\broominal\config.json`):
