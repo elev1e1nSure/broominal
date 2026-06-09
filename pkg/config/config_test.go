@@ -22,14 +22,18 @@ func TestDefault(t *testing.T) {
 	if cfg.QuarantineMaxAgeDays != 30 {
 		t.Errorf("QuarantineMaxAgeDays = %d, want 30", cfg.QuarantineMaxAgeDays)
 	}
-	if !cfg.EnabledCategories["Temp"] {
-		t.Error("Temp should be enabled by default")
+	if cfg.ActivePreset != string(PresetQuick) {
+		t.Errorf("ActivePreset = %q, want %q", cfg.ActivePreset, string(PresetQuick))
 	}
-	if !cfg.EnabledCategories["Browser Cache"] {
-		t.Error("Browser Cache should be enabled by default")
+	for _, cat := range []string{"Temp", "Browser Cache", "Edge Code Cache", "Chrome Code Cache", "Firefox Cache2", "Windows Prefetch"} {
+		if !cfg.EnabledCategories[cat] {
+			t.Errorf("%q should be enabled by default (Quick preset)", cat)
+		}
 	}
-	if cfg.EnabledCategories["Downloads"] {
-		t.Error("Downloads should be disabled by default (Safe preset)")
+	for _, cat := range []string{"Downloads", "Recycle Bin", "Messenger Cache", "Windows Defender"} {
+		if cfg.EnabledCategories[cat] {
+			t.Errorf("%q should be disabled by default (Quick preset)", cat)
+		}
 	}
 }
 

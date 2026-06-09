@@ -100,6 +100,7 @@ func (m model) handleKeyConfigCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			for _, item := range m.configCategories {
 				m.configCfg.EnabledCategories[item.name] = item.enabled
 			}
+			m.configCfg.ActivePreset = ""
 			_ = config.Save(m.configCfg)
 		}
 		m.screen = ScreenConfig
@@ -136,11 +137,11 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.configCfg != nil {
 			switch m.selectedIdx {
 			case 0:
-				m.configCfg.ApplyPreset(config.PresetSafe)
+				m.configCfg.ApplyPreset(config.PresetQuick)
 			case 1:
-				m.configCfg.ApplyPreset(config.PresetNormal)
+				m.configCfg.ApplyPreset(config.PresetStandard)
 			case 2:
-				m.configCfg.ApplyPreset(config.PresetHard)
+				m.configCfg.ApplyPreset(config.PresetDeep)
 			}
 			_ = config.Save(m.configCfg)
 		}
@@ -247,50 +248,42 @@ func (m model) viewConfigCategories() string {
 }
 
 func (m model) viewConfigPresets() string {
-	presets := []struct {
-		name     string
-		desc     string
-		preset   config.Preset
-		style    lipgloss.Style
-		expected int
-	}{
-		{"Safe", "~5 сек — браузеры, темпы, системный мусор", config.PresetSafe, safeStyle, 12},
-		{"Normal", "Safe + мессенджеры, ланчеры, dev-инструменты", config.PresetNormal, reviewStyle, 25},
-		{"Hard", "Всё включено — максимальная очистка", config.PresetHard, dangerStyle, 29},
+	type presetDef struct {
+		nameKey string
+		descKey string
+		catsKey string
+		preset  config.Preset
+		style   lipgloss.Style
+	}
+	presets := []presetDef{
+		{"preset_quick", "preset_quick_desc", "preset_quick_cats", config.PresetQuick, safeStyle},
+		{"preset_standard", "preset_standard_desc", "preset_standard_cats", config.PresetStandard, reviewStyle},
+		{"preset_deep", "preset_deep_desc", "preset_deep_cats", config.PresetDeep, dangerStyle},
 	}
 
-	currentPreset := -1
+	activePreset := ""
 	if m.configCfg != nil {
-		enabledCount := 0
-		for _, v := range m.configCfg.EnabledCategories {
-			if v {
-				enabledCount++
-			}
-		}
-		for i, p := range presets {
-			if enabledCount == p.expected {
-				currentPreset = i
-				break
-			}
-		}
+		activePreset = m.configCfg.ActivePreset
 	}
 
 	var body string
 	body += m.appTitle(i18n.T("config_presets")) + "\n\n"
 	for i, p := range presets {
 		marker := "   "
-		if currentPreset == i {
+		if activePreset == string(p.preset) {
 			marker = safeStyle.Render("[x]")
 		}
 		if i == m.selectedIdx {
-			body += selectedStyle.Render("> ") + p.style.Render(p.name) + " " + marker + "\n"
-			body += selectedStyle.Render(fmt.Sprintf("  %s\n", p.desc)) + "\n"
+			body += selectedStyle.Render("> ") + p.style.Render(i18n.T(p.nameKey)) + " " + marker + "\n"
+			body += selectedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.descKey))) + "\n"
+			body += mutedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.catsKey))) + "\n\n"
 		} else {
-			body += mutedStyle.Render("  ") + p.style.Render(p.name) + " " + marker + "\n"
-			body += mutedStyle.Render(fmt.Sprintf("  %s\n", p.desc)) + "\n"
+			body += mutedStyle.Render("  ") + p.style.Render(i18n.T(p.nameKey)) + " " + marker + "\n"
+			body += mutedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.descKey))) + "\n"
+			body += mutedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.catsKey))) + "\n\n"
 		}
 	}
-	body += "\n" + footer(
+	body += footer(
 		keyHint("Enter", i18n.T("apply")),
 		keyHint("Esc", i18n.T("back")),
 	)

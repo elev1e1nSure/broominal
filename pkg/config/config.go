@@ -12,6 +12,7 @@ import (
 // Config holds user-configurable cleanup rules.
 type Config struct {
 	EnabledCategories    map[string]bool   `json:"enabled_categories"`
+	ActivePreset         string            `json:"active_preset"`
 	OldInstallerMonths   int               `json:"old_installer_months"`
 	LargeFileMinSizeMB   int               `json:"large_file_min_size_mb"`
 	LargeFileMonths      int               `json:"large_file_months"`
@@ -27,7 +28,7 @@ type Config struct {
 func Default() *Config {
 	return &Config{
 		EnabledCategories: map[string]bool{
-			// Safe (default)
+			// Quick (default)
 			"Temp":                  true,
 			"Browser Cache":         true,
 			"Thumbnails Cache":      true,
@@ -40,27 +41,28 @@ func Default() *Config {
 			"Brave Cache":           true,
 			"Vivaldi Cache":         true,
 			"Yandex Cache":          true,
-			// Normal
-			"Downloads":                  false,
-			"Recycle Bin":                false,
-			"Logs":                       false,
-			"Old Installers":             false,
-			"Large Old Files":            false,
+			"Edge Code Cache":       true,
+			"Chrome Code Cache":     true,
+			"Firefox Cache2":        true,
+			"Windows Prefetch":      true,
+			// Standard
 			"Messenger Cache":            false,
 			"Game Launcher Cache":        false,
 			"Service Cache":              false,
 			"Dev Cache":                  false,
-			"Edge Code Cache":            false,
-			"Chrome Code Cache":          false,
-			"Firefox Cache2":             false,
-			"Windows Prefetch":           false,
+			"Logs":                       false,
 			"Windows Update Cache":       false,
 			"Crash & Memory Dumps":       false,
 			"Nvidia Installer Leftovers": false,
-			// Hard
+			// Deep
+			"Downloads":        false,
+			"Recycle Bin":      false,
+			"Old Installers":   false,
+			"Large Old Files":  false,
 			"Windows Defender": false,
 		},
-		Exclusions: []string{},
+		ActivePreset: string(PresetQuick),
+		Exclusions:   []string{},
 		AutoRiskOverrides: map[string]string{
 			".git":         "review",
 			"node_modules": "review",
@@ -203,15 +205,15 @@ func containsIgnoreCase(s, substr string) bool {
 type Preset string
 
 const (
-	PresetSafe   Preset = "safe"
-	PresetNormal Preset = "normal"
-	PresetHard   Preset = "hard"
+	PresetQuick    Preset = "quick"
+	PresetStandard Preset = "standard"
+	PresetDeep     Preset = "deep"
 )
 
 func (c *Config) ApplyPreset(p Preset) {
 	c.EnabledCategories = make(map[string]bool)
 
-	safeCategories := []string{
+	quickCategories := []string{
 		"Temp",
 		"Browser Cache",
 		"Thumbnails Cache",
@@ -224,42 +226,43 @@ func (c *Config) ApplyPreset(p Preset) {
 		"Brave Cache",
 		"Vivaldi Cache",
 		"Yandex Cache",
-	}
-
-	normalCategories := append(safeCategories,
-		"Messenger Cache",
-		"Game Launcher Cache",
-		"Service Cache",
-		"Dev Cache",
 		"Edge Code Cache",
 		"Chrome Code Cache",
 		"Firefox Cache2",
 		"Windows Prefetch",
-		"Downloads",
-		"Old Installers",
-		"Large Old Files",
-		"Logs",
-		"Recycle Bin",
-	)
+	}
 
-	hardCategories := append(normalCategories,
+	standardCategories := append(quickCategories,
+		"Messenger Cache",
+		"Game Launcher Cache",
+		"Service Cache",
+		"Dev Cache",
+		"Logs",
 		"Windows Update Cache",
 		"Crash & Memory Dumps",
 		"Nvidia Installer Leftovers",
+	)
+
+	deepCategories := append(standardCategories,
+		"Downloads",
+		"Recycle Bin",
+		"Old Installers",
+		"Large Old Files",
 		"Windows Defender",
 	)
 
 	var categories []string
 	switch p {
-	case PresetSafe:
-		categories = safeCategories
-	case PresetNormal:
-		categories = normalCategories
-	case PresetHard:
-		categories = hardCategories
+	case PresetQuick:
+		categories = quickCategories
+	case PresetStandard:
+		categories = standardCategories
+	case PresetDeep:
+		categories = deepCategories
 	}
 
 	for _, cat := range categories {
 		c.EnabledCategories[cat] = true
 	}
+	c.ActivePreset = string(p)
 }
