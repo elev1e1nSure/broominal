@@ -3,6 +3,9 @@ package tui
 import (
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -24,6 +27,16 @@ func Start(version string) error {
 	if cfg != nil && cfg.QuarantineMaxAgeDays > 0 {
 		if deleted, freed, err := quarantine.Cleanup(cfg.QuarantineMaxAgeDays); err == nil && deleted > 0 {
 			slog.Info("auto quarantine cleanup", "deleted", deleted, "freed", freed)
+		}
+	}
+	// Clean up leftover .old backup files from previous self-updates
+	if exePath, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exePath)
+		entries, _ := os.ReadDir(exeDir)
+		for _, e := range entries {
+			if !e.IsDir() && strings.HasSuffix(e.Name(), ".old") {
+				_ = os.Remove(filepath.Join(exeDir, e.Name()))
+			}
 		}
 	}
 	m := initialModel()
