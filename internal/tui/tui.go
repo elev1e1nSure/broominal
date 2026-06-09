@@ -633,32 +633,14 @@ func (m model) View() string {
 
 // Styles
 var (
-	// Palette
-	cAccent   = lipgloss.Color("#60a5fa")
-	cSafe     = lipgloss.Color("#4ade80")
-	cWarn     = lipgloss.Color("#fbbf24")
-	cDanger   = lipgloss.Color("#f87171")
-	cMuted    = lipgloss.Color("#9ca3af")
-	cFg       = lipgloss.Color("#e5e7eb")
-	cBgBox    = lipgloss.Color("#1f2937")
-	cBgSel    = lipgloss.Color("#2563eb")
-	cBorder   = lipgloss.Color("#374151")
-	cHeaderBg = lipgloss.Color("#111827")
-
-	titleStyle      = lipgloss.NewStyle().Bold(true).Foreground(cAccent).Padding(0, 1)
-	headerStyle     = lipgloss.NewStyle().Bold(true).Foreground(cFg).Background(cHeaderBg).Padding(0, 2).MarginBottom(1)
-	boxStyle        = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(cBorder).Background(cBgBox).Padding(1, 2)
-	activeItemStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ffffff")).Background(cBgSel).Padding(0, 1)
-	mutedItemStyle  = lipgloss.NewStyle().Foreground(cMuted).Padding(0, 1)
-	safeStyle       = lipgloss.NewStyle().Bold(true).Foreground(cSafe)
-	reviewStyle     = lipgloss.NewStyle().Bold(true).Foreground(cWarn)
-	dangerStyle     = lipgloss.NewStyle().Bold(true).Foreground(cDanger)
-	mutedStyle      = lipgloss.NewStyle().Foreground(cMuted)
-	keyStyle        = lipgloss.NewStyle().Bold(true).Foreground(cWarn)
-	valueStyle      = lipgloss.NewStyle().Bold(true).Foreground(cFg)
-	statLabelStyle  = lipgloss.NewStyle().Foreground(cMuted)
-	footerStyle     = lipgloss.NewStyle().Foreground(cMuted).MarginTop(1)
-	separatorStyle  = lipgloss.NewStyle().Foreground(cBorder)
+	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#60a5fa"))
+	selectedStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ffffff"))
+	safeStyle     = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#4ade80"))
+	reviewStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#fbbf24"))
+	dangerStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#f87171"))
+	mutedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#9ca3af"))
+	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#fbbf24"))
+	valueStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#e5e7eb"))
 )
 
 func keyHint(k, desc string) string {
@@ -666,69 +648,68 @@ func keyHint(k, desc string) string {
 }
 
 func footer(hints ...string) string {
-	return footerStyle.Render(strings.Join(hints, "  "))
+	return mutedStyle.Render(strings.Join(hints, "  "))
 }
 
 func (m model) viewDashboard() string {
 	if m.result == nil {
-		return boxStyle.Render(m.spinner.View()+" "+i18n.T("scanning")) + "\n"
+		return m.spinner.View() + " " + i18n.T("scanning") + "\n"
 	}
-	return boxStyle.Render(
-		headerStyle.Render(i18n.T("dashboard"))+"\n"+
-			fmt.Sprintf("  %s  %s\n", statLabelStyle.Render(i18n.T("total_found")+":"), valueStyle.Render(scanner.FormatSize(m.result.TotalSize)))+
-			separatorStyle.Render("  "+strings.Repeat("─", 36))+"\n"+
-			fmt.Sprintf("  %s  %s\n", safeStyle.Render("● "+i18n.T("safe")), valueStyle.Render(scanner.FormatSize(m.result.SafeSize)))+
-			fmt.Sprintf("  %s  %s\n", reviewStyle.Render("● "+i18n.T("review")), valueStyle.Render(scanner.FormatSize(m.result.ReviewSize)))+
-			fmt.Sprintf("  %s  %s", dangerStyle.Render("● "+i18n.T("danger")), valueStyle.Render(scanner.FormatSize(m.result.DangerSize))),
-	) + "\n" + footer(keyHint("Enter", i18n.T("continue")), keyHint("M", i18n.T("main_menu")), keyHint("Q", i18n.T("quit")))
+	return titleStyle.Render(i18n.T("dashboard")) + "\n\n" +
+		fmt.Sprintf("  Total found: %s\n", valueStyle.Render(scanner.FormatSize(m.result.TotalSize))) +
+		fmt.Sprintf("  %s Safe:       %s\n", safeStyle.Render("●"), valueStyle.Render(scanner.FormatSize(m.result.SafeSize))) +
+		fmt.Sprintf("  %s Review:     %s\n", reviewStyle.Render("●"), valueStyle.Render(scanner.FormatSize(m.result.ReviewSize))) +
+		fmt.Sprintf("  %s Danger:     %s\n\n", dangerStyle.Render("●"), valueStyle.Render(scanner.FormatSize(m.result.DangerSize))) +
+		footer(keyHint("Enter", i18n.T("continue")), keyHint("M", i18n.T("main_menu")), keyHint("Q", i18n.T("quit")))
 }
 
 func (m model) viewCategories() string {
 	var body string
-	body += headerStyle.Render(i18n.T("categories")) + "\n"
-	head := fmt.Sprintf("  %-18s %10s %7s %8s  %s", i18n.T("category"), i18n.T("size"), i18n.T("files"), i18n.T("risk"), i18n.T("select"))
-	body += lipgloss.NewStyle().Foreground(cMuted).Render(head) + "\n"
-	body += separatorStyle.Render("  "+strings.Repeat("─", 56)) + "\n"
+	body += titleStyle.Render(i18n.T("categories")) + "\n\n"
+	head := fmt.Sprintf("  %-20s %10s %8s %8s  %s", i18n.T("category"), i18n.T("size"), i18n.T("files"), i18n.T("risk"), i18n.T("select"))
+	body += mutedStyle.Render(head) + "\n"
+	body += mutedStyle.Render("  "+strings.Repeat("-", 60)) + "\n"
 	for i, c := range m.categories {
 		marker := "[ ]"
 		if c.selected {
 			marker = safeStyle.Render("[x]")
 		}
-		var rowStyle lipgloss.Style
+		prefix := "  "
+		nameSt := lipgloss.NewStyle()
+		sizeSt := lipgloss.NewStyle()
+		filesSt := lipgloss.NewStyle()
 		if i == m.selectedIdx {
-			rowStyle = activeItemStyle
-		} else {
-			rowStyle = mutedItemStyle
+			prefix = selectedStyle.Render("> ")
+			nameSt = selectedStyle
+			sizeSt = selectedStyle
+			filesSt = selectedStyle
 		}
-		riskStr := string(c.cat.Risk)
-		var riskCol lipgloss.Color
+		riskCol := lipgloss.Color("#9ca3af")
 		switch c.cat.Risk {
 		case types.RiskSafe:
-			riskCol = cSafe
+			riskCol = lipgloss.Color("#4ade80")
 		case types.RiskReview:
-			riskCol = cWarn
+			riskCol = lipgloss.Color("#fbbf24")
 		case types.RiskDanger:
-			riskCol = cDanger
-		default:
-			riskCol = cMuted
+			riskCol = lipgloss.Color("#f87171")
 		}
-		riskRendered := lipgloss.NewStyle().Width(8).Bold(true).Foreground(riskCol).Render(riskStr)
-		line := fmt.Sprintf("%-18s %10s %7d %s  %s",
-			c.cat.Category,
-			scanner.FormatSize(c.cat.Size),
-			c.cat.Files,
-			riskRendered,
-			marker,
-		)
-		body += rowStyle.Render(line) + "\n"
+		riskSt := lipgloss.NewStyle().Width(8).Bold(true).Foreground(riskCol)
+		line := prefix +
+			nameSt.Width(20).Render(c.cat.Category) + " " +
+			sizeSt.Width(10).Render(scanner.FormatSize(c.cat.Size)) + " " +
+			filesSt.Width(8).Render(fmt.Sprintf("%d", c.cat.Files)) + "  " +
+			riskSt.Render(string(c.cat.Risk)) + "  " +
+			marker
+		body += line + "\n"
 	}
-	return boxStyle.Render(body) + "\n" + footer(
+	body += "\n" + footer(
 		keyHint("Space", i18n.T("toggle")),
 		keyHint("Enter", i18n.T("confirm")),
 		keyHint("D", i18n.T("details")),
 		keyHint("M", i18n.T("main_menu")),
 		keyHint("Q", i18n.T("quit")),
 	)
+	return body
 }
 
 func (m model) viewDetails() string {

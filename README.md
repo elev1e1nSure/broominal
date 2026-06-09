@@ -83,6 +83,7 @@ broominal config
 # Remove quarantines older than 30 days
 broominal quarantine-cleanup --dry-run
 broominal quarantine-cleanup --force
+broominal quarantine-cleanup --force --max-age-days 7
 ```
 
 ---
@@ -92,7 +93,7 @@ broominal quarantine-cleanup --force
 ```
 cmd/broominal/      CLI entrypoint (Cobra)
 pkg/
-  scanner/          File discovery by category (18+ scan targets)
+  scanner/          File discovery by category (25+ scan targets)
   quarantine/       Move / Restore / Cleanup with JSON manifests
   report/           JSON report generation
   risk/             Risk classification (path, extension, config)

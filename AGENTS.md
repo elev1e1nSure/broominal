@@ -17,19 +17,23 @@ cmd/broominal/     CLI entrypoint (cobra)
                    quarantine-cleanup commands
 
 pkg/
-  scanner/         Scan() walks 18+ safe zones (Temp, Downloads, Browser Cache,
+  scanner/         Scan() walks 25+ safe zones (Temp, Downloads, Browser Cache,
                    Recycle Bin, Logs, Old Installers, Large Old Files,
                    Thumbnails, DirectX Shader Cache, Delivery Optimization,
-                   WER, Discord Cache, Steam Cache, Windows Update Cache,
-                   Crash & Memory Dumps, Nvidia Installer Leftovers,
-                   Telegram Desktop Cache)
+                   WER, Discord Cache, Steam Cache, VSCode Cache, Edge Code Cache,
+                   Chrome Code Cache, Firefox Cache2, Old Temp Files,
+                   Old .tmp/.log/.bak, Empty Folders, npm Cache, pip Cache,
+                   Windows Update Cache, Crash & Memory Dumps,
+                   Nvidia Installer Leftovers, Telegram Desktop Cache)
   quarantine/      Move() -> quarantine dir + manifest.json
                    Restore() -> move back, handles conflicts
                    Cleanup() -> delete old quarantines
   report/          Save() JSON report with scan + optional clean result
   risk/            Classify() risk level from path/category/config overrides
-  config/          Load/Save JSON config: enabled categories, thresholds,
-                   exclusions, auto risk overrides, language. Missing config
+  config/          Load/Save JSON config: enabled categories, thresholds
+                   (old_installer_months, large_file_min_size_mb, large_file_months,
+                   old_temp_days, old_extension_days), exclusions, auto risk
+                   overrides, language, quarantine_max_age_days. Missing config
                    auto-creates with defaults and merges missing categories.
   doctor/          Run() health checks: admin, dirs, manifests, quarantine stats
   i18n/            SetLanguage(), T(key), DetectFromIP(), SupportedLanguages()
