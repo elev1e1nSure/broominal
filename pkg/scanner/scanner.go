@@ -118,9 +118,14 @@ func ScanWithConfig(cfg *config.Config) (*types.ScanResult, error) {
 }
 
 func isExcluded(path string, cfg *config.Config) bool {
+	lp := strings.ToLower(path)
 	for _, ex := range cfg.Exclusions {
-		if strings.Contains(strings.ToLower(path), strings.ToLower(ex)) {
-			return true
+		lex := strings.ToLower(ex)
+		// exact segment match to avoid "temp" matching "template"
+		for _, seg := range strings.Split(lp, string(filepath.Separator)) {
+			if seg == lex {
+				return true
+			}
 		}
 	}
 	return false

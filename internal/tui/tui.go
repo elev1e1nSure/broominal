@@ -27,6 +27,7 @@ const (
 	ScreenCleaning
 	ScreenResult
 	ScreenRestoreConflict
+	ScreenError
 )
 
 // TUI model
@@ -119,12 +120,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case errMsg:
 		m.err = msg.err
-		return m, tea.Quit
+		m.screen = ScreenError
+		return m, nil
 
 	case cleanDoneMsg:
 		if msg.err != nil {
 			m.err = msg.err
-			return m, tea.Quit
+			m.screen = ScreenError
+			return m, nil
 		}
 		m.cleanResult = msg.result
 		m.screen = ScreenResult
@@ -294,7 +297,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				restored, skipped, err := quarantine.Restore(m.cleanResult.RestoreID, true)
 				if err != nil {
 					m.err = err
-					return m, tea.Quit
+					m.screen = ScreenError
+					return m, nil
 				}
 				_ = restored
 				_ = skipped
@@ -308,7 +312,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				restored, skipped, err := quarantine.Restore(m.cleanResult.RestoreID, false)
 				if err != nil {
 					m.err = err
-					return m, tea.Quit
+					m.screen = ScreenError
+					return m, nil
 				}
 				_ = restored
 				if skipped == 0 {
@@ -322,15 +327,16 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.screen = ScreenResult
 			return m, nil
 		}
+
+	case ScreenError:
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+			return m, tea.Quit
+		}
 	}
 	return m, nil
 }
 
 func (m model) View() string {
-	if m.err != nil {
-		return fmt.Sprintf("Error: %v\n", m.err)
-	}
-
 	switch m.screen {
 	case ScreenDashboard:
 		return m.viewDashboard()
@@ -348,6 +354,8 @@ func (m model) View() string {
 		return m.viewResult()
 	case ScreenRestoreConflict:
 		return m.viewRestoreConflict()
+	case ScreenError:
+		return m.viewError()
 	}
 	return ""
 }
@@ -473,6 +481,12 @@ func (m model) viewCleaning() string {
 	return titleStyle.Render(" Cleaning... ") + "\n\n" +
 		fmt.Sprintf("  %s Moving files to quarantine...\n", m.spinner.View()) +
 		mutedStyle.Render("  Please wait, this may take a while.")
+}
+
+func (m model) viewError() string {
+	return titleStyle.Render(" Error ") + "\n\n" +
+		dangerStyle.Render(fmt.Sprintf("  %v", m.err)) + "\n\n" +
+		mutedStyle.Render("  Press Q or Esc to quit")
 }
 
 func buildDetailList(items []types.Item, w, h int) list.Model {

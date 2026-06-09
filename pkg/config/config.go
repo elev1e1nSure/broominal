@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Config holds user-configurable cleanup rules.
@@ -109,33 +110,5 @@ func (c *Config) RiskOverrideFor(path string) string {
 }
 
 func containsIgnoreCase(s, substr string) bool {
-	return len(substr) <= len(s) && (containsAt(s, substr, 0) || containsFrom(s, substr, 1))
-}
-
-func containsAt(s, substr string, start int) bool {
-	for i := 0; i < len(substr); i++ {
-		if start+i >= len(s) {
-			return false
-		}
-		if toLower(s[start+i]) != toLower(substr[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-func containsFrom(s, substr string, start int) bool {
-	for i := start; i <= len(s)-len(substr); i++ {
-		if containsAt(s, substr, i) {
-			return true
-		}
-	}
-	return false
-}
-
-func toLower(b byte) byte {
-	if b >= 'A' && b <= 'Z' {
-		return b + ('a' - 'A')
-	}
-	return b
+	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }

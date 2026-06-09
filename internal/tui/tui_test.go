@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -224,6 +225,35 @@ func TestViewWarnRecycleBin(t *testing.T) {
 	}
 	if !strings.Contains(out, "Recycle Bin") {
 		t.Error("view should contain 'Recycle Bin'")
+	}
+}
+
+func TestUpdateErrMsg(t *testing.T) {
+	m := initialModel()
+	msg := errMsg{fmt.Errorf("scan failed")}
+	newM, cmd := m.Update(msg)
+	mm := newM.(model)
+	if mm.screen != ScreenError {
+		t.Errorf("screen = %d, want Error", mm.screen)
+	}
+	if mm.err == nil {
+		t.Error("err should be set")
+	}
+	if cmd != nil {
+		t.Error("cmd should be nil, not tea.Quit")
+	}
+}
+
+func TestViewError(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenError
+	m.err = fmt.Errorf("something broke")
+	out := m.View()
+	if !strings.Contains(out, "Error") {
+		t.Error("view should contain 'Error'")
+	}
+	if !strings.Contains(out, "something broke") {
+		t.Error("view should contain error message")
 	}
 }
 

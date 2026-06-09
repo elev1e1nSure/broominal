@@ -1,6 +1,7 @@
 package risk
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
@@ -38,7 +39,7 @@ func Classify(path string, category string) types.RiskLevel {
 
 	// Расширения системных файлов
 	sysExts := []string{".sys", ".dll", ".drv", ".ocx"}
-	ext := strings.ToLower(getExt(path))
+	ext := strings.ToLower(filepath.Ext(path))
 	for _, se := range sysExts {
 		if ext == se {
 			return types.RiskDanger
@@ -54,18 +55,6 @@ func Classify(path string, category string) types.RiskLevel {
 	default:
 		return types.RiskReview
 	}
-}
-
-func getExt(path string) string {
-	for i := len(path) - 1; i >= 0; i-- {
-		if path[i] == '.' {
-			return path[i:]
-		}
-		if path[i] == '\\' || path[i] == '/' {
-			break
-		}
-	}
-	return ""
 }
 
 // Label возвращает человекочитаемую метку

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,21 +25,19 @@ func BaseDir() string {
 func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 	id := uuid.New().String()
 
-	var freed int64
-	var files int
-
-	for _, it := range items {
-		if !it.Selected {
-			continue
-		}
-		if _, err := os.Stat(it.Path); os.IsNotExist(err) {
-			continue
-		}
-		freed += it.Size
-		files++
-	}
-
 	if dryRun {
+		var freed int64
+		var files int
+		for _, it := range items {
+			if !it.Selected {
+				continue
+			}
+			if _, err := os.Stat(it.Path); os.IsNotExist(err) {
+				continue
+			}
+			freed += it.Size
+			files++
+		}
 		return "", freed, files, nil
 	}
 
@@ -53,6 +52,8 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 		Items:     make([]types.ManifestItem, 0, len(items)),
 	}
 
+	var freed int64
+	var files int
 	for _, it := range items {
 		if !it.Selected {
 			continue
@@ -61,14 +62,12 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 			continue
 		}
 
-		qPath := filepath.Join(qDir, filepath.Base(it.Path))
-		// handle duplicate names
-		qPath = uniquePath(qDir, filepath.Base(it.Path))
+		qPath := uniquePath(qDir, filepath.Base(it.Path))
 
 		if err := os.Rename(it.Path, qPath); err != nil {
 			// fallback to copy+delete if cross-device
 			if err := copyAndDelete(it.Path, qPath); err != nil {
-				continue
+				return "", 0, 0, fmt.Errorf("move %s: %w", it.Path, err)
 			}
 		}
 
@@ -77,6 +76,8 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 			Quarantined: qPath,
 			Size:        it.Size,
 		})
+		freed += it.Size
+		files++
 	}
 
 	manifestPath := filepath.Join(qDir, "manifest.json")
@@ -297,7 +298,7 @@ func uniquePath(dir, name string) string {
 		return path
 	}
 	ext := filepath.Ext(name)
-	base := name[:len(name)-len(ext)]
+	base := strings.TrimSuffix(name, ext)
 	for i := 1; ; i++ {
 		newName := fmt.Sprintf("%s_%d%s", base, i, ext)
 		newPath := filepath.Join(dir, newName)

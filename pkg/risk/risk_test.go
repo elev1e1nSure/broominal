@@ -53,30 +53,6 @@ func TestClassify(t *testing.T) {
 	}
 }
 
-func TestGetExt(t *testing.T) {
-	tests := []struct {
-		path string
-		want string
-	}{
-		{`C:\file.txt`, ".txt"},
-		{`file.tar.gz`, ".gz"},
-		{`C:\path\to\file`, ""},
-		{".gitignore", ".gitignore"},
-		{`C:\path\to\.hidden`, ".hidden"},
-		{`C:\path\to\file.`, "."},
-		{"noext", ""},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.path, func(t *testing.T) {
-			got := getExt(tt.path)
-			if got != tt.want {
-				t.Errorf("getExt(%q) = %q, want %q", tt.path, got, tt.want)
-			}
-		})
-	}
-}
-
 func TestLabel(t *testing.T) {
 	tests := []struct {
 		level types.RiskLevel

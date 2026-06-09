@@ -42,6 +42,7 @@ func TestIsExcluded(t *testing.T) {
 		{`C:\project\.git\config`, true},
 		{`C:\project\.GIT\config`, true},
 		{`C:\safe\file.txt`, false},
+		{`C:\template\foo`, false}, // "temp" should not match "template"
 	}
 	for _, tt := range tests {
 		got := isExcluded(tt.path, cfg)
