@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/elev1e1nSure/broominal/internal/tui"
 	"github.com/elev1e1nSure/broominal/pkg/cleaner"
@@ -102,11 +103,13 @@ func scanCmd() *cobra.Command {
 		Use:   "scan",
 		Short: "Scan safe zones and show summary",
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			defer cancel()
 			cfg, _ := config.Load()
 			if cfg == nil {
 				cfg = config.Default()
 			}
-			res, err := scanner.ScanWithConfig(context.Background(), cfg)
+			res, err := scanner.ScanWithConfig(ctx, cfg)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
 				os.Exit(1)
@@ -156,7 +159,8 @@ func cleanCmd() *cobra.Command {
 		Use:   "clean",
 		Short: "Clean selected items",
 		Run: func(cmd *cobra.Command, args []string) {
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			defer cancel()
 			cfg, _ := config.Load()
 			if cfg == nil {
 				cfg = config.Default()

@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -38,7 +39,9 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				if cfg == nil {
 					cfg = config.Default()
 				}
-				res, err := scanner.ScanWithConfig(context.Background(), cfg)
+				ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+				defer cancel()
+				res, err := scanner.ScanWithConfig(ctx, cfg)
 				if err != nil {
 					return errMsg{err}
 				}

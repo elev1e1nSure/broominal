@@ -42,7 +42,7 @@ func ScanWithConfig(ctx context.Context, cfg *config.Config) (*types.ScanResult,
 		if ctx.Err() != nil {
 			return result, ctx.Err()
 		}
-		items, err := sc.Scan(cfg)
+		items, err := sc.Scan(ctx, cfg)
 		if err != nil {
 			slog.Warn("scan category failed", "category", sc.Name(), "error", err)
 			continue
@@ -68,11 +68,14 @@ func ScanWithConfig(ctx context.Context, cfg *config.Config) (*types.ScanResult,
 
 var errScanLimit = errors.New("scan file limit reached")
 
-func scanDir(root, category string, risk types.RiskLevel, matchExt []string, recursive bool, cfg *config.Config) ([]types.Item, error) {
+func scanDir(ctx context.Context, root, category string, risk types.RiskLevel, matchExt []string, recursive bool, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	var count int
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		if err != nil {
 			if errors.Is(err, os.ErrPermission) {
 				slog.Warn("scan: permission denied, skipping", "path", path, "category", category)
@@ -136,9 +139,12 @@ func scanDir(root, category string, risk types.RiskLevel, matchExt []string, rec
 	return items, nil
 }
 
-func scanFirefoxCache(root string, cfg *config.Config) ([]types.Item, error) {
+func scanFirefoxCache(ctx context.Context, root string, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		if err != nil {
 			if errors.Is(err, os.ErrPermission) {
 				slog.Warn("scan: permission denied, skipping", "path", path, "category", "browser_cache")
@@ -151,7 +157,7 @@ func scanFirefoxCache(root string, cfg *config.Config) ([]types.Item, error) {
 		}
 		if d.IsDir() {
 			if filepath.Base(path) == "cache2" {
-				sub, err := scanDir(path, "browser_cache", types.RiskSafe, nil, true, cfg)
+				sub, err := scanDir(ctx, path, "browser_cache", types.RiskSafe, nil, true, cfg)
 				if err != nil {
 					slog.Warn("scan firefox cache2 failed", "path", path, "error", err)
 				} else {
@@ -188,11 +194,11 @@ func recycleBinPaths() []string {
 	return paths
 }
 
-func scanLogs(cfg *config.Config) []types.Item {
+func scanLogs(ctx context.Context, cfg *config.Config) []types.Item {
 	var items []types.Item
 	tempPath := os.Getenv("TEMP")
 	if tempPath != "" {
-		sub, _ := scanDir(tempPath, "logs", types.RiskSafe, []string{".log"}, true, cfg)
+		sub, _ := scanDir(ctx, tempPath, "logs", types.RiskSafe, []string{".log"}, true, cfg)
 		items = append(items, sub...)
 	}
 	// Windows Event Logs (safe to list, but we can't delete them easily)
@@ -200,7 +206,7 @@ func scanLogs(cfg *config.Config) []types.Item {
 	return items
 }
 
-func scanOldInstallers(root string, cfg *config.Config) ([]types.Item, error) {
+func scanOldInstallers(ctx context.Context, root string, cfg *config.Config) ([]types.Item, error) {
 	months := cfg.OldInstallerMonths
 	if months <= 0 {
 		months = 6
@@ -236,6 +242,9 @@ func scanOldInstallers(root string, cfg *config.Config) ([]types.Item, error) {
 	}
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		if err != nil {
 			if errors.Is(err, os.ErrPermission) {
 				slog.Warn("scan: permission denied, skipping", "path", path, "category", "old_installers")
@@ -272,7 +281,7 @@ func scanOldInstallers(root string, cfg *config.Config) ([]types.Item, error) {
 	return items, nil
 }
 
-func scanLargeOldFiles(root string, cfg *config.Config) ([]types.Item, error) {
+func scanLargeOldFiles(ctx context.Context, root string, cfg *config.Config) ([]types.Item, error) {
 	months := cfg.LargeFileMonths
 	if months <= 0 {
 		months = 6
@@ -287,6 +296,9 @@ func scanLargeOldFiles(root string, cfg *config.Config) ([]types.Item, error) {
 	var count int
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		if err != nil {
 			if errors.Is(err, os.ErrPermission) {
 				slog.Warn("scan: permission denied, skipping", "path", path, "category", "large_old_files")
@@ -369,7 +381,7 @@ func IsSystemFile(path string) bool {
 	return attrs&syscall.FILE_ATTRIBUTE_SYSTEM != 0
 }
 
-func scanThumbnails(cfg *config.Config) ([]types.Item, error) {
+func scanThumbnails(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	root := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "Windows", "Explorer")
 	matches, err := filepath.Glob(filepath.Join(root, "thumbcache_*.db"))
 	if err != nil {
@@ -394,18 +406,18 @@ func scanThumbnails(cfg *config.Config) ([]types.Item, error) {
 	return items, nil
 }
 
-func scanDiscordCache(cfg *config.Config) ([]types.Item, error) {
+func scanDiscordCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	root := filepath.Join(os.Getenv("APPDATA"), "discord")
 	var items []types.Item
 	for _, sub := range []string{"Cache", "Code Cache"} {
 		path := filepath.Join(root, sub)
-		subItems, _ := scanDir(path, "discord_cache", types.RiskSafe, nil, true, cfg)
+		subItems, _ := scanDir(ctx, path, "discord_cache", types.RiskSafe, nil, true, cfg)
 		items = append(items, subItems...)
 	}
 	return items, nil
 }
 
-func scanSteamCache(cfg *config.Config) ([]types.Item, error) {
+func scanSteamCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	root := os.Getenv("ProgramFiles(x86)")
 	if root == "" {
 		root = os.Getenv("ProgramFiles")
@@ -414,20 +426,20 @@ func scanSteamCache(cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	for _, sub := range []string{"appcache", "htmlcache"} {
 		path := filepath.Join(root, sub)
-		subItems, _ := scanDir(path, "steam_cache", types.RiskSafe, nil, true, cfg)
+		subItems, _ := scanDir(ctx, path, "steam_cache", types.RiskSafe, nil, true, cfg)
 		items = append(items, subItems...)
 	}
 	return items, nil
 }
 
-func scanCrashMemoryDumps(cfg *config.Config) ([]types.Item, error) {
+func scanCrashMemoryDumps(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	paths := []string{
 		filepath.Join(os.Getenv("LOCALAPPDATA"), "CrashDumps"),
 		filepath.Join(os.Getenv("SystemRoot"), "Minidump"),
 	}
 	for _, path := range paths {
-		subItems, _ := scanDir(path, "crash_dumps", types.RiskReview, nil, true, cfg)
+		subItems, _ := scanDir(ctx, path, "crash_dumps", types.RiskReview, nil, true, cfg)
 		items = append(items, subItems...)
 	}
 	// MEMORY.DMP
@@ -443,34 +455,37 @@ func scanCrashMemoryDumps(cfg *config.Config) ([]types.Item, error) {
 	return items, nil
 }
 
-func scanNvidiaInstallerLeftovers(cfg *config.Config) ([]types.Item, error) {
+func scanNvidiaInstallerLeftovers(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	paths := []string{
 		`C:\NVIDIA\DisplayDriver`,
 		filepath.Join(os.Getenv("ProgramData"), "NVIDIA Corporation", "Downloader"),
 	}
 	for _, path := range paths {
-		subItems, _ := scanDir(path, "nvidia_installer_leftovers", types.RiskReview, nil, true, cfg)
+		subItems, _ := scanDir(ctx, path, "nvidia_installer_leftovers", types.RiskReview, nil, true, cfg)
 		items = append(items, subItems...)
 	}
 	return items, nil
 }
 
-func scanVSCodeCache(cfg *config.Config) ([]types.Item, error) {
+func scanVSCodeCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	root := filepath.Join(os.Getenv("APPDATA"), "Code")
 	for _, sub := range []string{"Cache", "Code Cache"} {
 		path := filepath.Join(root, sub)
-		subItems, _ := scanDir(path, "vscode_cache", types.RiskSafe, nil, true, cfg)
+		subItems, _ := scanDir(ctx, path, "vscode_cache", types.RiskSafe, nil, true, cfg)
 		items = append(items, subItems...)
 	}
 	return items, nil
 }
 
-func scanFirefoxCache2(cfg *config.Config) ([]types.Item, error) {
+func scanFirefoxCache2(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	root := filepath.Join(os.Getenv("LOCALAPPDATA"), "Mozilla", "Firefox", "Profiles")
 	entries, err := os.ReadDir(root)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	var items []types.Item
@@ -479,13 +494,13 @@ func scanFirefoxCache2(cfg *config.Config) ([]types.Item, error) {
 			continue
 		}
 		path := filepath.Join(root, e.Name(), "cache2")
-		subItems, _ := scanDir(path, "firefox_cache2", types.RiskSafe, nil, true, cfg)
+		subItems, _ := scanDir(ctx, path, "firefox_cache2", types.RiskSafe, nil, true, cfg)
 		items = append(items, subItems...)
 	}
 	return items, nil
 }
 
-func scanOldTempFiles(cfg *config.Config) ([]types.Item, error) {
+func scanOldTempFiles(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	days := cfg.OldTempDays
 	if days <= 0 {
 		days = 7
@@ -502,6 +517,9 @@ func scanOldTempFiles(cfg *config.Config) ([]types.Item, error) {
 			continue
 		}
 		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
 			if err != nil {
 				if errors.Is(err, os.ErrPermission) {
 					slog.Warn("scan: permission denied, skipping", "path", path, "category", "old_temp_files")
@@ -545,7 +563,7 @@ func scanOldTempFiles(cfg *config.Config) ([]types.Item, error) {
 	return items, nil
 }
 
-func scanOldExtensions(ext string, cfg *config.Config) ([]types.Item, error) {
+func scanOldExtensions(ctx context.Context, ext string, cfg *config.Config) ([]types.Item, error) {
 	days := cfg.OldExtensionDays
 	if days <= 0 {
 		days = 30
@@ -563,6 +581,9 @@ func scanOldExtensions(ext string, cfg *config.Config) ([]types.Item, error) {
 			continue
 		}
 		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
 			if err != nil {
 				if errors.Is(err, os.ErrPermission) {
 					slog.Warn("scan: permission denied, skipping", "path", path, "category", "old_extension_files")
@@ -609,7 +630,7 @@ func scanOldExtensions(ext string, cfg *config.Config) ([]types.Item, error) {
 	return items, nil
 }
 
-func scanEmptyFolders(cfg *config.Config) ([]types.Item, error) {
+func scanEmptyFolders(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	paths := []string{
 		os.Getenv("TEMP"),
@@ -620,6 +641,9 @@ func scanEmptyFolders(cfg *config.Config) ([]types.Item, error) {
 			continue
 		}
 		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
 			if err != nil {
 				if errors.Is(err, os.ErrPermission) {
 					slog.Warn("scan: permission denied, skipping", "path", path, "category", "empty_folders")
@@ -658,12 +682,12 @@ func scanEmptyFolders(cfg *config.Config) ([]types.Item, error) {
 	return items, nil
 }
 
-func scanNpmCache(cfg *config.Config) ([]types.Item, error) {
+func scanNpmCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "npm-cache")
-	return scanDir(path, "npm_cache", types.RiskSafe, nil, true, cfg)
+	return scanDir(ctx, path, "npm_cache", types.RiskSafe, nil, true, cfg)
 }
 
-func scanPipCache(cfg *config.Config) ([]types.Item, error) {
+func scanPipCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "pip", "cache")
-	return scanDir(path, "pip_cache", types.RiskSafe, nil, true, cfg)
+	return scanDir(ctx, path, "pip_cache", types.RiskSafe, nil, true, cfg)
 }

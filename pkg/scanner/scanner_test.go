@@ -52,7 +52,7 @@ func TestScanDir(t *testing.T) {
 	cfg := config.Default()
 
 	// Recursive, all files
-	items, err := scanDir(tmp, "test", types.RiskSafe, nil, true, cfg)
+	items, err := scanDir(context.Background(), tmp, "test", types.RiskSafe, nil, true, cfg)
 	if err != nil {
 		t.Fatalf("scanDir error: %v", err)
 	}
@@ -61,7 +61,7 @@ func TestScanDir(t *testing.T) {
 	}
 
 	// Non-recursive
-	items2, err := scanDir(tmp, "test", types.RiskSafe, nil, false, cfg)
+	items2, err := scanDir(context.Background(), tmp, "test", types.RiskSafe, nil, false, cfg)
 	if err != nil {
 		t.Fatalf("scanDir error: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestScanDir(t *testing.T) {
 	}
 
 	// Match .txt only
-	items3, err := scanDir(tmp, "test", types.RiskSafe, []string{".txt"}, true, cfg)
+	items3, err := scanDir(context.Background(), tmp, "test", types.RiskSafe, []string{".txt"}, true, cfg)
 	if err != nil {
 		t.Fatalf("scanDir error: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestScanDir(t *testing.T) {
 	// Exclusions
 	cfg2 := config.Default()
 	cfg2.Exclusions = []string{"sub"}
-	items4, err := scanDir(tmp, "test", types.RiskSafe, nil, true, cfg2)
+	items4, err := scanDir(context.Background(), tmp, "test", types.RiskSafe, nil, true, cfg2)
 	if err != nil {
 		t.Fatalf("scanDir error: %v", err)
 	}
@@ -117,7 +117,7 @@ func TestScanOldInstallers(t *testing.T) {
 	cfg := config.Default()
 	cfg.OldInstallerMonths = 6
 
-	items, err := scanOldInstallers(tmp, cfg)
+	items, err := scanOldInstallers(context.Background(), tmp, cfg)
 	if err != nil {
 		t.Fatalf("scanOldInstallers error: %v", err)
 	}
@@ -158,7 +158,7 @@ func TestScanLargeOldFiles(t *testing.T) {
 	cfg.LargeFileMonths = 6
 	cfg.LargeFileMinSizeMB = 100
 
-	items, err := scanLargeOldFiles(tmp, cfg)
+	items, err := scanLargeOldFiles(context.Background(), tmp, cfg)
 	if err != nil {
 		t.Fatalf("scanLargeOldFiles error: %v", err)
 	}
@@ -199,7 +199,7 @@ func TestScanOldTempFiles(t *testing.T) {
 	cfg := config.Default()
 	cfg.OldTempDays = 7
 
-	items, err := scanOldTempFiles(cfg)
+	items, err := scanOldTempFiles(context.Background(), cfg)
 	if err != nil {
 		t.Fatalf("scanOldTempFiles error: %v", err)
 	}
@@ -228,7 +228,7 @@ func TestScanOldExtensions(t *testing.T) {
 	cfg := config.Default()
 	cfg.OldExtensionDays = 30
 
-	items, err := scanOldExtensions(".bak", cfg)
+	items, err := scanOldExtensions(context.Background(), ".bak", cfg)
 	if err != nil {
 		t.Fatalf("scanOldExtensions error: %v", err)
 	}
@@ -253,7 +253,7 @@ func TestScanEmptyFolders(t *testing.T) {
 	_ = os.MkdirAll(empty, 0755)
 
 	cfg := config.Default()
-	items, err := scanEmptyFolders(cfg)
+	items, err := scanEmptyFolders(context.Background(), cfg)
 	if err != nil {
 		t.Fatalf("scanEmptyFolders error: %v", err)
 	}
@@ -276,7 +276,7 @@ func TestScanFirefoxCache(t *testing.T) {
 	_ = os.WriteFile(filepath.Join(cache2, "entry1"), []byte("data"), 0644)
 
 	cfg := config.Default()
-	items, err := scanFirefoxCache(tmp, cfg)
+	items, err := scanFirefoxCache(context.Background(), tmp, cfg)
 	if err != nil {
 		t.Fatalf("scanFirefoxCache error: %v", err)
 	}
@@ -292,7 +292,7 @@ func TestScanDirMaxFilesLimit(t *testing.T) {
 		_ = os.WriteFile(p, []byte("x"), 0644)
 	}
 	cfg := config.Default()
-	items, err := scanDir(tmp, "test", types.RiskSafe, nil, true, cfg)
+	items, err := scanDir(context.Background(), tmp, "test", types.RiskSafe, nil, true, cfg)
 	if err != nil {
 		t.Fatalf("scanDir error: %v", err)
 	}
