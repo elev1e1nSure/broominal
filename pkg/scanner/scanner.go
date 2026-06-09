@@ -403,24 +403,6 @@ func scanMessengerCache(ctx context.Context, cfg *config.Config) ([]types.Item, 
 	return items, nil
 }
 
-func scanSteamCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	root := os.Getenv("ProgramFiles(x86)")
-	if root == "" {
-		root = os.Getenv("ProgramFiles")
-	}
-	root = filepath.Join(root, "Steam")
-	var items []types.Item
-	for _, sub := range []string{"appcache", "htmlcache"} {
-		path := filepath.Join(root, sub)
-		subItems, err := scanDir(ctx, path, "steam_cache", types.RiskSafe, nil, true, cfg)
-		if err != nil {
-			slog.Warn("scan: failed to scan steam cache subdirectory", "path", path, "error", err)
-		}
-		items = append(items, subItems...)
-	}
-	return items, nil
-}
-
 func scanCrashMemoryDumps(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	paths := []string{
@@ -457,20 +439,6 @@ func scanNvidiaInstallerLeftovers(ctx context.Context, cfg *config.Config) ([]ty
 		subItems, err := scanDir(ctx, path, "nvidia_installer_leftovers", types.RiskReview, nil, true, cfg)
 		if err != nil {
 			slog.Warn("scan: failed to scan nvidia leftovers path", "path", path, "error", err)
-		}
-		items = append(items, subItems...)
-	}
-	return items, nil
-}
-
-func scanVSCodeCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	root := filepath.Join(os.Getenv("APPDATA"), "Code")
-	for _, sub := range []string{"Cache", "Code Cache"} {
-		path := filepath.Join(root, sub)
-		subItems, err := scanDir(ctx, path, "vscode_cache", types.RiskSafe, nil, true, cfg)
-		if err != nil {
-			slog.Warn("scan: failed to scan vscode cache subdirectory", "path", path, "error", err)
 		}
 		items = append(items, subItems...)
 	}
@@ -668,16 +636,6 @@ func scanEmptyFolders(ctx context.Context, cfg *config.Config) ([]types.Item, er
 	return items, nil
 }
 
-func scanNpmCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "npm-cache")
-	return scanDir(ctx, path, "npm_cache", types.RiskSafe, nil, true, cfg)
-}
-
-func scanPipCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "pip", "cache")
-	return scanDir(ctx, path, "pip_cache", types.RiskSafe, nil, true, cfg)
-}
-
 func scanOperaCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Opera Software", "Opera Stable", "Cache")
 	return scanDir(ctx, path, "opera_cache", types.RiskSafe, nil, true, cfg)
@@ -698,197 +656,170 @@ func scanYandexCache(ctx context.Context, cfg *config.Config) ([]types.Item, err
 	return scanDir(ctx, path, "yandex_cache", types.RiskSafe, nil, true, cfg)
 }
 
-func scanOfficeCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "Office", "16.0", "OfficeFileCache")
-	return scanDir(ctx, path, "office_cache", types.RiskSafe, nil, true, cfg)
-}
-
-func scanAdobeCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	paths := []string{
-		filepath.Join(os.Getenv("APPDATA"), "Adobe", "Common", "Media Cache"),
-		filepath.Join(os.Getenv("LOCALAPPDATA"), "Adobe"),
-	}
-	for _, p := range paths {
-		subItems, err := scanDir(ctx, p, "adobe_cache", types.RiskReview, nil, true, cfg)
-		if err != nil {
-			slog.Warn("scan: failed to scan adobe cache", "path", p, "error", err)
-		}
-		items = append(items, subItems...)
-	}
-	return items, nil
-}
-
-func scanDockerCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	paths := []string{
-		filepath.Join(os.Getenv("LOCALAPPDATA"), "Docker"),
-		filepath.Join(os.Getenv("USERPROFILE"), ".docker", "buildx"),
-	}
-	for _, p := range paths {
-		subItems, err := scanDir(ctx, p, "docker_cache", types.RiskReview, nil, true, cfg)
-		if err != nil {
-			slog.Warn("scan: failed to scan docker cache", "path", p, "error", err)
-		}
-		items = append(items, subItems...)
-	}
-	return items, nil
-}
-
-func scanJetBrainsCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	root := filepath.Join(os.Getenv("LOCALAPPDATA"), "JetBrains")
-	entries, err := os.ReadDir(root)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		slog.Warn("scan: failed to read JetBrains dir", "path", root, "error", err)
-		return nil, nil
-	}
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
-		}
-		for _, sub := range []string{"caches", "system", "log"} {
-			path := filepath.Join(root, e.Name(), sub)
-			subItems, err := scanDir(ctx, path, "jetbrains_cache", types.RiskSafe, nil, true, cfg)
-			if err != nil {
-				slog.Warn("scan: failed to scan JetBrains subdir", "path", path, "error", err)
-			}
-			items = append(items, subItems...)
-		}
-	}
-	return items, nil
-}
-
-func scanGoBuildCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "go-build")
-	return scanDir(ctx, path, "go_build_cache", types.RiskSafe, nil, true, cfg)
-}
-
-func scanRustCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	path := filepath.Join(os.Getenv("USERPROFILE"), ".cargo", "registry", "cache")
-	return scanDir(ctx, path, "rust_cache", types.RiskSafe, nil, true, cfg)
-}
-
-func scanNuGetCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	path := filepath.Join(os.Getenv("USERPROFILE"), ".nuget", "packages")
-	return scanDir(ctx, path, "nuget_cache", types.RiskReview, nil, true, cfg)
-}
-
-func scanUnityCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	paths := []string{
-		filepath.Join(os.Getenv("LOCALAPPDATA"), "Unity"),
-		filepath.Join(os.Getenv("APPDATA"), "Unity"),
-	}
-	for _, p := range paths {
-		subItems, err := scanDir(ctx, p, "unity_cache", types.RiskReview, nil, true, cfg)
-		if err != nil {
-			slog.Warn("scan: failed to scan unity cache", "path", p, "error", err)
-		}
-		items = append(items, subItems...)
-	}
-	return items, nil
-}
-
-func scanEpicGamesCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	paths := []string{
-		filepath.Join(os.Getenv("LOCALAPPDATA"), "EpicGamesLauncher", "Saved", "webcache"),
-		filepath.Join(os.Getenv("PROGRAMDATA"), "Epic"),
-	}
-	for _, p := range paths {
-		subItems, err := scanDir(ctx, p, "epic_games_cache", types.RiskSafe, nil, true, cfg)
-		if err != nil {
-			slog.Warn("scan: failed to scan epic games cache", "path", p, "error", err)
-		}
-		items = append(items, subItems...)
-	}
-	return items, nil
-}
-
-func scanBattleNetCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	paths := []string{
-		filepath.Join(os.Getenv("LOCALAPPDATA"), "Battle.net", "Cache"),
-		filepath.Join(os.Getenv("PROGRAMDATA"), "Battle.net"),
-	}
-	for _, p := range paths {
-		subItems, err := scanDir(ctx, p, "battle_net_cache", types.RiskSafe, nil, true, cfg)
-		if err != nil {
-			slog.Warn("scan: failed to scan battle.net cache", "path", p, "error", err)
-		}
-		items = append(items, subItems...)
-	}
-	return items, nil
-}
-
-func scanRockstarCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	paths := []string{
-		filepath.Join(os.Getenv("LOCALAPPDATA"), "Rockstar Games", "Launcher", "Cache"),
-		filepath.Join(os.Getenv("PROGRAMDATA"), "Rockstar Games"),
-	}
-	for _, p := range paths {
-		subItems, err := scanDir(ctx, p, "rockstar_cache", types.RiskSafe, nil, true, cfg)
-		if err != nil {
-			slog.Warn("scan: failed to scan rockstar cache", "path", p, "error", err)
-		}
-		items = append(items, subItems...)
-	}
-	return items, nil
-}
-
-func scanEAAppCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Electronic Arts", "EA Desktop", "Cache")
-	return scanDir(ctx, path, "ea_app_cache", types.RiskSafe, nil, true, cfg)
-}
-
-func scanUbisoftCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Ubisoft Game Launcher", "cache")
-	return scanDir(ctx, path, "ubisoft_cache", types.RiskSafe, nil, true, cfg)
-}
-
-func scanGOGGalaxyCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	paths := []string{
-		filepath.Join(os.Getenv("LOCALAPPDATA"), "GOG.com", "Galaxy", "webcache"),
-		filepath.Join(os.Getenv("PROGRAMDATA"), "GOG.com"),
-	}
-	for _, p := range paths {
-		subItems, err := scanDir(ctx, p, "gog_galaxy_cache", types.RiskSafe, nil, true, cfg)
-		if err != nil {
-			slog.Warn("scan: failed to scan GOG galaxy cache", "path", p, "error", err)
-		}
-		items = append(items, subItems...)
-	}
-	return items, nil
-}
-
-func scanOBSCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	paths := []string{
-		filepath.Join(os.Getenv("APPDATA"), "obs-studio", "plugin_config"),
-		filepath.Join(os.Getenv("APPDATA"), "obs-studio", "logs"),
-	}
-	for _, p := range paths {
-		subItems, err := scanDir(ctx, p, "obs_cache", types.RiskSafe, nil, true, cfg)
-		if err != nil {
-			slog.Warn("scan: failed to scan OBS cache", "path", p, "error", err)
-		}
-		items = append(items, subItems...)
-	}
-	return items, nil
-}
-
 func scanWindowsDefender(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	path := filepath.Join(os.Getenv("PROGRAMDATA"), "Microsoft", "Windows Defender", "Scans", "History")
 	return scanDir(ctx, path, "windows_defender", types.RiskReview, nil, true, cfg)
 }
 
-func scanTeamViewerLogs(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	path := filepath.Join(os.Getenv("PROGRAMDATA"), "TeamViewer")
-	return scanDir(ctx, path, "teamviewer_logs", types.RiskSafe, nil, true, cfg)
+func scanGameLauncherCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	// Steam
+	root := os.Getenv("ProgramFiles(x86)")
+	if root == "" {
+		root = os.Getenv("ProgramFiles")
+	}
+	for _, sub := range []string{"appcache", "htmlcache"} {
+		path := filepath.Join(root, "Steam", sub)
+		subItems, _ := scanDir(ctx, path, "game_launcher_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	// Epic Games
+	for _, path := range []string{
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "EpicGamesLauncher", "Saved", "webcache"),
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "EpicGamesLauncher", "Saved", "webcache_4147"),
+	} {
+		subItems, _ := scanDir(ctx, path, "game_launcher_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	// Battle.net
+	for _, path := range []string{
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Battle.net", "Cache"),
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Battle.net", "BrowserCache"),
+	} {
+		subItems, _ := scanDir(ctx, path, "game_launcher_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	// Rockstar
+	for _, path := range []string{
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Rockstar Games", "Launcher", "Cache"),
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Rockstar Games", "Social Club", "Renderer", "Cache"),
+	} {
+		subItems, _ := scanDir(ctx, path, "game_launcher_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	// EA App
+	eaPath := filepath.Join(os.Getenv("LOCALAPPDATA"), "Electronic Arts", "EA Desktop", "Cache")
+	subItems, _ := scanDir(ctx, eaPath, "game_launcher_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// Ubisoft
+	ubiPath := filepath.Join(os.Getenv("LOCALAPPDATA"), "Ubisoft Game Launcher", "cache")
+	subItems, _ = scanDir(ctx, ubiPath, "game_launcher_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// GOG Galaxy
+	for _, path := range []string{
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "GOG.com", "Galaxy", "webcache"),
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "GOG.com", "Galaxy", "webcache_2"),
+	} {
+		subItems, _ := scanDir(ctx, path, "game_launcher_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanServiceCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	// Spotify
+	spotifyPath := filepath.Join(os.Getenv("APPDATA"), "Spotify", "Data")
+	subItems, _ := scanDir(ctx, spotifyPath, "service_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// OneDrive
+	onedrivePath := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "OneDrive", "cache")
+	subItems, _ = scanDir(ctx, onedrivePath, "service_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// Office
+	officePath := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "Office", "16.0", "OfficeFileCache")
+	subItems, _ = scanDir(ctx, officePath, "service_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// Adobe
+	for _, path := range []string{
+		filepath.Join(os.Getenv("APPDATA"), "Adobe", "Common", "Media Cache"),
+		filepath.Join(os.Getenv("APPDATA"), "Adobe", "Common", "Media Cache Files"),
+		filepath.Join(os.Getenv("APPDATA"), "Adobe", "Common", "Peak Files"),
+	} {
+		subItems, _ := scanDir(ctx, path, "service_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	// OBS
+	for _, path := range []string{
+		filepath.Join(os.Getenv("APPDATA"), "obs-studio", "plugin_config"),
+		filepath.Join(os.Getenv("APPDATA"), "obs-studio", "logs"),
+	} {
+		subItems, _ := scanDir(ctx, path, "service_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	// TeamViewer
+	tvPath := filepath.Join(os.Getenv("PROGRAMDATA"), "TeamViewer")
+	subItems, _ = scanDir(ctx, tvPath, "service_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	return items, nil
+}
+
+func scanDevCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	// VSCode
+	for _, sub := range []string{"Cache", "Code Cache"} {
+		path := filepath.Join(os.Getenv("APPDATA"), "Code", sub)
+		subItems, _ := scanDir(ctx, path, "dev_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	// npm
+	npmPath := filepath.Join(os.Getenv("LOCALAPPDATA"), "npm-cache")
+	subItems, _ := scanDir(ctx, npmPath, "dev_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// pip
+	pipPath := filepath.Join(os.Getenv("LOCALAPPDATA"), "pip", "cache")
+	subItems, _ = scanDir(ctx, pipPath, "dev_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// Git
+	gitPath := filepath.Join(os.Getenv("LOCALAPPDATA"), "Git", "CredentialManager", "cache")
+	subItems, _ = scanDir(ctx, gitPath, "dev_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// Visual Studio
+	vsPath := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "VisualStudio")
+	subItems, _ = scanDir(ctx, vsPath, "dev_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// Docker
+	for _, path := range []string{
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Docker"),
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "DockerDesktop"),
+		filepath.Join(os.Getenv("APPDATA"), "Docker Desktop"),
+		filepath.Join(os.Getenv("USERPROFILE"), ".docker"),
+	} {
+		subItems, _ := scanDir(ctx, path, "dev_cache", types.RiskReview, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	// JetBrains
+	jbRoot := filepath.Join(os.Getenv("LOCALAPPDATA"), "JetBrains")
+	entries, _ := os.ReadDir(jbRoot)
+	for _, e := range entries {
+		if e.IsDir() {
+			for _, sub := range []string{"cache", "caches", "log", "logs"} {
+				path := filepath.Join(jbRoot, e.Name(), sub)
+				subItems, _ := scanDir(ctx, path, "dev_cache", types.RiskSafe, nil, true, cfg)
+				items = append(items, subItems...)
+			}
+		}
+	}
+	// Go Build
+	goPath := filepath.Join(os.Getenv("LOCALAPPDATA"), "go-build")
+	subItems, _ = scanDir(ctx, goPath, "dev_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// Rust
+	rustPath := filepath.Join(os.Getenv("USERPROFILE"), ".cargo", "registry", "cache")
+	subItems, _ = scanDir(ctx, rustPath, "dev_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// NuGet
+	nugetPath := filepath.Join(os.Getenv("USERPROFILE"), ".nuget", "packages")
+	subItems, _ = scanDir(ctx, nugetPath, "dev_cache", types.RiskReview, nil, true, cfg)
+	items = append(items, subItems...)
+	// Unity
+	for _, path := range []string{
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Unity"),
+		filepath.Join(os.Getenv("APPDATA"), "Unity"),
+		filepath.Join(os.Getenv("APPDATA"), "UnityHub"),
+	} {
+		subItems, _ := scanDir(ctx, path, "dev_cache", types.RiskReview, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
 }

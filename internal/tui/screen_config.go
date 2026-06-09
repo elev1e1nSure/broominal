@@ -183,13 +183,11 @@ func categoryGroup(name string) string {
 		return "2_browsers"
 	case "Messenger Cache":
 		return "3_messengers"
-	case "Steam Cache", "Epic Games Cache", "Battle.net Cache", "Rockstar Cache",
-		"EA App Cache", "Ubisoft Cache", "GOG Galaxy Cache":
+	case "Game Launcher Cache":
 		return "4_games"
-	case "VSCode Cache", "npm Cache", "pip Cache", "Git Cache", "Visual Studio Cache",
-		"Docker Cache", "JetBrains Cache", "Go Build Cache", "Rust Cache", "NuGet Cache", "Unity Cache":
+	case "Dev Cache":
 		return "5_dev"
-	case "Spotify Cache", "OneDrive Cache", "Office Cache", "Adobe Cache", "OBS Cache", "TeamViewer Logs":
+	case "Service Cache":
 		return "6_apps"
 	default:
 		return "0_user"
@@ -257,8 +255,8 @@ func (m model) viewConfigPresets() string {
 		expected int
 	}{
 		{"Safe", "~5 сек — браузеры, темпы, системный мусор", config.PresetSafe, safeStyle, 12},
-		{"Normal", "Safe + мессенджеры, ланчеры, dev-инструменты", config.PresetNormal, reviewStyle, 34},
-		{"Hard", "Всё включено — максимальная очистка", config.PresetHard, dangerStyle, 50},
+		{"Normal", "Safe + мессенджеры, ланчеры, dev-инструменты", config.PresetNormal, reviewStyle, 25},
+		{"Hard", "Всё включено — максимальная очистка", config.PresetHard, dangerStyle, 29},
 	}
 
 	currentPreset := -1

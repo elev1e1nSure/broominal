@@ -103,8 +103,14 @@ var allScanners = []CategoryScanner{
 	catScanner{"Messenger Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanMessengerCache(ctx, cfg)
 	}},
-	catScanner{"Steam Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		return scanSteamCache(ctx, cfg)
+	catScanner{"Game Launcher Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		return scanGameLauncherCache(ctx, cfg)
+	}},
+	catScanner{"Service Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		return scanServiceCache(ctx, cfg)
+	}},
+	catScanner{"Dev Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		return scanDevCache(ctx, cfg)
 	}},
 	catScanner{"Windows Update Cache", types.RiskReview, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		path := filepath.Join(os.Getenv("SystemRoot"), "SoftwareDistribution", "Download")
@@ -115,9 +121,6 @@ var allScanners = []CategoryScanner{
 	}},
 	catScanner{"Nvidia Installer Leftovers", types.RiskReview, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanNvidiaInstallerLeftovers(ctx, cfg)
-	}},
-	catScanner{"VSCode Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		return scanVSCodeCache(ctx, cfg)
 	}},
 	catScanner{"Edge Code Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "Edge", "User Data", "Default", "Code Cache")
@@ -132,28 +135,6 @@ var allScanners = []CategoryScanner{
 	}},
 	catScanner{"Empty Folders", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanEmptyFolders(ctx, cfg)
-	}},
-	catScanner{"npm Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		return scanNpmCache(ctx, cfg)
-	}},
-	catScanner{"pip Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		return scanPipCache(ctx, cfg)
-	}},
-	catScanner{"Spotify Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		path := filepath.Join(os.Getenv("APPDATA"), "Spotify", "Data")
-		return scanDir(ctx, path, "spotify_cache", types.RiskSafe, nil, true, cfg)
-	}},
-	catScanner{"OneDrive Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "OneDrive", "cache")
-		return scanDir(ctx, path, "onedrive_cache", types.RiskSafe, nil, true, cfg)
-	}},
-	catScanner{"Visual Studio Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "VisualStudio")
-		return scanDir(ctx, path, "vs_cache", types.RiskSafe, nil, true, cfg)
-	}},
-	catScanner{"Git Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Git", "CredentialManager", "cache")
-		return scanDir(ctx, path, "git_cache", types.RiskSafe, nil, true, cfg)
 	}},
 	catScanner{"Windows Prefetch", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		path := filepath.Join(os.Getenv("SystemRoot"), "Prefetch")
@@ -171,21 +152,5 @@ var allScanners = []CategoryScanner{
 	catScanner{"Brave Cache", types.RiskSafe, scanBraveCache},
 	catScanner{"Vivaldi Cache", types.RiskSafe, scanVivaldiCache},
 	catScanner{"Yandex Cache", types.RiskSafe, scanYandexCache},
-	catScanner{"Office Cache", types.RiskSafe, scanOfficeCache},
-	catScanner{"Adobe Cache", types.RiskReview, scanAdobeCache},
-	catScanner{"Docker Cache", types.RiskReview, scanDockerCache},
-	catScanner{"JetBrains Cache", types.RiskSafe, scanJetBrainsCache},
-	catScanner{"Go Build Cache", types.RiskSafe, scanGoBuildCache},
-	catScanner{"Rust Cache", types.RiskSafe, scanRustCache},
-	catScanner{"NuGet Cache", types.RiskReview, scanNuGetCache},
-	catScanner{"Unity Cache", types.RiskReview, scanUnityCache},
-	catScanner{"Epic Games Cache", types.RiskSafe, scanEpicGamesCache},
-	catScanner{"Battle.net Cache", types.RiskSafe, scanBattleNetCache},
-	catScanner{"Rockstar Cache", types.RiskSafe, scanRockstarCache},
-	catScanner{"EA App Cache", types.RiskSafe, scanEAAppCache},
-	catScanner{"Ubisoft Cache", types.RiskSafe, scanUbisoftCache},
-	catScanner{"GOG Galaxy Cache", types.RiskSafe, scanGOGGalaxyCache},
-	catScanner{"OBS Cache", types.RiskSafe, scanOBSCache},
 	catScanner{"Windows Defender", types.RiskReview, scanWindowsDefender},
-	catScanner{"TeamViewer Logs", types.RiskSafe, scanTeamViewerLogs},
 }
