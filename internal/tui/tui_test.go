@@ -443,3 +443,23 @@ func TestHandleKeyLanguageSelect(t *testing.T) {
 		t.Errorf("after select: screen = %d, want MainMenu", mm2.screen)
 	}
 }
+
+func TestHandleKeyMReturnsToMainMenu(t *testing.T) {
+	screens := []Screen{
+		ScreenResult, ScreenError, ScreenRestore, ScreenDoctor,
+		ScreenConfig, ScreenQuarantineCleanup, ScreenLanguage,
+	}
+	for _, sc := range screens {
+		m := initialModel()
+		m.screen = sc
+		m.selectedIdx = 5
+		newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
+		mm := newM.(model)
+		if mm.screen != ScreenMainMenu {
+			t.Errorf("screen %d: M should go to MainMenu, got %d", sc, mm.screen)
+		}
+		if mm.selectedIdx != 0 {
+			t.Errorf("screen %d: selectedIdx should reset to 0, got %d", sc, mm.selectedIdx)
+		}
+	}
+}

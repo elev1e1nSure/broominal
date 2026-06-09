@@ -434,7 +434,7 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case ScreenRestore:
-		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
 			m.screen = ScreenMainMenu
 			m.selectedIdx = 0
 			return m, nil
@@ -475,21 +475,21 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case ScreenDoctor:
-		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
 			m.screen = ScreenMainMenu
 			m.selectedIdx = 0
 			return m, nil
 		}
 
 	case ScreenConfig:
-		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
 			m.screen = ScreenMainMenu
 			m.selectedIdx = 0
 			return m, nil
 		}
 
 	case ScreenQuarantineCleanup:
-		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
 			m.screen = ScreenMainMenu
 			m.selectedIdx = 0
 			return m, nil
@@ -522,7 +522,7 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case ScreenLanguage:
-		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
 			m.screen = ScreenMainMenu
 			m.selectedIdx = 0
 			return m, nil
