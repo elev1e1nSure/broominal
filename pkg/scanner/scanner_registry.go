@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,10 +48,16 @@ var allScanners = []CategoryScanner{
 		for _, rel := range browserCachePaths {
 			path := filepath.Join(os.Getenv("USERPROFILE"), rel)
 			if strings.Contains(rel, "Firefox") {
-				sub, _ := scanFirefoxCache(ctx, path, cfg)
+				sub, err := scanFirefoxCache(ctx, path, cfg)
+				if err != nil {
+					slog.Warn("scanner: firefox cache scan failed", "path", path, "error", err)
+				}
 				items = append(items, sub...)
 			} else {
-				sub, _ := scanDir(ctx, path, "browser_cache", types.RiskSafe, nil, true, cfg)
+				sub, err := scanDir(ctx, path, "browser_cache", types.RiskSafe, nil, true, cfg)
+				if err != nil {
+					slog.Warn("scanner: browser cache scan failed", "path", path, "error", err)
+				}
 				items = append(items, sub...)
 			}
 		}
@@ -59,7 +66,10 @@ var allScanners = []CategoryScanner{
 	catScanner{"Recycle Bin", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		var items []types.Item
 		for _, rp := range recycleBinPaths() {
-			sub, _ := scanDir(ctx, rp, "recycle_bin", types.RiskSafe, nil, true, cfg)
+			sub, err := scanDir(ctx, rp, "recycle_bin", types.RiskSafe, nil, true, cfg)
+			if err != nil {
+				slog.Warn("scanner: recycle bin scan failed", "path", rp, "error", err)
+			}
 			items = append(items, sub...)
 		}
 		return items, nil
@@ -151,7 +161,10 @@ var allScanners = []CategoryScanner{
 	}},
 	catScanner{"Icon Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "IconCache.db")
-		items, _ := scanDir(ctx, path, "icon_cache", types.RiskSafe, nil, false, cfg)
+		items, err := scanDir(ctx, path, "icon_cache", types.RiskSafe, nil, false, cfg)
+		if err != nil {
+			slog.Warn("scanner: icon cache scan failed", "path", path, "error", err)
+		}
 		return items, nil
 	}},
 }
