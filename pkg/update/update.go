@@ -170,15 +170,37 @@ func InstallUpdate(updatePath string) error {
 		return fmt.Errorf("failed to backup current executable: %w", err)
 	}
 
-	// Move new executable to current location
-	if err := os.Rename(updatePath, exePath); err != nil {
-		// Try to restore backup
+	// Copy new executable to current location (cross-drive safe)
+	if err := copyFile(updatePath, exePath); err != nil {
 		_ = os.Rename(backupPath, exePath)
 		return fmt.Errorf("failed to install update: %w", err)
 	}
 
-	// Remove backup
 	_ = os.Remove(backupPath)
-
+	_ = os.Remove(updatePath)
 	return nil
+}
+
+func copyFile(srcPath, dstPath string) error {
+	src, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	info, err := src.Stat()
+	if err != nil {
+		return err
+	}
+
+	dst, err := os.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode())
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, src); err != nil {
+		return err
+	}
+	return dst.Close()
 }
