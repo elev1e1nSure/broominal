@@ -3,12 +3,12 @@ package quarantine
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
@@ -18,9 +18,25 @@ func BaseDir() string {
 	return filepath.Join(config.AppDir(), "quarantine")
 }
 
+// generateBackupID creates a timestamp-based unique ID.
+func generateBackupID() string {
+	base := time.Now().Format("2006-01-02-150405")
+	qDir := BaseDir()
+	id := base
+	suffix := 2
+	for {
+		if _, err := os.Stat(filepath.Join(qDir, id)); os.IsNotExist(err) {
+			break
+		}
+		id = fmt.Sprintf("%s-%d", base, suffix)
+		suffix++
+	}
+	return id
+}
+
 // Move перемещает файлы в карантин и возвращает restore ID
 func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
-	id := uuid.New().String()
+	id := generateBackupID()
 
 	if dryRun {
 		var freed int64
@@ -35,7 +51,7 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 			freed += it.Size
 			files++
 		}
-		return "", freed, files, nil
+		return id, freed, files, nil
 	}
 
 	qDir := filepath.Join(BaseDir(), id)
@@ -46,6 +62,7 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 	manifest := types.Manifest{
 		ID:        id,
 		CreatedAt: time.Now(),
+		Label:     "Cleanup " + id,
 		Items:     make([]types.ManifestItem, 0, len(items)),
 	}
 
@@ -79,6 +96,8 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 			files++
 		}
 	}
+	manifest.TotalSize = freed
+	manifest.Files = files
 
 	manifestPath := filepath.Join(qDir, "manifest.json")
 	mf, err := os.Create(manifestPath)
@@ -142,7 +161,9 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 			continue
 		}
 		if exists && forceOverwrite {
-			_ = os.Remove(it.Original)
+			if err := os.Remove(it.Original); err != nil {
+				slog.Warn("restore: failed to remove existing file", "path", it.Original, "error", err)
+			}
 		}
 		if err := os.Rename(it.Quarantined, it.Original); err != nil {
 			// fallback
@@ -163,9 +184,13 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 		defer mf2.Close()
 		enc := json.NewEncoder(mf2)
 		enc.SetIndent("", "  ")
-		_ = enc.Encode(manifest)
+		if err := enc.Encode(manifest); err != nil {
+			slog.Warn("restore: failed to update manifest", "path", manifestPath, "error", err)
+		}
 	} else {
-		_ = os.RemoveAll(qDir)
+		if err := os.RemoveAll(qDir); err != nil {
+			slog.Warn("restore: failed to remove quarantine dir", "path", qDir, "error", err)
+		}
 	}
 
 	return restored, skipped, nil
@@ -199,7 +224,24 @@ func CheckRestoreConflicts(id string) ([]string, error) {
 	return conflicts, nil
 }
 
-// List возвращает список доступных restore ID
+// GetManifest reads a manifest by restore ID.
+func GetManifest(id string) (*types.Manifest, error) {
+	if err := validateID(id); err != nil {
+		return nil, err
+	}
+	path := filepath.Join(BaseDir(), id, "manifest.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var m types.Manifest
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// List возвращает список доступных restore ID, отсортированных от новых к старым.
 func List() ([]string, error) {
 	qDir := BaseDir()
 	entries, err := os.ReadDir(qDir)
@@ -209,11 +251,41 @@ func List() ([]string, error) {
 		}
 		return nil, err
 	}
-	var ids []string
+	type entryInfo struct {
+		id   string
+		time time.Time
+	}
+	var infos []entryInfo
 	for _, e := range entries {
-		if e.IsDir() {
-			ids = append(ids, e.Name())
+		if !e.IsDir() {
+			continue
 		}
+		id := e.Name()
+		if err := validateID(id); err != nil {
+			continue
+		}
+		m, _ := GetManifest(id)
+		if m != nil {
+			infos = append(infos, entryInfo{id: id, time: m.CreatedAt})
+		} else {
+			// fallback to dir mod time
+			info, _ := os.Stat(filepath.Join(qDir, id))
+			if info != nil {
+				infos = append(infos, entryInfo{id: id, time: info.ModTime()})
+			}
+		}
+	}
+	// sort newest first
+	for i := 0; i < len(infos)-1; i++ {
+		for j := i + 1; j < len(infos); j++ {
+			if infos[j].time.After(infos[i].time) {
+				infos[i], infos[j] = infos[j], infos[i]
+			}
+		}
+	}
+	var ids []string
+	for _, info := range infos {
+		ids = append(ids, info.id)
 	}
 	return ids, nil
 }
@@ -255,9 +327,14 @@ func Cleanup(maxAgeDays int, dryRun bool) (int, int64, error) {
 			}
 		} else {
 			var manifest types.Manifest
-			_ = json.NewDecoder(mf).Decode(&manifest)
-			createdAt = manifest.CreatedAt
-			_ = mf.Close()
+			if err := json.NewDecoder(mf).Decode(&manifest); err != nil {
+				slog.Warn("cleanup: failed to decode manifest", "path", filepath.Join(dirPath, "manifest.json"), "error", err)
+			} else {
+				createdAt = manifest.CreatedAt
+			}
+			if err := mf.Close(); err != nil {
+				slog.Warn("cleanup: failed to close manifest", "path", filepath.Join(dirPath, "manifest.json"), "error", err)
+			}
 		}
 
 		if createdAt.IsZero() || createdAt.Before(cutoff) {
@@ -270,7 +347,9 @@ func Cleanup(maxAgeDays int, dryRun bool) (int, int64, error) {
 				return nil
 			})
 			if !dryRun {
-				_ = os.RemoveAll(dirPath)
+				if err := os.RemoveAll(dirPath); err != nil {
+					slog.Warn("cleanup: failed to remove quarantine dir", "path", dirPath, "error", err)
+				}
 			}
 			deleted++
 			freed += size
@@ -314,7 +393,9 @@ func CleanupAll(dryRun bool) (int, int64, error) {
 			return nil
 		})
 		if !dryRun {
-			_ = os.RemoveAll(dirPath)
+			if err := os.RemoveAll(dirPath); err != nil {
+				slog.Warn("cleanup: failed to remove quarantine dir", "path", dirPath, "error", err)
+			}
 		}
 		deleted++
 		freed += size
@@ -332,23 +413,7 @@ func GetLast() (string, error) {
 	if len(ids) == 0 {
 		return "", fmt.Errorf("no cleanups to restore")
 	}
-	// Return most recent (by dir mod time)
-	var lastID string
-	var lastTime time.Time
-	for _, id := range ids {
-		if err := validateID(id); err != nil {
-			continue
-		}
-		info, err := os.Stat(filepath.Join(BaseDir(), id))
-		if err != nil {
-			continue
-		}
-		if info.ModTime().After(lastTime) {
-			lastTime = info.ModTime()
-			lastID = id
-		}
-	}
-	return lastID, nil
+	return ids[0], nil
 }
 
 func validateID(id string) error {

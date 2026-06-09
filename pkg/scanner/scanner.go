@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -441,7 +442,9 @@ func scanOldTempFiles(cfg *config.Config) ([]types.Item, error) {
 			}
 			return nil
 		})
-		_ = err
+		if err != nil {
+			slog.Warn("scan old temp files failed", "error", err)
+		}
 	}
 	return items, nil
 }
@@ -486,7 +489,9 @@ func scanOldExtensions(ext string, cfg *config.Config) ([]types.Item, error) {
 			}
 			return nil
 		})
-		_ = err
+		if err != nil {
+			slog.Warn("scan old extension files failed", "ext", ext, "error", err)
+		}
 	}
 	return items, nil
 }
@@ -522,7 +527,9 @@ func scanEmptyFolders(cfg *config.Config) ([]types.Item, error) {
 			}
 			return nil
 		})
-		_ = err
+		if err != nil {
+			slog.Warn("scan empty folders failed", "error", err)
+		}
 	}
 	return items, nil
 }

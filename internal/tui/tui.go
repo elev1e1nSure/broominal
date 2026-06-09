@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -43,6 +44,14 @@ const (
 )
 
 // TUI model
+type restoreEntry struct {
+	id        string
+	createdAt time.Time
+	totalSize int64
+	files     int
+	label     string
+}
+
 type model struct {
 	screen                Screen
 	result                *types.ScanResult
@@ -60,9 +69,9 @@ type model struct {
 	conflicts             []string
 	restoreForceOverwrite bool
 	// Restore screen
-	restoreIDs    []string
-	restoreIdx    int
-	restoreResult string
+	restoreEntries []restoreEntry
+	restoreIdx     int
+	restoreResult  string
 	// Doctor screen
 	doctorChecks []doctor.Check
 	// Config screen
@@ -239,7 +248,21 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					m.screen = ScreenError
 					return m, nil
 				}
-				m.restoreIDs = ids
+				var entries []restoreEntry
+				for _, id := range ids {
+					mf, _ := quarantine.GetManifest(id)
+					if mf == nil {
+						continue
+					}
+					entries = append(entries, restoreEntry{
+						id:        mf.ID,
+						createdAt: mf.CreatedAt,
+						totalSize: mf.TotalSize,
+						files:     mf.Files,
+						label:     mf.Label,
+					})
+				}
+				m.restoreEntries = entries
 				m.restoreIdx = 0
 				m.screen = ScreenRestore
 				return m, nil
@@ -480,27 +503,42 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-			if m.restoreIdx < len(m.restoreIDs)-1 {
+			if m.restoreIdx < len(m.restoreEntries)-1 {
 				m.restoreIdx++
 			}
 			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
-			if len(m.restoreIDs) == 0 {
+			if len(m.restoreEntries) == 0 {
 				return m, nil
 			}
-			id := m.restoreIDs[m.restoreIdx]
+			id := m.restoreEntries[m.restoreIdx].id
 			restored, skipped, err := quarantine.Restore(id, false)
 			if err != nil {
 				m.err = err
 				m.screen = ScreenError
 				return m, nil
 			}
-			m.restoreResult = fmt.Sprintf("Restored %d files (%d skipped)", restored, skipped)
+			m.restoreResult = fmt.Sprintf(i18n.T("restored_n_skipped"), restored, skipped)
 			// Refresh list
-			m.restoreIDs, _ = quarantine.List()
-			if m.restoreIdx >= len(m.restoreIDs) {
-				m.restoreIdx = len(m.restoreIDs) - 1
+			ids, _ := quarantine.List()
+			var entries []restoreEntry
+			for _, rid := range ids {
+				mf, _ := quarantine.GetManifest(rid)
+				if mf == nil {
+					continue
+				}
+				entries = append(entries, restoreEntry{
+					id:        mf.ID,
+					createdAt: mf.CreatedAt,
+					totalSize: mf.TotalSize,
+					files:     mf.Files,
+					label:     mf.Label,
+				})
+			}
+			m.restoreEntries = entries
+			if m.restoreIdx >= len(m.restoreEntries) {
+				m.restoreIdx = len(m.restoreEntries) - 1
 				if m.restoreIdx < 0 {
 					m.restoreIdx = 0
 				}
@@ -1017,14 +1055,16 @@ func (m model) viewMainMenu() string {
 func (m model) viewRestore() string {
 	var body string
 	body += titleStyle.Render(i18n.T("restore")) + "\n\n"
-	if len(m.restoreIDs) == 0 {
+	if len(m.restoreEntries) == 0 {
 		body += mutedStyle.Render("  " + i18n.T("no_quarantines")) + "\n"
 	} else {
-		for i, id := range m.restoreIDs {
+		for i, e := range m.restoreEntries {
+			dateStr := e.createdAt.Format("2006-01-02 15:04")
+			line := fmt.Sprintf("%s  %s  %s, %d files", e.id, dateStr, util.FormatSize(e.totalSize), e.files)
 			if i == m.restoreIdx {
-				body += selectedStyle.Render(fmt.Sprintf("> %s", id)) + "\n"
+				body += selectedStyle.Render(fmt.Sprintf("> %s", line)) + "\n"
 			} else {
-				body += mutedStyle.Render(fmt.Sprintf("  %s", id)) + "\n"
+				body += mutedStyle.Render(fmt.Sprintf("  %s", line)) + "\n"
 			}
 		}
 	}

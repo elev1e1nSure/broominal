@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
@@ -354,7 +355,7 @@ func TestHandleKeyMainMenuNavigation(t *testing.T) {
 func TestViewRestoreEmpty(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenRestore
-	m.restoreIDs = []string{}
+	m.restoreEntries = []restoreEntry{}
 	out := m.View()
 	if !strings.Contains(out, "No backups") {
 		t.Error("view should show empty message")
@@ -364,14 +365,17 @@ func TestViewRestoreEmpty(t *testing.T) {
 func TestViewRestoreWithIDs(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenRestore
-	m.restoreIDs = []string{"id-1", "id-2"}
+	m.restoreEntries = []restoreEntry{
+		{id: "2025-06-09-143052", createdAt: time.Now(), totalSize: 100, files: 2},
+		{id: "2025-06-08-120000", createdAt: time.Now().Add(-24 * time.Hour), totalSize: 200, files: 5},
+	}
 	m.restoreIdx = 1
 	out := m.View()
-	if !strings.Contains(out, "id-1") {
-		t.Error("view should contain id-1")
+	if !strings.Contains(out, "2025-06-09") {
+		t.Error("view should contain first entry date")
 	}
-	if !strings.Contains(out, "id-2") {
-		t.Error("view should contain id-2")
+	if !strings.Contains(out, "2025-06-08") {
+		t.Error("view should contain second entry date")
 	}
 }
 

@@ -33,6 +33,9 @@ type CategorySummary struct {
 type Manifest struct {
 	ID        string      `json:"id"`
 	CreatedAt time.Time   `json:"created_at"`
+	Label     string      `json:"label"`
+	TotalSize int64       `json:"total_size"`
+	Files     int         `json:"files"`
 	Items     []ManifestItem `json:"items"`
 }
 

@@ -65,8 +65,8 @@ func TestMoveDryRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Move dry-run failed: %v", err)
 	}
-	if id != "" {
-		t.Errorf("dry-run id = %q, want empty", id)
+	if id == "" {
+		t.Errorf("dry-run id = %q, want non-empty", id)
 	}
 	if freed != 4 {
 		t.Errorf("dry-run freed = %d, want 4", freed)
