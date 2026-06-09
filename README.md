@@ -31,10 +31,6 @@ No fake boost magic. No hidden system tweaking. No "trust me bro" cleanup.
 ## Installation
 
 ```powershell
-# macOS or Linux
-go install github.com/elev1e1nSure/broominal/cmd/broominal@latest
-
-# Windows (via Go)
 go install github.com/elev1e1nSure/broominal/cmd/broominal@latest
 ```
 
@@ -59,19 +55,23 @@ go build -o broominal.exe ./cmd/broominal
 
 ## Quick Start
 
+Typical workflow: scan → preview → clean → restore if needed.
+
 ```powershell
-# scan safe zones
+# find cleanup candidates
 broominal scan
 
-# launch interactive tui
-broominal ui
+# preview what would be cleaned (dry-run)
+broominal clean --dry-run
 
-# clean safe items only
+# clean safe items
 broominal clean --safe
 
-# allow cleaning danger items (requires explicit confirmation)
-broominal clean --danger
+# something went wrong? restore the last cleanup
+broominal restore latest
 ```
+
+For an interactive experience, run `broominal ui`.
 
 ---
 
@@ -93,6 +93,19 @@ broominal clean --danger
 ```
 
 Files are moved to `%LOCALAPPDATA%\broominal\quarantine\<restore-id>` with a `manifest.json` mapping original paths to quarantined paths.
+
+---
+
+## Highlights
+
+- **safe by default** — files are quarantined, not deleted
+- **transparent** — scan results, reports, and manifests are plain JSON
+- **undoable** — restore any cleanup by ID or restore the latest one
+- **predictable** — explicit categories, risk levels, and exclusions
+- **interactive** — Bubbletea TUI for scan, preview, dry-run, and restore
+- **multilingual** — English and Russian with first-run auto-detection
+- **25+ categories** — temp, caches, logs, browser data, dev tools, and more
+- **doctor** — lightweight health checks for permissions, manifests, and state
 
 ---
 
@@ -204,22 +217,9 @@ broominal quarantine-cleanup --max-age-days 7 --force
 
 ---
 
-## Highlights
-
-- **safe by default** — files are quarantined, not deleted
-- **transparent** — scan results, reports, and manifests are plain JSON
-- **undoable** — restore any cleanup by ID or restore the latest one
-- **predictable** — explicit categories, risk levels, and exclusions
-- **interactive** — Bubbletea TUI for scan, preview, dry-run, and restore
-- **multilingual** — English and Russian with first-run auto-detection
-- **25+ categories** — temp, caches, logs, browser data, dev tools, and more
-- **doctor** — lightweight health checks for permissions, manifests, and state
-
----
-
 ## Configuration
 
-You can customize broominal behavior with flags or environment variables.
+You can customize broominal behavior with flags.
 
 ```powershell
 # scan with custom config path
