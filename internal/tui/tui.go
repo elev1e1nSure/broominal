@@ -658,7 +658,7 @@ func (m model) viewDashboard() string {
 		fmt.Sprintf("  %s Safe:       %s\n", safeStyle.Render("●"), valueStyle.Render(scanner.FormatSize(m.result.SafeSize))) +
 		fmt.Sprintf("  %s Review:     %s\n", reviewStyle.Render("●"), valueStyle.Render(scanner.FormatSize(m.result.ReviewSize))) +
 		fmt.Sprintf("  %s Danger:     %s\n\n", dangerStyle.Render("●"), valueStyle.Render(scanner.FormatSize(m.result.DangerSize))) +
-		footer(keyHint("Enter", i18n.T("continue")), keyHint("M", i18n.T("main_menu")), keyHint("Q", i18n.T("quit")))
+		footer(keyHint("Enter", i18n.T("continue")), keyHint("M", i18n.T("main_menu")))
 }
 
 func (m model) viewCategories() string {
@@ -705,14 +705,13 @@ func (m model) viewCategories() string {
 		keyHint("Enter", i18n.T("confirm")),
 		keyHint("D", i18n.T("details")),
 		keyHint("M", i18n.T("main_menu")),
-		keyHint("Q", i18n.T("quit")),
 	)
 	return body
 }
 
 func (m model) viewDetails() string {
 	head := titleStyle.Render(fmt.Sprintf("%s: %s", i18n.T("details"), m.categories[m.detailCat].cat.Category))
-	return head + "\n\n" + m.detailList.View() + "\n" + footer(keyHint("Q/Esc", i18n.T("back")), keyHint("M", i18n.T("main_menu")))
+	return head + "\n\n" + m.detailList.View() + "\n" + footer(keyHint("Esc", i18n.T("back")), keyHint("M", i18n.T("main_menu")))
 }
 
 func (m model) viewConfirm() string {
@@ -732,7 +731,7 @@ func (m model) viewResult() string {
 	if m.cleanResult == nil {
 		return titleStyle.Render(i18n.T("restored")) + "\n\n" +
 			safeStyle.Render("  [OK] "+i18n.T("hint_restored")) + "\n\n" +
-			footer(keyHint("M", i18n.T("main_menu")), keyHint("Q", i18n.T("quit")))
+			footer(keyHint("M", i18n.T("main_menu")))
 	}
 	var body string
 	if m.dryRun {
@@ -748,7 +747,6 @@ func (m model) viewResult() string {
 	body += footer(
 		keyHint("R", i18n.T("restore_last")),
 		keyHint("M", i18n.T("main_menu")),
-		keyHint("Q", i18n.T("quit")),
 	)
 	return body
 }
@@ -791,7 +789,7 @@ func (m model) viewError() string {
 		dangerStyle.Render(fmt.Sprintf("  %v", m.err)) + "\n\n" +
 		footer(
 			keyHint("M", i18n.T("main_menu")),
-			keyHint("Q/Esc", i18n.T("quit")),
+			keyHint("Esc", i18n.T("quit")),
 		)
 }
 
@@ -888,7 +886,6 @@ func (m model) viewRestore() string {
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("restore")),
 		keyHint("M", i18n.T("main_menu")),
-		keyHint("Q/Esc", i18n.T("back")),
 	)
 	return body
 }
@@ -910,7 +907,6 @@ func (m model) viewDoctor() string {
 	}
 	body += "\n" + footer(
 		keyHint("M", i18n.T("main_menu")),
-		keyHint("Q/Esc", i18n.T("back")),
 	)
 	return body
 }
@@ -937,7 +933,6 @@ func (m model) viewQuarantineCleanup() string {
 		keyHint("T", i18n.T("toggle_dry_run")),
 		keyHint("Enter", i18n.T("proceed")),
 		keyHint("M", i18n.T("main_menu")),
-		keyHint("Q/Esc", i18n.T("back")),
 	)
 }
 

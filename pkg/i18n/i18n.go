@@ -9,7 +9,7 @@ import (
 
 var translations = map[string]map[string]string{
 	"en": {
-		"main_menu":                    "Broominal — Main Menu",
+		"main_menu":                    "Main Menu",
 		"menu_scan_clean":              "Scan & Clean",
 		"menu_restore":                 "Restore from Quarantine",
 		"menu_doctor":                  "Doctor (Health Checks)",
@@ -87,7 +87,7 @@ var translations = map[string]map[string]string{
 		"restore_last":                  "restore last",
 	},
 	"ru": {
-		"main_menu":                    "Broominal — Главное меню",
+		"main_menu":                    "Меню",
 		"menu_scan_clean":              "Сканирование и очистка",
 		"menu_restore":                 "Восстановление из карантина",
 		"menu_doctor":                  "Доктор (Проверка здоровья)",
