@@ -3,6 +3,7 @@ package tui
 import (
 "fmt"
 "strings"
+"time"
 
 "github.com/charmbracelet/bubbles/list"
 "github.com/charmbracelet/bubbles/spinner"
@@ -36,6 +37,14 @@ ScreenQuarantineCleanup
 ScreenLanguage
 )
 
+type restoreEntry struct {
+id        string
+createdAt time.Time
+totalSize int64
+files     int
+label     string
+}
+
 type model struct {
 screen                Screen
 result                *types.ScanResult
@@ -53,9 +62,9 @@ dryRun                bool
 conflicts             []string
 restoreForceOverwrite bool
 // Restore screen
-restoreIDs    []string
-restoreIdx    int
-restoreResult string
+restoreEntries []restoreEntry
+restoreIdx     int
+restoreResult  string
 // Doctor screen
 doctorChecks []doctor.Check
 // Config screen

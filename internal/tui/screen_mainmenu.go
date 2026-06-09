@@ -49,7 +49,21 @@ m.err = err
 m.screen = ScreenError
 return m, nil
 }
-m.restoreIDs = ids
+var entries []restoreEntry
+for _, id := range ids {
+mf, _ := quarantine.GetManifest(id)
+if mf == nil {
+continue
+}
+entries = append(entries, restoreEntry{
+id:        mf.ID,
+createdAt: mf.CreatedAt,
+totalSize: mf.TotalSize,
+files:     mf.Files,
+label:     mf.Label,
+})
+}
+m.restoreEntries = entries
 m.restoreIdx = 0
 m.screen = ScreenRestore
 return m, nil
