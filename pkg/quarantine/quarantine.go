@@ -310,7 +310,10 @@ func GetLast() (string, error) {
 
 func validateID(id string) error {
 	clean := filepath.Clean(id)
-	if filepath.IsAbs(clean) || strings.Contains(clean, "..") {
+	if filepath.IsAbs(clean) {
+		return fmt.Errorf("invalid restore id")
+	}
+	if clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
 		return fmt.Errorf("invalid restore id")
 	}
 	return nil

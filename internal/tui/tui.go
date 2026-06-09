@@ -266,18 +266,17 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if key.Matches(msg, key.NewBinding(key.WithKeys("enter", " "))) {
 			m.screen = ScreenCategories
 		}
-		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
+		if key.Matches(msg, key.NewBinding(key.WithKeys("m", "q", "esc"))) {
 			m.screen = ScreenMainMenu
 			m.selectedIdx = 0
 			return m, nil
 		}
-		if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
-			return m, tea.Quit
-		}
 
 	case ScreenCategories:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
-			return m, tea.Quit
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
+			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
 			m.screen = ScreenMainMenu
@@ -323,7 +322,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case ScreenWarnRecycleBin:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
-			m.screen = ScreenCategories
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
 			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
@@ -339,7 +339,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case ScreenDetails:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
-			m.screen = ScreenCategories
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
 			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
@@ -354,7 +355,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case ScreenConfirm:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
-			m.screen = ScreenCategories
+			m.screen = ScreenMainMenu
+			m.selectedIdx = 0
 			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {

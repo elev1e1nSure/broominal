@@ -1,6 +1,7 @@
 package quarantine
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -456,5 +457,110 @@ func TestCleanupKeepsRecent(t *testing.T) {
 	}
 	if _, err := os.Stat(recentDir); os.IsNotExist(err) {
 		t.Error("recent quarantine should be kept")
+	}
+}
+
+func TestValidateID(t *testing.T) {
+	tests := []struct {
+		id    string
+		valid bool
+	}{
+		{"12345678-1234-1234-1234-123456789abc", true},
+		{"simple-name", true},
+		{"foo..bar", true},
+		{"..", false},
+		{`..\foo`, false},
+		{`../foo`, false},
+		{`C:\foo`, false},
+	}
+	for _, tt := range tests {
+		err := validateID(tt.id)
+		if tt.valid && err != nil {
+			t.Errorf("validateID(%q) = %v, want nil", tt.id, err)
+		}
+		if !tt.valid && err == nil {
+			t.Errorf("validateID(%q) = nil, want error", tt.id)
+		}
+	}
+}
+
+func TestRestoreInvalidID(t *testing.T) {
+	_, _, err := Restore(`..\foo`, false)
+	if err == nil {
+		t.Fatal("expected error for invalid restore id")
+	}
+}
+
+func TestCheckRestoreConflictsInvalidID(t *testing.T) {
+	_, err := CheckRestoreConflicts(`..\foo`)
+	if err == nil {
+		t.Fatal("expected error for invalid restore id")
+	}
+}
+
+func TestRestoreManifestPathTraversal(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+	t.Setenv("TEMP", tmp)
+	t.Setenv("USERPROFILE", tmp)
+
+	secretFile := filepath.Join(tmp, "secret.txt")
+	_ = os.WriteFile(secretFile, []byte("secret"), 0644)
+
+	qDir := filepath.Join(BaseDir(), "test-id")
+	_ = os.MkdirAll(qDir, 0755)
+
+	qFile := filepath.Join(qDir, "q.txt")
+	_ = os.WriteFile(qFile, []byte("stolen"), 0644)
+
+	manifest := `{"id":"test-id","created_at":"2020-01-01T00:00:00Z","items":[{"original":"../secret.txt","quarantined":` + fmt.Sprintf("%q", qFile) + `,"size":6}]}`
+	_ = os.WriteFile(filepath.Join(qDir, "manifest.json"), []byte(manifest), 0644)
+
+	restored, _, err := Restore("test-id", false)
+	if err != nil {
+		t.Fatalf("Restore failed: %v", err)
+	}
+	if restored != 0 {
+		t.Errorf("restored = %d, want 0", restored)
+	}
+
+	data, _ := os.ReadFile(secretFile)
+	if string(data) != "secret" {
+		t.Errorf("secret was overwritten: %q", data)
+	}
+}
+
+func TestRestoreManifestDisallowedPath(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+	// Set all allowed roots to dummy paths so that C:\evil is disallowed
+	t.Setenv("TEMP", filepath.Join(tmp, "temp"))
+	t.Setenv("TMP", filepath.Join(tmp, "tmp"))
+	t.Setenv("USERPROFILE", filepath.Join(tmp, "profile"))
+	t.Setenv("LOCALAPPDATA", filepath.Join(tmp, "local"))
+	t.Setenv("APPDATA", filepath.Join(tmp, "roaming"))
+	t.Setenv("ProgramData", filepath.Join(tmp, "programdata"))
+	t.Setenv("SystemRoot", filepath.Join(tmp, "windows"))
+	t.Setenv("WINDIR", filepath.Join(tmp, "windows"))
+	t.Setenv("ProgramFiles", filepath.Join(tmp, "pf"))
+	t.Setenv("ProgramFiles(x86)", filepath.Join(tmp, "pf86"))
+	t.Setenv("SYSTEMDRIVE", "Q:")
+
+	qDir := filepath.Join(BaseDir(), "test-id2")
+	_ = os.MkdirAll(qDir, 0755)
+
+	qFile := filepath.Join(qDir, "q.txt")
+	_ = os.WriteFile(qFile, []byte("stolen"), 0644)
+
+	outsideFile := `C:\evil\target.txt`
+	manifest := fmt.Sprintf(`{"id":"test-id2","created_at":"2020-01-01T00:00:00Z","items":[{"original":%q,"quarantined":%q,"size":6}]}`, outsideFile, qFile)
+	_ = os.WriteFile(filepath.Join(qDir, "manifest.json"), []byte(manifest), 0644)
+
+	restored, _, err := Restore("test-id2", false)
+	if err != nil {
+		t.Fatalf("Restore failed: %v", err)
+	}
+	if restored != 0 {
+		t.Errorf("restored = %d, want 0", restored)
 	}
 }
