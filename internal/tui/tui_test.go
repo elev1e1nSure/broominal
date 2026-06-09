@@ -436,11 +436,11 @@ func TestHandleKeyLanguageSelect(t *testing.T) {
 		t.Errorf("after down: selectedIdx = %d, want 1", mm.selectedIdx)
 	}
 
-	// Select Russian
+	// Select Russian — should stay on language screen
 	newM2, _ := mm.handleKey(tea.KeyMsg{Type: tea.KeyEnter})
 	mm2 := newM2.(model)
-	if mm2.screen != ScreenMainMenu {
-		t.Errorf("after select: screen = %d, want MainMenu", mm2.screen)
+	if mm2.screen != ScreenLanguage {
+		t.Errorf("after select: screen = %d, want Language", mm2.screen)
 	}
 }
 

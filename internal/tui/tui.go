@@ -576,8 +576,6 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					_ = config.Save(cfg)
 				}
 			}
-			m.screen = ScreenMainMenu
-			m.selectedIdx = 0
 			return m, nil
 		}
 
