@@ -34,7 +34,7 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		switch m.selectedIdx {
 		case 0: // Scan & Clean
 			m.screen = ScreenDashboard
-			return m, func() tea.Msg {
+			return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
 				cfg, _ := config.Load()
 				if cfg == nil {
 					cfg = config.Default()
@@ -46,7 +46,7 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					return errMsg{err}
 				}
 				return scanDoneMsg{res}
-			}
+			})
 		case 1: // Restore
 			ids, err := quarantine.List()
 			if err != nil {

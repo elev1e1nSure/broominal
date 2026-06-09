@@ -142,23 +142,33 @@ func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) viewCategories() string {
 	var body string
 	body += titleStyle.Render(i18n.T("categories")) + "\n\n"
-	head := fmt.Sprintf("  %-20s %10s %8s %8s  %s", i18n.T("category"), i18n.T("size"), i18n.T("files"), i18n.T("risk"), i18n.T("select"))
-	body += mutedStyle.Render(head) + "\n"
-	body += mutedStyle.Render("  "+strings.Repeat("-", 60)) + "\n"
+
+	// Build aligned header using same widths as rows
+	catW, sizeW, filesW, riskW, selW := 26, 10, 7, 12, 5
+	head := lipgloss.NewStyle().Width(catW).Render(i18n.T("category")) + " " +
+		lipgloss.NewStyle().Width(sizeW).Align(lipgloss.Right).Render(i18n.T("size")) + " " +
+		lipgloss.NewStyle().Width(filesW).Align(lipgloss.Right).Render(i18n.T("files")) + " " +
+		lipgloss.NewStyle().Width(riskW).Render(i18n.T("risk")) + " " +
+		lipgloss.NewStyle().Width(selW).Render(i18n.T("select"))
+	body += mutedStyle.Render("  "+head) + "\n"
+	body += mutedStyle.Render("  "+strings.Repeat("─", catW+sizeW+filesW+riskW+selW+4)) + "\n"
+
 	for i, c := range m.categories {
 		marker := "[ ]"
 		if c.selected {
 			marker = safeStyle.Render("[x]")
 		}
 		prefix := "  "
-		nameSt := lipgloss.NewStyle()
-		sizeSt := lipgloss.NewStyle()
-		filesSt := lipgloss.NewStyle()
+		nameSt := lipgloss.NewStyle().Width(catW)
+		sizeSt := lipgloss.NewStyle().Width(sizeW).Align(lipgloss.Right)
+		filesSt := lipgloss.NewStyle().Width(filesW).Align(lipgloss.Right)
+		riskSt := lipgloss.NewStyle().Width(riskW)
 		if i == m.selectedIdx {
 			prefix = selectedStyle.Render("> ")
-			nameSt = selectedStyle
-			sizeSt = selectedStyle
-			filesSt = selectedStyle
+			nameSt = nameSt.Inherit(selectedStyle)
+			sizeSt = sizeSt.Inherit(selectedStyle)
+			filesSt = filesSt.Inherit(selectedStyle)
+			riskSt = riskSt.Inherit(selectedStyle)
 		}
 		riskCol := lipgloss.Color("#9ca3af")
 		switch c.cat.Risk {
@@ -169,12 +179,13 @@ func (m model) viewCategories() string {
 		case types.RiskDanger:
 			riskCol = lipgloss.Color("#f87171")
 		}
-		riskSt := lipgloss.NewStyle().Width(8).Bold(true).Foreground(riskCol)
+		riskSt = riskSt.Foreground(riskCol).Bold(true)
+		riskLabel := i18n.T("risk_" + strings.ToLower(string(c.cat.Risk)))
 		line := prefix +
-			nameSt.Width(20).Render(c.cat.Category) + " " +
-			sizeSt.Width(10).Render(util.FormatSize(c.cat.Size)) + " " +
-			filesSt.Width(8).Render(fmt.Sprintf("%d", c.cat.Files)) + "  " +
-			riskSt.Render(string(c.cat.Risk)) + "  " +
+			nameSt.Render(i18n.CategoryName(c.cat.Category)) + " " +
+			sizeSt.Render(util.FormatSize(c.cat.Size)) + " " +
+			filesSt.Render(fmt.Sprintf("%d", c.cat.Files)) + " " +
+			riskSt.Render(riskLabel) + " " +
 			marker
 		body += line + "\n"
 	}
