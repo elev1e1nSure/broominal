@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/elev1e1nSure/broominal/internal/tui"
 	"github.com/elev1e1nSure/broominal/pkg/config"
+	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/report"
 	"github.com/elev1e1nSure/broominal/pkg/scanner"
@@ -27,6 +28,7 @@ func main() {
 	rootCmd.AddCommand(restoreCmd())
 	rootCmd.AddCommand(reportCmd())
 	rootCmd.AddCommand(configCmd())
+	rootCmd.AddCommand(doctorCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -180,6 +182,33 @@ func configCmd() *cobra.Command {
 			}
 			data, _ := json.MarshalIndent(cfg, "", "  ")
 			fmt.Printf("Config path: %s\n\n%s\n", config.Path(), string(data))
+		},
+	}
+}
+
+func doctorCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "doctor",
+		Short: "Run health checks",
+		Run: func(cmd *cobra.Command, args []string) {
+			checks := doctor.Run()
+			var fail bool
+			for _, c := range checks {
+				marker := "  "
+				switch c.Status {
+				case doctor.StatusPass:
+					marker = "[PASS]"
+				case doctor.StatusWarn:
+					marker = "[WARN]"
+				case doctor.StatusFail:
+					marker = "[FAIL]"
+					fail = true
+				}
+				fmt.Printf("%-8s %-25s %s\n", marker, c.Name, c.Detail)
+			}
+			if fail {
+				os.Exit(1)
+			}
 		},
 	}
 }
