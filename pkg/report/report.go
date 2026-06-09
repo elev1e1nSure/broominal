@@ -29,7 +29,7 @@ func Save(result *types.ScanResult, cleaned *types.CleanResult) (string, error) 
 		Cleaned:   cleaned,
 	}
 
-	filename := fmt.Sprintf("report_%s.json", time.Now().Format("20060102_150405"))
+	filename := fmt.Sprintf("report_%s.json", time.Now().Format("20060102_150405.000"))
 	path := filepath.Join(BaseDir(), filename)
 
 	f, err := os.Create(path)
