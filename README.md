@@ -88,6 +88,20 @@ broominal quarantine-cleanup --force --max-age-days 7
 
 ---
 
+## Build from source
+
+Requires **Go 1.26+**.
+
+```powershell
+# Clone and build
+go build -o broominal.exe ./cmd/broominal
+
+# Run
+.\broominal.exe ui
+```
+
+---
+
 ## Architecture
 
 ```
