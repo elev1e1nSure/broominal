@@ -391,6 +391,94 @@ func TestScanDuplicateFiles(t *testing.T) {
 	}
 }
 
+func TestScanEdgeWebViewCache(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	cacheDir := filepath.Join(tmp, "Microsoft", "EdgeWebView", "User", "Default", "Cache")
+	_ = os.MkdirAll(cacheDir, 0755)
+	_ = os.WriteFile(filepath.Join(cacheDir, "data_0"), []byte("cache"), 0644)
+
+	cfg := config.Default()
+	items, err := scanEdgeWebViewCache(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) == 0 {
+		t.Fatal("expected at least 1 item")
+	}
+	if items[0].Category != "edge_webview_cache" {
+		t.Errorf("category = %q, want edge_webview_cache", items[0].Category)
+	}
+}
+
+func TestScanJetBrainsCache(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	cachePath := filepath.Join(tmp, "JetBrains", "IntelliJIdea2024.1", "caches")
+	_ = os.MkdirAll(cachePath, 0755)
+	_ = os.WriteFile(filepath.Join(cachePath, "vfs.db"), []byte("cache"), 0644)
+
+	cfg := config.Default()
+	items, err := scanJetBrainsCache(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) == 0 {
+		t.Fatal("expected at least 1 item")
+	}
+	if items[0].Category != "jetbrains_cache" {
+		t.Errorf("category = %q, want jetbrains_cache", items[0].Category)
+	}
+}
+
+func TestScanOfficeCache(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tmp)
+
+	cachePath := filepath.Join(tmp, "Microsoft", "Office", "16.0", "OfficeFileCache")
+	_ = os.MkdirAll(cachePath, 0755)
+	_ = os.WriteFile(filepath.Join(cachePath, "FSD.dat"), []byte("data"), 0644)
+
+	cfg := config.Default()
+	items, err := scanOfficeCache(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) == 0 {
+		t.Fatal("expected at least 1 item")
+	}
+	if items[0].Category != "office_cache" {
+		t.Errorf("category = %q, want office_cache", items[0].Category)
+	}
+}
+
+func TestScanRecentDocuments(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("APPDATA", tmp)
+
+	recentDir := filepath.Join(tmp, "Microsoft", "Windows", "Recent")
+	_ = os.MkdirAll(recentDir, 0755)
+	_ = os.WriteFile(filepath.Join(recentDir, "report.lnk"), []byte("lnk"), 0644)
+	_ = os.WriteFile(filepath.Join(recentDir, "AutomaticDestinations"), []byte("data"), 0644) // not .lnk, filtered
+
+	cfg := config.Default()
+	items, err := scanRecentDocuments(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 .lnk item, got %d", len(items))
+	}
+	if items[0].Category != "recent_documents" {
+		t.Errorf("category = %q, want recent_documents", items[0].Category)
+	}
+	if items[0].Risk != types.RiskReview {
+		t.Errorf("risk = %v, want RiskReview", items[0].Risk)
+	}
+}
+
 func TestScanDirMaxFilesLimit(t *testing.T) {
 	tmp := t.TempDir()
 	for i := 0; i < maxScanFiles+5; i++ {

@@ -615,6 +615,84 @@ func scanDuplicateFiles(ctx context.Context, cfg *config.Config) ([]types.Item, 
 	return items, nil
 }
 
+func scanEdgeWebViewCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	base := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "EdgeWebView", "User", "Default")
+	for _, sub := range []string{"Cache", "Code Cache", "GPUCache"} {
+		subItems, _ := scanDir(ctx, filepath.Join(base, sub), "edge_webview_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanEpicGamesCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	base := filepath.Join(os.Getenv("LOCALAPPDATA"), "EpicGamesLauncher", "Saved")
+	for _, sub := range []string{"webcache", "Logs", "crashes"} {
+		subItems, _ := scanDir(ctx, filepath.Join(base, sub), "epic_games_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanAdobeCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	for _, path := range []string{
+		filepath.Join(os.Getenv("APPDATA"), "Adobe", "Common", "Media Cache Files"),
+		filepath.Join(os.Getenv("APPDATA"), "Adobe", "Common", "Media Cache"),
+	} {
+		subItems, _ := scanDir(ctx, path, "adobe_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanJetBrainsCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	base := filepath.Join(os.Getenv("LOCALAPPDATA"), "JetBrains")
+	entries, err := os.ReadDir(base)
+	if err != nil {
+		return nil, nil
+	}
+	var items []types.Item
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		subItems, _ := scanDir(ctx, filepath.Join(base, e.Name(), "caches"), "jetbrains_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanOfficeCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	base := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "Office")
+	entries, err := os.ReadDir(base)
+	if err != nil {
+		return nil, nil
+	}
+	var items []types.Item
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		subItems, _ := scanDir(ctx, filepath.Join(base, e.Name(), "OfficeFileCache"), "office_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanJavaCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	path := filepath.Join(os.Getenv("APPDATA"), "LocalLow", "Sun", "Java", "Deployment", "cache")
+	items, _ := scanDir(ctx, path, "java_cache", types.RiskSafe, nil, true, cfg)
+	return items, nil
+}
+
+func scanRecentDocuments(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	path := filepath.Join(os.Getenv("APPDATA"), "Microsoft", "Windows", "Recent")
+	items, _ := scanDir(ctx, path, "recent_documents", types.RiskReview, []string{".lnk"}, false, cfg)
+	return items, nil
+}
+
 func scanCrashMemoryDumps(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	paths := []string{

@@ -46,6 +46,7 @@ func Default() *Config {
 			"Firefox Cache2":        true,
 			"Windows Prefetch":      true,
 			"AMD GPU Cache":         true,
+			"Edge WebView2 Cache":   true,
 			// Standard
 			"Messenger Cache":            false,
 			"Game Launcher Cache":        false,
@@ -56,6 +57,11 @@ func Default() *Config {
 			"Crash & Memory Dumps":       false,
 			"Nvidia Installer Leftovers": false,
 			"Zoom Cache":                 false,
+			"Epic Games Cache":           false,
+			"Adobe Cache":                false,
+			"JetBrains Cache":            false,
+			"Office Cache":               false,
+			"Java Cache":                 false,
 			// Deep
 			"Downloads":          false,
 			"Recycle Bin":        false,
@@ -65,6 +71,7 @@ func Default() *Config {
 			"Startup Leftovers":  false,
 			"Scheduled Tasks":    false,
 			"Duplicate Files":    false,
+			"Recent Documents":   false,
 		},
 		ActivePreset: string(PresetQuick),
 		Exclusions:   []string{},
@@ -236,6 +243,7 @@ func (c *Config) ApplyPreset(p Preset) {
 		"Firefox Cache2",
 		"Windows Prefetch",
 		"AMD GPU Cache",
+		"Edge WebView2 Cache",
 	}
 
 	standardCategories := append(quickCategories,
@@ -248,6 +256,11 @@ func (c *Config) ApplyPreset(p Preset) {
 		"Crash & Memory Dumps",
 		"Nvidia Installer Leftovers",
 		"Zoom Cache",
+		"Epic Games Cache",
+		"Adobe Cache",
+		"JetBrains Cache",
+		"Office Cache",
+		"Java Cache",
 	)
 
 	deepCategories := append(standardCategories,
@@ -258,6 +271,7 @@ func (c *Config) ApplyPreset(p Preset) {
 		"Windows Defender",
 		"Startup Leftovers",
 		"Scheduled Tasks",
+		"Recent Documents",
 	)
 
 	var categories []string

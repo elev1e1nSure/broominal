@@ -25,12 +25,12 @@ func TestDefault(t *testing.T) {
 	if cfg.ActivePreset != string(PresetQuick) {
 		t.Errorf("ActivePreset = %q, want %q", cfg.ActivePreset, string(PresetQuick))
 	}
-	for _, cat := range []string{"Temp", "Browser Cache", "Edge Code Cache", "Chrome Code Cache", "Firefox Cache2", "Windows Prefetch", "AMD GPU Cache"} {
+	for _, cat := range []string{"Temp", "Browser Cache", "Edge Code Cache", "Chrome Code Cache", "Firefox Cache2", "Windows Prefetch", "AMD GPU Cache", "Edge WebView2 Cache"} {
 		if !cfg.EnabledCategories[cat] {
 			t.Errorf("%q should be enabled by default (Quick preset)", cat)
 		}
 	}
-	for _, cat := range []string{"Downloads", "Recycle Bin", "Messenger Cache", "Zoom Cache", "Windows Defender"} {
+	for _, cat := range []string{"Downloads", "Recycle Bin", "Messenger Cache", "Zoom Cache", "Windows Defender", "Epic Games Cache", "Adobe Cache", "JetBrains Cache", "Office Cache", "Java Cache", "Recent Documents"} {
 		if cfg.EnabledCategories[cat] {
 			t.Errorf("%q should be disabled by default (Quick preset)", cat)
 		}

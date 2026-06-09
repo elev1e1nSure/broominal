@@ -158,4 +158,11 @@ var allScanners = []CategoryScanner{
 	catScanner{"Startup Leftovers", types.RiskReview, scanStartupLeftovers},
 	catScanner{"Scheduled Tasks", types.RiskReview, scanScheduledTasksLeftovers},
 	catScanner{"Duplicate Files", types.RiskReview, scanDuplicateFiles},
+	catScanner{"Edge WebView2 Cache", types.RiskSafe, scanEdgeWebViewCache},
+	catScanner{"Epic Games Cache", types.RiskSafe, scanEpicGamesCache},
+	catScanner{"Adobe Cache", types.RiskSafe, scanAdobeCache},
+	catScanner{"JetBrains Cache", types.RiskSafe, scanJetBrainsCache},
+	catScanner{"Office Cache", types.RiskSafe, scanOfficeCache},
+	catScanner{"Java Cache", types.RiskSafe, scanJavaCache},
+	catScanner{"Recent Documents", types.RiskReview, scanRecentDocuments},
 }
