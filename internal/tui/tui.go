@@ -341,8 +341,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case ScreenDetails:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
-			m.screen = ScreenMainMenu
-			m.selectedIdx = 0
+			m.screen = ScreenCategories
+			m.selectedIdx = m.detailCat
 			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
