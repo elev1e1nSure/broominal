@@ -153,8 +153,8 @@ func TestViewCategories(t *testing.T) {
 	}
 	m.selectedIdx = 0
 	out := m.View()
-	if !strings.Contains(out, "Categories") {
-		t.Error("view should contain 'Categories'")
+	if !strings.Contains(out, "Cleanup Selection") {
+		t.Error("view should contain 'Cleanup Selection'")
 	}
 	if !strings.Contains(out, "Temp") {
 		t.Error("view should contain 'Temp'")

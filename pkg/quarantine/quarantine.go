@@ -22,30 +22,39 @@ func BaseDir() string {
 	return filepath.Join(config.AppDir(), "quarantine")
 }
 
-// generateBackupID creates a timestamp-based unique ID.
-func generateBackupID() string {
+// generateBackupID creates a timestamp-based unique ID atomically by
+// attempting os.Mkdir; if the directory already exists it appends a suffix.
+func generateBackupID() (string, error) {
 	base := time.Now().Format("2006-01-02-150405")
 	qDir := BaseDir()
+	if err := os.MkdirAll(qDir, 0700); err != nil {
+		return "", fmt.Errorf("create quarantine base dir: %w", err)
+	}
 	id := base
 	suffix := 2
 	for {
-		if _, err := os.Stat(filepath.Join(qDir, id)); os.IsNotExist(err) {
-			break
+		dirPath := filepath.Join(qDir, id)
+		err := os.Mkdir(dirPath, 0700)
+		if err == nil {
+			return id, nil
 		}
-		id = fmt.Sprintf("%s-%d", base, suffix)
-		suffix++
+		if os.IsExist(err) {
+			id = fmt.Sprintf("%s-%d", base, suffix)
+			suffix++
+			continue
+		}
+		return "", fmt.Errorf("create quarantine dir: %w", err)
 	}
-	return id
 }
 
 // Move перемещает файлы в карантин и возвращает restore ID
 func Move(ctx context.Context, items []types.Item) (string, int64, int, int, error) {
-	id := generateBackupID()
+	id, err := generateBackupID()
+	if err != nil {
+		return "", 0, 0, 0, err
+	}
 
 	qDir := filepath.Join(BaseDir(), id)
-	if err := os.MkdirAll(qDir, 0700); err != nil {
-		return "", 0, 0, 0, fmt.Errorf("create quarantine dir: %w", err)
-	}
 
 	manifest := types.Manifest{
 		ID:        id,
