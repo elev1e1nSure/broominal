@@ -89,9 +89,9 @@ func CheckForUpdates(currentVersion string) (*Release, error) {
 	return &release, nil
 }
 
-// HasInternet checks if there's an internet connection
+// HasInternet checks if there's an internet connection by trying GitHub.
 func HasInternet() bool {
-	conn, err := net.DialTimeout("tcp", "8.8.8.8:53", 5*time.Second)
+	conn, err := net.DialTimeout("tcp", "api.github.com:443", 5*time.Second)
 	if err != nil {
 		return false
 	}
