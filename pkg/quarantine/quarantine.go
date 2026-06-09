@@ -190,7 +190,7 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 			return restored, skipped, fmt.Errorf("update manifest: %w", err)
 		}
 	} else {
-		if err := os.RemoveAll(qDir); err != nil {
+		if err := removeAllRetry(qDir); err != nil {
 			slog.Warn("restore: failed to remove quarantine dir", "path", qDir, "error", err)
 		}
 	}
@@ -359,7 +359,7 @@ func cleanupQuarantines(shouldDelete func(time.Time) bool) (int, int64, error) {
 				size += info.Size()
 				return nil
 			})
-			if err := os.RemoveAll(dirPath); err != nil {
+			if err := removeAllRetry(dirPath); err != nil {
 				errs = append(errs, err)
 			}
 			deleted++
@@ -401,7 +401,7 @@ func Delete(id string) (int64, error) {
 			return nil
 		})
 	}
-	if err := os.RemoveAll(dirPath); err != nil {
+	if err := removeAllRetry(dirPath); err != nil {
 		return 0, err
 	}
 	return size, nil
@@ -474,6 +474,26 @@ func isAllowedRestorePath(path string) bool {
 	return false
 }
 
+func removeRetry(path string) error {
+	for i := 0; i < 5; i++ {
+		if err := os.Remove(path); err == nil {
+			return nil
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	return os.Remove(path)
+}
+
+func removeAllRetry(path string) error {
+	for i := 0; i < 5; i++ {
+		if err := os.RemoveAll(path); err == nil {
+			return nil
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	return os.RemoveAll(path)
+}
+
 func writeManifest(path string, manifest *types.Manifest) error {
 	tmp := path + ".tmp"
 	f, err := os.Create(tmp)
@@ -491,6 +511,7 @@ func writeManifest(path string, manifest *types.Manifest) error {
 		os.Remove(tmp)
 		return fmt.Errorf("close temp manifest: %w", err)
 	}
+	_ = os.Remove(path) // allow overwrite on Windows
 	return os.Rename(tmp, path)
 }
 
@@ -542,5 +563,5 @@ func copyAndDelete(src, dst string) error {
 	if err := in.Close(); err != nil {
 		return err
 	}
-	return os.Remove(src)
+	return removeRetry(src)
 }
