@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
@@ -355,7 +354,7 @@ func TestHandleKeyMainMenuNavigation(t *testing.T) {
 func TestViewRestoreEmpty(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenRestore
-	m.restoreEntries = []restoreEntry{}
+	m.restoreIDs = []string{}
 	out := m.View()
 	if !strings.Contains(out, "No backups") {
 		t.Error("view should show empty message")
@@ -365,9 +364,9 @@ func TestViewRestoreEmpty(t *testing.T) {
 func TestViewRestoreWithIDs(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenRestore
-	m.restoreEntries = []restoreEntry{
-		{id: "2025-06-09-143052", createdAt: time.Now(), totalSize: 100, files: 2},
-		{id: "2025-06-08-120000", createdAt: time.Now().Add(-24 * time.Hour), totalSize: 200, files: 5},
+	m.restoreIDs = []string{
+		"2025-06-09-143052",
+		"2025-06-08-120000",
 	}
 	m.restoreIdx = 1
 	out := m.View()
