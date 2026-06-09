@@ -2,7 +2,6 @@ package tui
 
 import (
 	"log/slog"
-	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
