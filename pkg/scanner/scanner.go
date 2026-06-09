@@ -101,6 +101,71 @@ func ScanWithConfig(cfg *config.Config) (*types.ScanResult, error) {
 		mergeItems(categories, "Large Old Files", types.RiskReview, largeItems)
 	}
 
+	// Thumbnails Cache
+	if cfg.IsCategoryEnabled("Thumbnails Cache") {
+		items, _ := scanThumbnails(cfg)
+		mergeItems(categories, "Thumbnails Cache", types.RiskSafe, items)
+	}
+
+	// DirectX Shader Cache
+	if cfg.IsCategoryEnabled("DirectX Shader Cache") {
+		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "D3DSCache")
+		items, _ := scanDir(path, "directx_shader_cache", types.RiskSafe, nil, true, cfg)
+		mergeItems(categories, "DirectX Shader Cache", types.RiskSafe, items)
+	}
+
+	// Delivery Optimization
+	if cfg.IsCategoryEnabled("Delivery Optimization") {
+		path := filepath.Join(os.Getenv("ProgramData"), "Microsoft", "Network", "Downloader")
+		items, _ := scanDir(path, "delivery_optimization", types.RiskSafe, nil, true, cfg)
+		mergeItems(categories, "Delivery Optimization", types.RiskSafe, items)
+	}
+
+	// Windows Error Reports
+	if cfg.IsCategoryEnabled("Windows Error Reports") {
+		path := filepath.Join(os.Getenv("ProgramData"), "Microsoft", "Windows", "WER")
+		items, _ := scanDir(path, "windows_error_reports", types.RiskSafe, nil, true, cfg)
+		mergeItems(categories, "Windows Error Reports", types.RiskSafe, items)
+	}
+
+	// Discord Cache
+	if cfg.IsCategoryEnabled("Discord Cache") {
+		items, _ := scanDiscordCache(cfg)
+		mergeItems(categories, "Discord Cache", types.RiskSafe, items)
+	}
+
+	// Steam Cache
+	if cfg.IsCategoryEnabled("Steam Cache") {
+		items, _ := scanSteamCache(cfg)
+		mergeItems(categories, "Steam Cache", types.RiskSafe, items)
+	}
+
+	// Windows Update Cache
+	if cfg.IsCategoryEnabled("Windows Update Cache") {
+		path := filepath.Join(os.Getenv("SystemRoot"), "SoftwareDistribution", "Download")
+		items, _ := scanDir(path, "windows_update_cache", types.RiskReview, nil, false, cfg)
+		mergeItems(categories, "Windows Update Cache", types.RiskReview, items)
+	}
+
+	// Crash & Memory Dumps
+	if cfg.IsCategoryEnabled("Crash & Memory Dumps") {
+		items, _ := scanCrashMemoryDumps(cfg)
+		mergeItems(categories, "Crash & Memory Dumps", types.RiskReview, items)
+	}
+
+	// Nvidia Installer Leftovers
+	if cfg.IsCategoryEnabled("Nvidia Installer Leftovers") {
+		items, _ := scanNvidiaInstallerLeftovers(cfg)
+		mergeItems(categories, "Nvidia Installer Leftovers", types.RiskReview, items)
+	}
+
+	// Telegram Desktop Cache
+	if cfg.IsCategoryEnabled("Telegram Desktop Cache") {
+		path := filepath.Join(os.Getenv("APPDATA"), "Telegram Desktop", "tdata", "user_data")
+		items, _ := scanDir(path, "telegram_desktop_cache", types.RiskReview, nil, true, cfg)
+		mergeItems(categories, "Telegram Desktop Cache", types.RiskReview, items)
+	}
+
 	for _, cat := range categories {
 		result.Categories = append(result.Categories, *cat)
 		result.TotalSize += cat.Size
@@ -379,4 +444,91 @@ func IsSystemFile(path string) bool {
 		return false
 	}
 	return attrs&syscall.FILE_ATTRIBUTE_SYSTEM != 0
+}
+
+func scanThumbnails(cfg *config.Config) ([]types.Item, error) {
+	root := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "Windows", "Explorer")
+	matches, err := filepath.Glob(filepath.Join(root, "thumbcache_*.db"))
+	if err != nil {
+		return nil, err
+	}
+	var items []types.Item
+	for _, path := range matches {
+		if isExcluded(path, cfg) {
+			continue
+		}
+		info, err := os.Stat(path)
+		if err != nil {
+			continue
+		}
+		items = append(items, types.Item{
+			Category: "thumbnails_cache",
+			Path:     path,
+			Size:     info.Size(),
+			Risk:     types.RiskSafe,
+		})
+	}
+	return items, nil
+}
+
+func scanDiscordCache(cfg *config.Config) ([]types.Item, error) {
+	root := filepath.Join(os.Getenv("APPDATA"), "discord")
+	var items []types.Item
+	for _, sub := range []string{"Cache", "Code Cache"} {
+		path := filepath.Join(root, sub)
+		subItems, _ := scanDir(path, "discord_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanSteamCache(cfg *config.Config) ([]types.Item, error) {
+	root := os.Getenv("ProgramFiles(x86)")
+	if root == "" {
+		root = os.Getenv("ProgramFiles")
+	}
+	root = filepath.Join(root, "Steam")
+	var items []types.Item
+	for _, sub := range []string{"appcache", "htmlcache"} {
+		path := filepath.Join(root, sub)
+		subItems, _ := scanDir(path, "steam_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanCrashMemoryDumps(cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	paths := []string{
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "CrashDumps"),
+		filepath.Join(os.Getenv("SystemRoot"), "Minidump"),
+	}
+	for _, path := range paths {
+		subItems, _ := scanDir(path, "crash_dumps", types.RiskReview, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	// MEMORY.DMP
+	memDmp := filepath.Join(os.Getenv("SystemRoot"), "MEMORY.DMP")
+	if info, err := os.Stat(memDmp); err == nil && !info.IsDir() {
+		items = append(items, types.Item{
+			Category: "memory_dumps",
+			Path:     memDmp,
+			Size:     info.Size(),
+			Risk:     types.RiskReview,
+		})
+	}
+	return items, nil
+}
+
+func scanNvidiaInstallerLeftovers(cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	paths := []string{
+		`C:\NVIDIA\DisplayDriver`,
+		filepath.Join(os.Getenv("ProgramData"), "NVIDIA Corporation", "Downloader"),
+	}
+	for _, path := range paths {
+		subItems, _ := scanDir(path, "nvidia_installer_leftovers", types.RiskReview, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
 }

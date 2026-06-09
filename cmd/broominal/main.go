@@ -59,6 +59,12 @@ func main() {
 		Use:   "broominal",
 		Short: "Safe Windows cleanup with undo",
 		Long:  "A safe, transparent, undoable Windows cleanup tool.",
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := tui.Start(); err != nil {
+				fmt.Fprintf(os.Stderr, "TUI error: %v\n", err)
+				os.Exit(1)
+			}
+		},
 	}
 
 	rootCmd.SetHelpTemplate(helpTemplate)
