@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/elev1e1nSure/broominal/internal/tui"
+	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/report"
 	"github.com/elev1e1nSure/broominal/pkg/scanner"
@@ -24,6 +26,7 @@ func main() {
 	rootCmd.AddCommand(cleanCmd())
 	rootCmd.AddCommand(restoreCmd())
 	rootCmd.AddCommand(reportCmd())
+	rootCmd.AddCommand(configCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -161,6 +164,22 @@ func reportCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			fmt.Printf("Report saved to: %s\n", path)
+		},
+	}
+}
+
+func configCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "config",
+		Short: "Show current configuration",
+		Run: func(cmd *cobra.Command, args []string) {
+			cfg, err := config.Load()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
+				os.Exit(1)
+			}
+			data, _ := json.MarshalIndent(cfg, "", "  ")
+			fmt.Printf("Config path: %s\n\n%s\n", config.Path(), string(data))
 		},
 	}
 }

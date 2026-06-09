@@ -3,12 +3,27 @@ package risk
 import (
 	"strings"
 
+	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
 // Classify классифицирует файл по риску на основе пути и категории
 func Classify(path string, category string) types.RiskLevel {
 	lp := strings.ToLower(path)
+
+	// Проверка конфиг-оверрайдов
+	cfg, err := config.Load()
+	if err == nil {
+		override := cfg.RiskOverrideFor(path)
+		switch override {
+		case "safe":
+			return types.RiskSafe
+		case "review":
+			return types.RiskReview
+		case "danger":
+			return types.RiskDanger
+		}
+	}
 
 	// Системные пути — danger
 	systemPaths := []string{

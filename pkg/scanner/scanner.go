@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
@@ -26,56 +27,79 @@ var logPatterns = []string{
 }
 
 func Scan() (*types.ScanResult, error) {
+	cfg, err := config.Load()
+	if err != nil {
+		cfg = config.Default()
+	}
+	return ScanWithConfig(cfg)
+}
+
+func ScanWithConfig(cfg *config.Config) (*types.ScanResult, error) {
 	result := &types.ScanResult{}
 	categories := make(map[string]*types.CategorySummary)
 
 	// Temp
-	tempPath := os.Getenv("TEMP")
-	if tempPath != "" {
-		items, err := scanDir(tempPath, "temp", types.RiskSafe, nil, true)
-		if err == nil {
-			mergeItems(categories, "Temp", types.RiskSafe, items)
+	if cfg.IsCategoryEnabled("Temp") {
+		tempPath := os.Getenv("TEMP")
+		if tempPath != "" {
+			items, err := scanDir(tempPath, "temp", types.RiskSafe, nil, true, cfg)
+			if err == nil {
+				mergeItems(categories, "Temp", types.RiskSafe, items)
+			}
 		}
 	}
 
 	// Downloads
-	downloadsPath := filepath.Join(os.Getenv("USERPROFILE"), "Downloads")
-	items, err := scanDir(downloadsPath, "downloads", types.RiskReview, nil, true)
-	if err == nil {
-		mergeItems(categories, "Downloads", types.RiskReview, items)
+	if cfg.IsCategoryEnabled("Downloads") {
+		downloadsPath := filepath.Join(os.Getenv("USERPROFILE"), "Downloads")
+		items, err := scanDir(downloadsPath, "downloads", types.RiskReview, nil, true, cfg)
+		if err == nil {
+			mergeItems(categories, "Downloads", types.RiskReview, items)
+		}
 	}
 
 	// Browser Cache
-	for _, rel := range browserCachePaths {
-		path := filepath.Join(os.Getenv("USERPROFILE"), rel)
-		if strings.Contains(rel, "Firefox") {
-			// Firefox profiles: need to scan subdirs for cache2
-			items, _ := scanFirefoxCache(path)
-			mergeItems(categories, "Browser Cache", types.RiskSafe, items)
-		} else {
-			items, _ := scanDir(path, "browser_cache", types.RiskSafe, nil, true)
-			mergeItems(categories, "Browser Cache", types.RiskSafe, items)
+	if cfg.IsCategoryEnabled("Browser Cache") {
+		for _, rel := range browserCachePaths {
+			path := filepath.Join(os.Getenv("USERPROFILE"), rel)
+			if strings.Contains(rel, "Firefox") {
+				items, _ := scanFirefoxCache(path, cfg)
+				mergeItems(categories, "Browser Cache", types.RiskSafe, items)
+			} else {
+				items, _ := scanDir(path, "browser_cache", types.RiskSafe, nil, true, cfg)
+				mergeItems(categories, "Browser Cache", types.RiskSafe, items)
+			}
 		}
 	}
 
 	// Recycle Bin
-	recyclePaths := recycleBinPaths()
-	for _, rp := range recyclePaths {
-		items, _ := scanDir(rp, "recycle_bin", types.RiskSafe, nil, true)
-		mergeItems(categories, "Recycle Bin", types.RiskSafe, items)
+	if cfg.IsCategoryEnabled("Recycle Bin") {
+		recyclePaths := recycleBinPaths()
+		for _, rp := range recyclePaths {
+			items, _ := scanDir(rp, "recycle_bin", types.RiskSafe, nil, true, cfg)
+			mergeItems(categories, "Recycle Bin", types.RiskSafe, items)
+		}
 	}
 
 	// Logs
-	logItems := scanLogs()
-	mergeItems(categories, "Logs", types.RiskSafe, logItems)
+	if cfg.IsCategoryEnabled("Logs") {
+		logItems := scanLogs(cfg)
+		mergeItems(categories, "Logs", types.RiskSafe, logItems)
+	}
 
 	// Old Installers
-	installerItems, _ := scanOldInstallers(downloadsPath)
-	mergeItems(categories, "Old Installers", types.RiskReview, installerItems)
+	if cfg.IsCategoryEnabled("Old Installers") {
+		downloadsPath := filepath.Join(os.Getenv("USERPROFILE"), "Downloads")
+		installerItems, _ := scanOldInstallers(downloadsPath, cfg)
+		mergeItems(categories, "Old Installers", types.RiskReview, installerItems)
+	}
 
 	// Large Old Files
-	largeItems, _ := scanLargeOldFiles(downloadsPath)
-	mergeItems(categories, "Large Old Files", types.RiskReview, largeItems)
+	if cfg.IsCategoryEnabled("Large Old Files") {
+		downloadsPath := filepath.Join(os.Getenv("USERPROFILE"), "Downloads")
+		largeItems, _ := scanLargeOldFiles(downloadsPath, cfg)
+		mergeItems(categories, "Large Old Files", types.RiskReview, largeItems)
+	}
 
 	for _, cat := range categories {
 		result.Categories = append(result.Categories, *cat)
@@ -93,7 +117,16 @@ func Scan() (*types.ScanResult, error) {
 	return result, nil
 }
 
-func scanDir(root, category string, risk types.RiskLevel, matchExt []string, recursive bool) ([]types.Item, error) {
+func isExcluded(path string, cfg *config.Config) bool {
+	for _, ex := range cfg.Exclusions {
+		if strings.Contains(strings.ToLower(path), strings.ToLower(ex)) {
+			return true
+		}
+	}
+	return false
+}
+
+func scanDir(root, category string, risk types.RiskLevel, matchExt []string, recursive bool, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -107,6 +140,9 @@ func scanDir(root, category string, risk types.RiskLevel, matchExt []string, rec
 			if !recursive {
 				return filepath.SkipDir
 			}
+			return nil
+		}
+		if isExcluded(path, cfg) {
 			return nil
 		}
 
@@ -143,7 +179,7 @@ func scanDir(root, category string, risk types.RiskLevel, matchExt []string, rec
 	return items, nil
 }
 
-func scanFirefoxCache(root string) ([]types.Item, error) {
+func scanFirefoxCache(root string, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -152,7 +188,7 @@ func scanFirefoxCache(root string) ([]types.Item, error) {
 		if d.IsDir() {
 			if filepath.Base(path) == "cache2" {
 				// scan cache2
-				sub, _ := scanDir(path, "browser_cache", types.RiskSafe, nil, true)
+				sub, _ := scanDir(path, "browser_cache", types.RiskSafe, nil, true, cfg)
 				items = append(items, sub...)
 				return filepath.SkipDir
 			}
@@ -182,11 +218,11 @@ func recycleBinPaths() []string {
 	return paths
 }
 
-func scanLogs() []types.Item {
+func scanLogs(cfg *config.Config) []types.Item {
 	var items []types.Item
 	tempPath := os.Getenv("TEMP")
 	if tempPath != "" {
-		sub, _ := scanDir(tempPath, "logs", types.RiskSafe, []string{".log"}, true)
+		sub, _ := scanDir(tempPath, "logs", types.RiskSafe, []string{".log"}, true, cfg)
 		items = append(items, sub...)
 	}
 	// Windows Event Logs (safe to list, but we can't delete them easily)
@@ -194,12 +230,19 @@ func scanLogs() []types.Item {
 	return items
 }
 
-func scanOldInstallers(root string) ([]types.Item, error) {
-	cutoff := time.Now().AddDate(0, -6, 0)
+func scanOldInstallers(root string, cfg *config.Config) ([]types.Item, error) {
+	months := cfg.OldInstallerMonths
+	if months <= 0 {
+		months = 6
+	}
+	cutoff := time.Now().AddDate(0, -months, 0)
 	var items []types.Item
 
 	match := func(path string, d fs.DirEntry) bool {
 		if d.IsDir() {
+			return false
+		}
+		if isExcluded(path, cfg) {
 			return false
 		}
 		ext := strings.ToLower(filepath.Ext(path))
@@ -239,9 +282,17 @@ func scanOldInstallers(root string) ([]types.Item, error) {
 	return items, err
 }
 
-func scanLargeOldFiles(root string) ([]types.Item, error) {
-	cutoff := time.Now().AddDate(0, -6, 0)
-	const minSize = 100 * 1024 * 1024 // 100MB
+func scanLargeOldFiles(root string, cfg *config.Config) ([]types.Item, error) {
+	months := cfg.LargeFileMonths
+	if months <= 0 {
+		months = 6
+	}
+	cutoff := time.Now().AddDate(0, -months, 0)
+	minSizeMB := cfg.LargeFileMinSizeMB
+	if minSizeMB <= 0 {
+		minSizeMB = 100
+	}
+	minSize := int64(minSizeMB) * 1024 * 1024
 	var items []types.Item
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -249,6 +300,9 @@ func scanLargeOldFiles(root string) ([]types.Item, error) {
 			return nil
 		}
 		if d.IsDir() {
+			return nil
+		}
+		if isExcluded(path, cfg) {
 			return nil
 		}
 		info, err := d.Info()
