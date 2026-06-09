@@ -249,20 +249,6 @@ func ScanWithConfig(cfg *config.Config) (*types.ScanResult, error) {
 	return result, nil
 }
 
-func isExcluded(path string, cfg *config.Config) bool {
-	lp := strings.ToLower(path)
-	for _, ex := range cfg.Exclusions {
-		lex := strings.ToLower(ex)
-		// exact segment match to avoid "temp" matching "template"
-		for _, seg := range strings.Split(lp, string(filepath.Separator)) {
-			if seg == lex {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func scanDir(root, category string, risk types.RiskLevel, matchExt []string, recursive bool, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 
@@ -279,7 +265,7 @@ func scanDir(root, category string, risk types.RiskLevel, matchExt []string, rec
 			}
 			return nil
 		}
-		if isExcluded(path, cfg) {
+		if cfg.IsExcluded(path) {
 			return nil
 		}
 
@@ -379,7 +365,7 @@ func scanOldInstallers(root string, cfg *config.Config) ([]types.Item, error) {
 		if d.IsDir() {
 			return false
 		}
-		if isExcluded(path, cfg) {
+		if cfg.IsExcluded(path) {
 			return false
 		}
 		ext := strings.ToLower(filepath.Ext(path))
@@ -439,7 +425,7 @@ func scanLargeOldFiles(root string, cfg *config.Config) ([]types.Item, error) {
 		if d.IsDir() {
 			return nil
 		}
-		if isExcluded(path, cfg) {
+		if cfg.IsExcluded(path) {
 			return nil
 		}
 		info, err := d.Info()
@@ -507,7 +493,7 @@ func scanThumbnails(cfg *config.Config) ([]types.Item, error) {
 	}
 	var items []types.Item
 	for _, path := range matches {
-		if isExcluded(path, cfg) {
+		if cfg.IsExcluded(path) {
 			continue
 		}
 		info, err := os.Stat(path)
@@ -634,7 +620,7 @@ func scanOldTempFiles(cfg *config.Config) ([]types.Item, error) {
 			if err != nil || d.IsDir() {
 				return nil
 			}
-			if isExcluded(path, cfg) {
+			if cfg.IsExcluded(path) {
 				return nil
 			}
 			info, err := d.Info()
@@ -676,7 +662,7 @@ func scanOldExtensions(ext string, cfg *config.Config) ([]types.Item, error) {
 			if err != nil || d.IsDir() {
 				return nil
 			}
-			if isExcluded(path, cfg) {
+			if cfg.IsExcluded(path) {
 				return nil
 			}
 			if !strings.EqualFold(filepath.Ext(path), ext) {
@@ -715,7 +701,7 @@ func scanEmptyFolders(cfg *config.Config) ([]types.Item, error) {
 			if err != nil || !d.IsDir() || path == root {
 				return nil
 			}
-			if isExcluded(path, cfg) {
+			if cfg.IsExcluded(path) {
 				return nil
 			}
 			entries, err := os.ReadDir(path)

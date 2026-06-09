@@ -151,6 +151,21 @@ func (c *Config) IsCategoryEnabled(name string) bool {
 	return c.EnabledCategories[name]
 }
 
+// IsExcluded reports whether a path matches any exclusion rule.
+func (c *Config) IsExcluded(path string) bool {
+	lp := strings.ToLower(path)
+	for _, ex := range c.Exclusions {
+		lex := strings.ToLower(ex)
+		// exact segment match to avoid "temp" matching "template"
+		for _, seg := range strings.Split(lp, string(filepath.Separator)) {
+			if seg == lex {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // RiskOverrideFor returns an override risk for a path, or empty string.
 func (c *Config) RiskOverrideFor(path string) string {
 	for substr, risk := range c.AutoRiskOverrides {
