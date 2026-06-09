@@ -32,6 +32,7 @@ const (
 	ScreenConfigPresets
 	ScreenConfigCategories
 	ScreenQuarantineCleanup
+	ScreenQuarantineCleaning
 	ScreenLanguage
 	ScreenAdminPrompt
 	ScreenUpdateAvailable

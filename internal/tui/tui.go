@@ -296,6 +296,8 @@ func (m model) View() string {
 		return m.viewConfigPresets()
 	case ScreenQuarantineCleanup:
 		return m.viewQuarantineCleanup()
+	case ScreenQuarantineCleaning:
+		return m.viewQuarantineCleaning()
 	case ScreenLanguage:
 		return m.viewLanguage()
 	case ScreenAdminPrompt:

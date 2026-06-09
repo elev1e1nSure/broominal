@@ -18,6 +18,7 @@ func (m model) handleKeyQuarantineCleanup(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+		m.screen = ScreenQuarantineCleaning
 		return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
 			deleted, freed, err := quarantine.CleanupAll()
 			if err != nil {
@@ -41,4 +42,10 @@ func (m model) viewQuarantineCleanup() string {
 			keyHint("Enter", i18n.T("proceed")),
 			keyHint("Esc", i18n.T("back")),
 		)
+}
+
+func (m model) viewQuarantineCleaning() string {
+	return m.appTitle(i18n.T("quarantine_cleanup")) + "\n\n" +
+		fmt.Sprintf("  %s %s\n", m.spinner.View(), i18n.T("cleaning_quarantines")) +
+		mutedStyle.Render("  "+i18n.T("please_wait"))
 }
