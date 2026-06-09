@@ -393,13 +393,41 @@ func scanMessengerCache(ctx context.Context, cfg *config.Config) ([]types.Item, 
 		slog.Warn("scan: failed to scan slack cache", "path", slackPath, "error", err)
 	}
 	items = append(items, subItems...)
-	// Teams
+	// Teams (classic)
 	teamsPath := filepath.Join(os.Getenv("APPDATA"), "Microsoft", "Teams", "Cache")
 	subItems, err = scanDir(ctx, teamsPath, "messenger_cache", types.RiskSafe, nil, true, cfg)
 	if err != nil {
 		slog.Warn("scan: failed to scan teams cache", "path", teamsPath, "error", err)
 	}
 	items = append(items, subItems...)
+	// New Microsoft Teams (Windows 11)
+	newTeamsPath := filepath.Join(os.Getenv("LOCALAPPDATA"), "Packages", "MSTeams_8wekyb3d8bbwe", "LocalCache", "Microsoft", "MSTeams")
+	subItems, _ = scanDir(ctx, newTeamsPath, "messenger_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	return items, nil
+}
+
+func scanAMDGPUCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	for _, path := range []string{
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "AMD", "DxCache"),
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "AMD", "CLCache"),
+	} {
+		subItems, _ := scanDir(ctx, path, "amd_gpu_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
+	return items, nil
+}
+
+func scanZoomCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	for _, path := range []string{
+		filepath.Join(os.Getenv("APPDATA"), "Zoom", "data"),
+		filepath.Join(os.Getenv("APPDATA"), "Zoom", "logs"),
+	} {
+		subItems, _ := scanDir(ctx, path, "zoom_cache", types.RiskSafe, nil, true, cfg)
+		items = append(items, subItems...)
+	}
 	return items, nil
 }
 

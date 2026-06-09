@@ -45,6 +45,7 @@ func Default() *Config {
 			"Chrome Code Cache":     true,
 			"Firefox Cache2":        true,
 			"Windows Prefetch":      true,
+			"AMD GPU Cache":         true,
 			// Standard
 			"Messenger Cache":            false,
 			"Game Launcher Cache":        false,
@@ -54,6 +55,7 @@ func Default() *Config {
 			"Windows Update Cache":       false,
 			"Crash & Memory Dumps":       false,
 			"Nvidia Installer Leftovers": false,
+			"Zoom Cache":                 false,
 			// Deep
 			"Downloads":        false,
 			"Recycle Bin":      false,
@@ -230,6 +232,7 @@ func (c *Config) ApplyPreset(p Preset) {
 		"Chrome Code Cache",
 		"Firefox Cache2",
 		"Windows Prefetch",
+		"AMD GPU Cache",
 	}
 
 	standardCategories := append(quickCategories,
@@ -241,6 +244,7 @@ func (c *Config) ApplyPreset(p Preset) {
 		"Windows Update Cache",
 		"Crash & Memory Dumps",
 		"Nvidia Installer Leftovers",
+		"Zoom Cache",
 	)
 
 	deepCategories := append(standardCategories,

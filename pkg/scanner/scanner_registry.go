@@ -153,4 +153,6 @@ var allScanners = []CategoryScanner{
 	catScanner{"Vivaldi Cache", types.RiskSafe, scanVivaldiCache},
 	catScanner{"Yandex Cache", types.RiskSafe, scanYandexCache},
 	catScanner{"Windows Defender", types.RiskReview, scanWindowsDefender},
+	catScanner{"AMD GPU Cache", types.RiskSafe, scanAMDGPUCache},
+	catScanner{"Zoom Cache", types.RiskSafe, scanZoomCache},
 }
