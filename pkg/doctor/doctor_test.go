@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 )
 
@@ -37,8 +38,8 @@ func TestCheckDirReadOnlyParent(t *testing.T) {
 
 	c := checkDir(filepath.Join(readonly, "nested"), "ReadOnly")
 	// May pass or fail depending on OS/permissions; just check it returns something
-	if c.Name != "ReadOnly directory" {
-		t.Errorf("name = %q, want %q", c.Name, "ReadOnly directory")
+	if c.Name != "ReadOnly" {
+		t.Errorf("name = %q, want %q", c.Name, "ReadOnly")
 	}
 }
 
@@ -64,8 +65,8 @@ func TestCheckManifestsEmpty(t *testing.T) {
 	if c.Status != StatusPass {
 		t.Errorf("expected PASS for empty quarantine, got %s: %s", c.Status, c.Detail)
 	}
-	if c.Detail != "No quarantines yet" {
-		t.Errorf("detail = %q, want %q", c.Detail, "No quarantines yet")
+	if c.Detail != i18n.T("no_backups_yet") {
+		t.Errorf("detail = %q, want %q", c.Detail, i18n.T("no_backups_yet"))
 	}
 }
 
@@ -109,8 +110,8 @@ func TestCheckQuarantineStatsEmpty(t *testing.T) {
 	if c.Status != StatusPass {
 		t.Errorf("expected PASS for empty quarantine stats, got %s: %s", c.Status, c.Detail)
 	}
-	if c.Detail != "0 quarantines" {
-		t.Errorf("detail = %q, want %q", c.Detail, "0 quarantines")
+	if c.Detail != "0" {
+		t.Errorf("detail = %q, want %q", c.Detail, "0")
 	}
 }
 
@@ -149,14 +150,14 @@ func TestRun(t *testing.T) {
 	}
 
 	expected := []string{
-		"Admin privileges",
-		"Quarantine directory",
-		"Reports directory",
-		"Config directory",
-		"Temp directory",
-		"User profile directory",
-		"Quarantine manifests",
-		"Quarantine stats",
+		i18n.T("check_admin"),
+		i18n.T("check_quarantine_dir"),
+		i18n.T("check_reports_dir"),
+		i18n.T("check_config_dir"),
+		i18n.T("check_temp_dir"),
+		i18n.T("check_userprofile_dir"),
+		i18n.T("check_manifests"),
+		i18n.T("check_stats"),
 	}
 	for _, name := range expected {
 		if !names[name] {

@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g. 1.0.0)'
+        required: true
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Generate release notes
+        id: git-cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --unreleased --strip all
+        env:
+          OUTPUT: RELEASE_BODY.md
+
+      - name: Build
+        run: go build -ldflags "-s -w" -o broominal.exe ./cmd/broominal
+
+      - name: Generate checksums
+        run: |
+          $hash = Get-FileHash broominal.exe -Algorithm SHA256
+          "$($hash.Hash)  broominal.exe" | Out-File -Encoding utf8 checksums.txt
+        shell: pwsh
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ github.event.inputs.version }}" -m "Release v${{ github.event.inputs.version }}"
+          git push origin "v${{ github.event.inputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_BODY.md
+          tag_name: v${{ github.event.inputs.version }}
+          files: |
+            broominal.exe
+            checksums.txt

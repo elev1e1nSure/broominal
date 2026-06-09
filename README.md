@@ -122,6 +122,36 @@ internal/
   tui/              Bubbletea interactive interface (Main Menu → multiple screens)
 ```
 
+## Development
+
+### Githooks
+
+Enable shared hooks to enforce code style and commit conventions:
+
+```powershell
+git config core.hooksPath githooks
+```
+
+Hooks included:
+- `pre-commit` — warns when code changes may need doc updates
+- `commit-msg` — enforces [Conventional Commits](https://www.conventionalcommits.org/) (`feat|fix|chore|refactor|docs|test|build|ci|perf|style|revert`)
+
+### CI / CD
+
+All pushes and pull requests to `main` trigger:
+- `gofmt` check
+- `go vet`
+- `golangci-lint`
+- `go test ./...`
+- Build artifact upload
+
+### Releasing
+
+Run the **Release** workflow from GitHub Actions. It will:
+1. Generate release notes from Conventional Commits via `git-cliff`
+2. Build `broominal.exe`
+3. Create a signed tag and GitHub Release with `checksums.txt`
+
 ## License
 
 [MIT](LICENSE) © elev1e1nSure

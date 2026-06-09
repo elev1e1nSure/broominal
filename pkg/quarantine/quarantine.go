@@ -339,13 +339,15 @@ func Cleanup(maxAgeDays int, dryRun bool) (int, int64, error) {
 
 		if createdAt.IsZero() || createdAt.Before(cutoff) {
 			var size int64
-			_ = filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+			if err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 				if err != nil || info.IsDir() {
 					return nil
 				}
 				size += info.Size()
 				return nil
-			})
+			}); err != nil {
+				slog.Warn("quarantine cleanup: failed to walk dir", "path", dirPath, "error", err)
+			}
 			if !dryRun {
 				if err := os.RemoveAll(dirPath); err != nil {
 					slog.Warn("cleanup: failed to remove quarantine dir", "path", dirPath, "error", err)
@@ -385,13 +387,15 @@ func CleanupAll(dryRun bool) (int, int64, error) {
 		dirPath := filepath.Join(qDir, id)
 
 		var size int64
-		_ = filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 			if err != nil || info.IsDir() {
 				return nil
 			}
 			size += info.Size()
 			return nil
-		})
+		}); err != nil {
+			slog.Warn("quarantine cleanup all: failed to walk dir", "path", dirPath, "error", err)
+		}
 		if !dryRun {
 			if err := os.RemoveAll(dirPath); err != nil {
 				slog.Warn("cleanup: failed to remove quarantine dir", "path", dirPath, "error", err)

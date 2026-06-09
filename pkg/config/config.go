@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -96,7 +97,9 @@ func Load() (*Config, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			cfg := Default()
-			_ = Save(cfg) // try to persist defaults
+			if err := Save(cfg); err != nil {
+				slog.Warn("config: failed to persist defaults", "error", err)
+			}
 			return cfg, nil
 		}
 		return nil, fmt.Errorf("read config: %w", err)

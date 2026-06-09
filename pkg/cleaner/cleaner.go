@@ -2,6 +2,8 @@
 package cleaner
 
 import (
+	"log/slog"
+
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/report"
 	"github.com/elev1e1nSure/broominal/pkg/types"
@@ -20,7 +22,9 @@ func Run(items []types.Item, dryRun bool, scanResult *types.ScanResult) (*types.
 		Files:     files,
 	}
 	if !dryRun && scanResult != nil {
-		_, _ = report.Save(scanResult, result)
+		if _, err := report.Save(scanResult, result); err != nil {
+			slog.Warn("cleaner: failed to save report", "error", err)
+		}
 	}
 	return result, nil
 }

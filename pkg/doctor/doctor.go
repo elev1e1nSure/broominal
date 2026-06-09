@@ -3,11 +3,13 @@ package doctor
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
+	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/report"
 	"github.com/elev1e1nSure/broominal/pkg/util"
@@ -35,11 +37,11 @@ func Run() []Check {
 	var checks []Check
 
 	checks = append(checks, checkAdmin())
-	checks = append(checks, checkDir(quarantine.BaseDir(), "Quarantine"))
-	checks = append(checks, checkDir(report.BaseDir(), "Reports"))
-	checks = append(checks, checkDir(config.Dir(), "Config"))
-	checks = append(checks, checkEnvDir("TEMP", "Temp"))
-	checks = append(checks, checkEnvDir("USERPROFILE", "User profile"))
+	checks = append(checks, checkDir(quarantine.BaseDir(), i18n.T("check_quarantine_dir")))
+	checks = append(checks, checkDir(report.BaseDir(), i18n.T("check_reports_dir")))
+	checks = append(checks, checkDir(config.Dir(), i18n.T("check_config_dir")))
+	checks = append(checks, checkEnvDir("TEMP", i18n.T("check_temp_dir")))
+	checks = append(checks, checkEnvDir("USERPROFILE", i18n.T("check_userprofile_dir")))
 	checks = append(checks, checkManifests())
 	checks = append(checks, checkQuarantineStats())
 
@@ -50,15 +52,15 @@ func checkAdmin() Check {
 	cmd := exec.Command("cmd", "/c", "net", "session")
 	if err := cmd.Run(); err != nil {
 		return Check{
-			Name:   "Admin privileges",
+			Name:   i18n.T("check_admin"),
 			Status: StatusWarn,
-			Detail: "Not running as administrator (some paths may be inaccessible)",
+			Detail: i18n.T("not_running_as_admin"),
 		}
 	}
 	return Check{
-		Name:   "Admin privileges",
+		Name:   i18n.T("check_admin"),
 		Status: StatusPass,
-		Detail: "Running as administrator",
+		Detail: i18n.T("running_as_admin"),
 	}
 }
 
@@ -67,7 +69,7 @@ func checkDir(path, name string) Check {
 		// try to create
 		if err := os.MkdirAll(path, 0700); err != nil {
 			return Check{
-				Name:   name + " directory",
+				Name:   name,
 				Status: StatusFail,
 				Detail: fmt.Sprintf("%s: %v", path, err),
 			}
@@ -78,9 +80,9 @@ func checkDir(path, name string) Check {
 	f, err := os.Create(testFile)
 	if err != nil {
 		return Check{
-			Name:   name + " directory",
+			Name:   name,
 			Status: StatusFail,
-			Detail: fmt.Sprintf("Cannot write to %s: %v", path, err),
+			Detail: fmt.Sprintf(i18n.T("dir_not_writable"), path, err),
 		}
 	}
 	defer func() {
@@ -88,7 +90,7 @@ func checkDir(path, name string) Check {
 		_ = os.Remove(testFile)
 	}()
 	return Check{
-		Name:   name + " directory",
+		Name:   name,
 		Status: StatusPass,
 		Detail: path,
 	}
@@ -98,7 +100,7 @@ func checkEnvDir(env, name string) Check {
 	val := os.Getenv(env)
 	if val == "" {
 		return Check{
-			Name:   name + " environment",
+			Name:   name,
 			Status: StatusFail,
 			Detail: env + " not set",
 		}
@@ -106,13 +108,13 @@ func checkEnvDir(env, name string) Check {
 	info, err := os.Stat(val)
 	if err != nil || !info.IsDir() {
 		return Check{
-			Name:   name + " directory",
+			Name:   name,
 			Status: StatusFail,
 			Detail: fmt.Sprintf("%s is not accessible: %v", val, err),
 		}
 	}
 	return Check{
-		Name:   name + " directory",
+		Name:   name,
 		Status: StatusPass,
 		Detail: val,
 	}
@@ -124,13 +126,13 @@ func checkManifests() Check {
 	if err != nil {
 		if os.IsNotExist(err) {
 			return Check{
-				Name:   "Quarantine manifests",
+				Name:   i18n.T("check_manifests"),
 				Status: StatusPass,
-				Detail: "No quarantines yet",
+				Detail: i18n.T("no_backups_yet"),
 			}
 		}
 		return Check{
-			Name:   "Quarantine manifests",
+			Name:   i18n.T("check_manifests"),
 			Status: StatusFail,
 			Detail: err.Error(),
 		}
@@ -153,15 +155,15 @@ func checkManifests() Check {
 	}
 	if invalid > 0 {
 		return Check{
-			Name:   "Quarantine manifests",
+			Name:   i18n.T("check_manifests"),
 			Status: StatusWarn,
-			Detail: fmt.Sprintf("%d invalid manifest(s)", invalid),
+			Detail: fmt.Sprintf(i18n.T("invalid_manifests"), invalid),
 		}
 	}
 	return Check{
-		Name:   "Quarantine manifests",
+		Name:   i18n.T("check_manifests"),
 		Status: StatusPass,
-		Detail: fmt.Sprintf("%d valid quarantine(s)", len(entries)),
+		Detail: fmt.Sprintf(i18n.T("valid_backups"), len(entries)),
 	}
 }
 
@@ -171,13 +173,13 @@ func checkQuarantineStats() Check {
 	if err != nil {
 		if os.IsNotExist(err) {
 			return Check{
-				Name:   "Quarantine stats",
+				Name:   i18n.T("check_stats"),
 				Status: StatusPass,
-				Detail: "0 quarantines",
+				Detail: "0",
 			}
 		}
 		return Check{
-			Name:   "Quarantine stats",
+			Name:   i18n.T("check_stats"),
 			Status: StatusFail,
 			Detail: err.Error(),
 		}
@@ -188,19 +190,21 @@ func checkQuarantineStats() Check {
 		if !e.IsDir() {
 			continue
 		}
-		_ = filepath.Walk(filepath.Join(qDir, e.Name()), func(path string, info os.FileInfo, err error) error {
+		if err := filepath.Walk(filepath.Join(qDir, e.Name()), func(path string, info os.FileInfo, err error) error {
 			if err != nil || info.IsDir() {
 				return nil
 			}
 			totalSize += info.Size()
 			totalFiles++
 			return nil
-		})
+		}); err != nil {
+			slog.Warn("doctor: failed to walk quarantine dir", "path", filepath.Join(qDir, e.Name()), "error", err)
+		}
 	}
 	return Check{
-		Name:   "Quarantine stats",
+		Name:   i18n.T("check_stats"),
 		Status: StatusPass,
-		Detail: fmt.Sprintf("%d quarantines, %d files, %s", len(entries), totalFiles, util.FormatSize(totalSize)),
+		Detail: fmt.Sprintf(i18n.T("backups_files_size"), len(entries), totalFiles, util.FormatSize(totalSize)),
 	}
 }
 

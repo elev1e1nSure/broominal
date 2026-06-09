@@ -207,7 +207,10 @@ func scanOldInstallers(root string, cfg *config.Config) ([]types.Item, error) {
 		}
 		return nil
 	})
-	return items, err
+	if err != nil {
+		slog.Warn("scan old installers failed", "error", err)
+	}
+	return items, nil
 }
 
 func scanLargeOldFiles(root string, cfg *config.Config) ([]types.Item, error) {
@@ -255,7 +258,10 @@ func scanLargeOldFiles(root string, cfg *config.Config) ([]types.Item, error) {
 		})
 		return nil
 	})
-	return items, err
+	if err != nil {
+		slog.Warn("scan large old files failed", "error", err)
+	}
+	return items, nil
 }
 
 func mergeItems(cats map[string]*types.CategorySummary, name string, risk types.RiskLevel, items []types.Item) {
