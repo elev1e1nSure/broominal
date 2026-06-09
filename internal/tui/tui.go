@@ -18,7 +18,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/update"
 )
 
-// Start запускает TUI
+// Start — запускает TUI
 func Start(version string) error {
 	cfg, _ := config.Load()
 	if cfg != nil && cfg.Language != "" {
@@ -189,7 +189,7 @@ func normalizeKey(msg tea.KeyMsg) tea.KeyMsg {
 	if msg.Type != tea.KeyRunes || len(msg.Runes) == 0 {
 		return msg
 	}
-	// ЙЦУКЕН -> QWERTY
+	// ЙЦУКЕН — QWERTY
 	m := map[rune]rune{
 		'й': 'q', 'ц': 'w', 'у': 'e', 'к': 'r', 'е': 't', 'н': 'y', 'г': 'u', 'ш': 'i', 'щ': 'o', 'з': 'p', 'х': '[', 'ъ': ']',
 		'ф': 'a', 'ы': 's', 'в': 'd', 'а': 'f', 'п': 'g', 'р': 'h', 'о': 'j', 'л': 'k', 'д': 'l', 'ж': ';', 'э': '\'',

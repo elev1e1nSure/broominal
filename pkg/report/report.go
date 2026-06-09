@@ -12,12 +12,12 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
-// BaseDir возвращает директорию отчётов
+// BaseDir — возвращает директорию отчётов
 func BaseDir() string {
 	return filepath.Join(config.AppDir(), "reports")
 }
 
-// Save сохраняет отчёт в JSON и выводит summary в stdout
+// Save — сохраняет отчёт в JSON и выводит summary в stdout
 func Save(result *types.ScanResult, cleaned *types.CleanResult) (string, error) {
 	if err := os.MkdirAll(BaseDir(), 0700); err != nil {
 		return "", fmt.Errorf("create reports dir: %w", err)
@@ -47,7 +47,7 @@ func Save(result *types.ScanResult, cleaned *types.CleanResult) (string, error) 
 	return path, nil
 }
 
-// PrintSummary выводит краткую сводку в stdout
+// PrintSummary — выводит краткую сводку в stdout
 func PrintSummary(result *types.ScanResult, cleaned *types.CleanResult) {
 	fmt.Println()
 	fmt.Println("═ Broominal Report ════════════════════════")

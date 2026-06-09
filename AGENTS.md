@@ -21,7 +21,7 @@ pkg/
                    Recycle Bin, Logs, Old Installers, Large Old Files,
                    Thumbnails, DirectX Shader Cache, Delivery Optimization,
                    WER, Discord Cache, Steam Cache, VSCode Cache, Edge Code Cache,
-                   Chrome Code Cache, Firefox Cache2, Old Temp Files,
+                   Chrome Code Cache, Firefox Cache2,
                    Empty Folders, npm Cache, pip Cache, Spotify Cache,
                    Slack Cache, Teams Cache, OneDrive Cache, Visual Studio Cache,
                    Git Cache, Windows Prefetch, Icon Cache,
@@ -34,10 +34,9 @@ pkg/
   report/          Save() JSON report with scan + optional clean result
   update/          CheckForUpdates(), DownloadUpdate(), InstallUpdate()
   config/          Load/Save JSON config: enabled categories, thresholds
-                   (old_installer_months, large_file_min_size_mb, large_file_months,
-                   old_temp_days, old_extension_days), exclusions, auto risk
-                   overrides, language, quarantine_max_age_days. Missing config
-                   auto-creates with defaults and merges missing categories.
+                   (old_installer_months, large_file_min_size_mb, large_file_months),
+                   exclusions, auto risk overrides, language, quarantine_max_age_days.
+                   Missing config auto-creates with defaults and merges missing categories.
   doctor/          Run() health checks: admin, dirs, manifests, quarantine stats
   i18n/            SetLanguage(), T(key), DetectFromIP(), SupportedLanguages()
   style/           ANSI color helpers: Boldf, Greenf, Yellowf, Redf, Cyanf,

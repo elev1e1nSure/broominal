@@ -17,7 +17,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
-// BaseDir возвращает базовую директорию карантина
+// BaseDir — возвращает базовую директорию карантина
 func BaseDir() string {
 	return filepath.Join(config.AppDir(), "quarantine")
 }
@@ -47,7 +47,7 @@ func generateBackupID() (string, error) {
 	}
 }
 
-// Move перемещает файлы в карантин и возвращает restore ID
+// Move — перемещает файлы в карантин и возвращает restore ID
 func Move(ctx context.Context, items []types.Item) (string, int64, int, int, error) {
 	id, err := generateBackupID()
 	if err != nil {
@@ -119,7 +119,7 @@ func Move(ctx context.Context, items []types.Item) (string, int64, int, int, err
 	return id, freed, files, skipped, nil
 }
 
-// Restore восстанавливает файлы из карантина по ID.
+// Restore — восстанавливает файлы из карантина по ID.
 // Возвращает количество восстановленных, пропущенных (конфликт) и ошибку.
 func Restore(id string, forceOverwrite bool) (int, int, error) {
 	if err := validateID(id); err != nil {
@@ -198,7 +198,7 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 	return restored, skipped, nil
 }
 
-// CheckRestoreConflicts возвращает пути оригинальных файлов, которые уже существуют
+// CheckRestoreConflicts — возвращает пути оригинальных файлов, которые уже существуют
 func CheckRestoreConflicts(id string) ([]string, error) {
 	if err := validateID(id); err != nil {
 		return nil, err
@@ -243,7 +243,7 @@ func GetManifest(id string) (*types.Manifest, error) {
 	return &m, nil
 }
 
-// List возвращает список доступных restore ID, отсортированных от новых к старым.
+// List — возвращает список доступных restore ID, отсортированных от новых к старым.
 func List() ([]string, error) {
 	qDir := BaseDir()
 	entries, err := os.ReadDir(qDir)
@@ -407,7 +407,7 @@ func Delete(id string) (int64, error) {
 	return size, nil
 }
 
-// GetLast возвращает последний restore ID
+// GetLast — возвращает последний restore ID
 func GetLast() (string, error) {
 	ids, err := List()
 	if err != nil {

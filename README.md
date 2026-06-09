@@ -2,7 +2,7 @@
 
 # 🧹 broominal
 
-**safe, transparent, undoable windows cleanup from the terminal**
+**safe, transparent, undoable Windows cleanup from the terminal**
 
 [![go](https://img.shields.io/badge/go-1.26.3-00ADD8?logo=go\&logoColor=white)](https://go.dev)
 [![ci](https://github.com/elev1e1nSure/broominal/actions/workflows/ci.yml/badge.svg)](https://github.com/elev1e1nSure/broominal/actions/workflows/ci.yml)
@@ -250,8 +250,6 @@ Config file (`%LOCALAPPDATA%\broominal\config.json`):
   "oldInstallerMonths": 6,
   "largeFileMinSizeMb": 100,
   "largeFileMonths": 6,
-  "oldTempDays": 7,
-  "oldExtensionDays": 30,
   "exclusions": [],
   "autoRiskOverrides": {},
   "language": "en",

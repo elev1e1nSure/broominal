@@ -2,7 +2,7 @@
 
 # 🧹 broominal
 
-**безопасная, прозрачная, отменяемая очистка windows из терминала**
+**безопасная, прозрачная, отменяемая очистка Windows из терминала**
 
 [![go](https://img.shields.io/badge/go-1.26.3-00ADD8?logo=go\&logoColor=white)](https://go.dev)
 [![ci](https://github.com/elev1e1nSure/broominal/actions/workflows/ci.yml/badge.svg)](https://github.com/elev1e1nSure/broominal/actions/workflows/ci.yml)
@@ -159,7 +159,7 @@ broominal restore <id> --force-overwrite
 
 ### ui
 
-Запусти интерактивный TUI дляguided-очистки.
+Запусти интерактивный TUI для guided-очистки.
 
 ```powershell
 broominal ui
@@ -250,8 +250,6 @@ broominal clean --danger
   "oldInstallerMonths": 6,
   "largeFileMinSizeMb": 100,
   "largeFileMonths": 6,
-  "oldTempDays": 7,
-  "oldExtensionDays": 30,
   "exclusions": [],
   "autoRiskOverrides": {},
   "language": "ru",
