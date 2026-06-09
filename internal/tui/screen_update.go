@@ -137,11 +137,12 @@ func (m model) viewUpdating() string {
 		body += fmt.Sprintf("  %s\n", m.updateProgress)
 		body += "\n" + footer(keyHint("Enter", i18n.T("restart")))
 	} else {
-		body += fmt.Sprintf("  %s %s\n", m.spinner.View(), m.updateProgress)
 		if m.updateError != nil {
+			body += fmt.Sprintf("  %s\n", m.updateProgress)
 			body += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"
 			body += "\n" + footer(keyHint("Esc", i18n.T("back")))
 		} else {
+			body += fmt.Sprintf("  %s %s\n", m.spinner.View(), m.updateProgress)
 			body += "\n" + mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
 		}
 	}

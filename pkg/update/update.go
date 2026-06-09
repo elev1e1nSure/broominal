@@ -132,7 +132,7 @@ func DownloadUpdate(release *Release) (string, error) {
 		tmpDir = "."
 	}
 
-	tmpPath := filepath.Join(tmpDir, "broominal-update.exe")
+	tmpPath := filepath.Join(tmpDir, asset.Name)
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Get(asset.BrowserDownloadURL)
