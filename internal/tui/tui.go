@@ -2,6 +2,7 @@ package tui
 
 import (
 	"log/slog"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -10,6 +11,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/types"
+	"github.com/elev1e1nSure/broominal/pkg/update"
 )
 
 // Start запускает TUI
@@ -79,6 +81,10 @@ type checkUpdateMsg struct {
 type downloadUpdateMsg struct {
 	path string
 	err  error
+}
+
+type checkUpdateCmd struct {
+	version string
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
