@@ -3,7 +3,6 @@ package tui
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/update"
@@ -14,25 +13,23 @@ type installUpdateMsg struct {
 }
 
 func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
+	s := msg.String()
+	if s == "q" || s == "esc" || s == "m" {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = 0
 		m.updateAvailableRelease = nil
 		m.updateError = nil
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("y", "enter"))) {
-		if m.updateAvailableRelease != nil {
-			m.screen = ScreenUpdating
-			m.updateProgress = i18n.T("downloading_update")
-			return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
-				path, err := update.DownloadUpdate(m.updateAvailableRelease)
-				return downloadUpdateMsg{path, err}
-			})
-		}
-		return m, nil
+	if (s == "y" || s == "enter") && m.updateAvailableRelease != nil {
+		m.screen = ScreenUpdating
+		m.updateProgress = i18n.T("downloading_update")
+		return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
+			path, err := update.DownloadUpdate(m.updateAvailableRelease)
+			return downloadUpdateMsg{path, err}
+		})
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("n"))) {
+	if s == "n" {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = 0
 		m.updateAvailableRelease = nil

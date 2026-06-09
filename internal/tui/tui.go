@@ -80,10 +80,6 @@ type downloadUpdateMsg struct {
 	err  error
 }
 
-type checkUpdateCmd struct {
-	version string
-}
-
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -122,15 +118,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case checkUpdateMsg:
-		if msg.err != nil {
-			m.updateError = msg.err
-			m.screen = ScreenUpdateAvailable
+		if msg.err != nil || msg.release == nil {
+			// No internet, API error, or no update available - go to main menu
+			m.screen = ScreenMainMenu
 			return m, nil
 		}
-		if msg.release != nil {
-			m.updateAvailableRelease = msg.release
-			m.screen = ScreenUpdateAvailable
-		}
+		m.updateAvailableRelease = msg.release
+		m.screen = ScreenUpdateAvailable
 		return m, nil
 
 	case downloadUpdateMsg:
@@ -161,13 +155,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		return m.handleKey(msg)
-
-	case checkUpdateCmd:
-		return m, func() tea.Msg {
-			release, err := update.CheckForUpdates(msg.version)
-			return checkUpdateMsg{release, err}
-		}
-
 	}
 
 	if m.screen == ScreenDetails {

@@ -56,11 +56,11 @@ func CheckForUpdates(currentVersion string) (*Release, error) {
 		return nil, fmt.Errorf("failed to decode release info: %w", err)
 	}
 
-	// Remove 'v' prefix for comparison
-	current := strings.TrimPrefix(currentVersion, "v")
-	latest := strings.TrimPrefix(release.TagName, "v")
+	// Normalize and compare versions (case-insensitive, trim whitespace and 'v' prefix)
+	current := strings.ToLower(strings.TrimSpace(strings.TrimPrefix(currentVersion, "v")))
+	latest := strings.ToLower(strings.TrimSpace(strings.TrimPrefix(release.TagName, "v")))
 
-	if current == latest {
+	if current == latest || current == "dev" || current == "" {
 		return nil, nil // No update available
 	}
 
