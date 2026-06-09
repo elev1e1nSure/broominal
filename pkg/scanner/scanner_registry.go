@@ -90,8 +90,8 @@ var allScanners = []CategoryScanner{
 		path := filepath.Join(os.Getenv("ProgramData"), "Microsoft", "Windows", "WER")
 		return scanDir(ctx, path, "windows_error_reports", types.RiskSafe, nil, true, cfg)
 	}},
-	catScanner{"Discord Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		return scanDiscordCache(ctx, cfg)
+	catScanner{"Messenger Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+		return scanMessengerCache(ctx, cfg)
 	}},
 	catScanner{"Steam Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanSteamCache(ctx, cfg)
@@ -105,10 +105,6 @@ var allScanners = []CategoryScanner{
 	}},
 	catScanner{"Nvidia Installer Leftovers", types.RiskReview, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanNvidiaInstallerLeftovers(ctx, cfg)
-	}},
-	catScanner{"Telegram Desktop Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		path := filepath.Join(os.Getenv("APPDATA"), "Telegram Desktop", "tdata", "user_data")
-		return scanDir(ctx, path, "telegram_desktop_cache", types.RiskSafe, nil, true, cfg)
 	}},
 	catScanner{"VSCode Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanVSCodeCache(ctx, cfg)
@@ -136,14 +132,6 @@ var allScanners = []CategoryScanner{
 	catScanner{"Spotify Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		path := filepath.Join(os.Getenv("APPDATA"), "Spotify", "Data")
 		return scanDir(ctx, path, "spotify_cache", types.RiskSafe, nil, true, cfg)
-	}},
-	catScanner{"Slack Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		path := filepath.Join(os.Getenv("APPDATA"), "Slack", "storage", "slack-settings")
-		return scanDir(ctx, path, "slack_cache", types.RiskSafe, nil, true, cfg)
-	}},
-	catScanner{"Teams Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		path := filepath.Join(os.Getenv("APPDATA"), "Microsoft", "Teams", "Cache")
-		return scanDir(ctx, path, "teams_cache", types.RiskSafe, nil, true, cfg)
 	}},
 	catScanner{"OneDrive Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "OneDrive", "cache")

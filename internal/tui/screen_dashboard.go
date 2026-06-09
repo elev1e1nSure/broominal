@@ -10,7 +10,8 @@ import (
 
 func (m model) handleKeyDashboard(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter", " "))) {
-		m.screen = ScreenCategories
+		m.confirmMsg = buildConfirmMessage(m.categories, m.result)
+		m.screen = ScreenConfirm
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("m", "q", "esc"))) {
 		m.screen = ScreenMainMenu

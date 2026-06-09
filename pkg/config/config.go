@@ -38,7 +38,7 @@ func Default() *Config {
 			"DirectX Shader Cache":       true,
 			"Delivery Optimization":      true,
 			"Windows Error Reports":      true,
-			"Discord Cache":              true,
+			"Messenger Cache":            false,
 			"Steam Cache":                true,
 			"VSCode Cache":               true,
 			"Edge Code Cache":            true,
@@ -48,8 +48,6 @@ func Default() *Config {
 			"npm Cache":                  true,
 			"pip Cache":                  true,
 			"Spotify Cache":              true,
-			"Slack Cache":                true,
-			"Teams Cache":                true,
 			"OneDrive Cache":             true,
 			"Visual Studio Cache":        true,
 			"Git Cache":                  true,
@@ -58,7 +56,6 @@ func Default() *Config {
 			"Windows Update Cache":       false,
 			"Crash & Memory Dumps":       false,
 			"Nvidia Installer Leftovers": false,
-			"Telegram Desktop Cache":     false,
 		},
 		Exclusions: []string{},
 		AutoRiskOverrides: map[string]string{
@@ -223,7 +220,6 @@ func (c *Config) ApplyPreset(p Preset) {
 		"DirectX Shader Cache",
 		"Delivery Optimization",
 		"Windows Error Reports",
-		"Discord Cache",
 		"Steam Cache",
 		"VSCode Cache",
 		"Edge Code Cache",
@@ -233,8 +229,6 @@ func (c *Config) ApplyPreset(p Preset) {
 		"npm Cache",
 		"pip Cache",
 		"Spotify Cache",
-		"Slack Cache",
-		"Teams Cache",
 		"OneDrive Cache",
 		"Visual Studio Cache",
 		"Git Cache",
@@ -243,7 +237,7 @@ func (c *Config) ApplyPreset(p Preset) {
 	}
 
 	normalCategories := append(safeCategories,
-		"Telegram Desktop Cache",
+		"Messenger Cache",
 	)
 
 	hardCategories := append(normalCategories,

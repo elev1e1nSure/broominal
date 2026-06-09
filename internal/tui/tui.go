@@ -95,11 +95,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.result = msg.result
 		m.categories = make([]categoryItem, 0, len(msg.result.Categories))
 		for _, c := range msg.result.Categories {
-			// auto-select safe items
-			sel := c.Risk == types.RiskSafe
-			m.categories = append(m.categories, categoryItem{cat: c, selected: sel})
+			m.categories = append(m.categories, categoryItem{cat: c, selected: true})
 		}
-		m.screen = ScreenCategories
+		m.screen = ScreenDashboard
 		return m, nil
 
 	case errMsg:

@@ -386,16 +386,27 @@ func scanThumbnails(ctx context.Context, cfg *config.Config) ([]types.Item, erro
 	return items, nil
 }
 
-func scanDiscordCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	root := filepath.Join(os.Getenv("APPDATA"), "discord")
+func scanMessengerCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
+	// Discord
+	discordRoot := filepath.Join(os.Getenv("APPDATA"), "discord")
 	for _, sub := range []string{"Cache", "Code Cache"} {
-		path := filepath.Join(root, sub)
-		subItems, err := scanDir(ctx, path, "discord_cache", types.RiskSafe, nil, true, cfg)
-		if err != nil {
-		}
+		path := filepath.Join(discordRoot, sub)
+		subItems, _ := scanDir(ctx, path, "messenger_cache", types.RiskSafe, nil, true, cfg)
 		items = append(items, subItems...)
 	}
+	// Telegram Desktop
+	telePath := filepath.Join(os.Getenv("APPDATA"), "Telegram Desktop", "tdata", "user_data")
+	subItems, _ := scanDir(ctx, telePath, "messenger_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// Slack
+	slackPath := filepath.Join(os.Getenv("APPDATA"), "Slack", "storage", "slack-settings")
+	subItems, _ = scanDir(ctx, slackPath, "messenger_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
+	// Teams
+	teamsPath := filepath.Join(os.Getenv("APPDATA"), "Microsoft", "Teams", "Cache")
+	subItems, _ = scanDir(ctx, teamsPath, "messenger_cache", types.RiskSafe, nil, true, cfg)
+	items = append(items, subItems...)
 	return items, nil
 }
 

@@ -35,8 +35,8 @@ func TestUpdateScanDone(t *testing.T) {
 	msg := scanDoneMsg{res}
 	newM, _ := m.Update(msg)
 	mm := newM.(model)
-	if mm.screen != ScreenCategories {
-		t.Errorf("screen = %d, want Categories", mm.screen)
+	if mm.screen != ScreenDashboard {
+		t.Errorf("screen = %d, want Dashboard", mm.screen)
 	}
 	if mm.result == nil {
 		t.Fatal("result should be set")
@@ -44,13 +44,12 @@ func TestUpdateScanDone(t *testing.T) {
 	if len(mm.categories) != 2 {
 		t.Fatalf("categories = %d, want 2", len(mm.categories))
 	}
-	// Safe auto-selected
+	// All categories auto-selected
 	if !mm.categories[0].selected {
 		t.Error("safe category should be auto-selected")
 	}
-	// Review not auto-selected
-	if mm.categories[1].selected {
-		t.Error("review category should not be auto-selected")
+	if !mm.categories[1].selected {
+		t.Error("review category should be auto-selected")
 	}
 }
 
@@ -91,20 +90,15 @@ func TestHandleKeyToggle(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenCategories
 	m.categories = []categoryItem{
-		{cat: types.CategorySummary{Category: "A"}, selected: false},
+		{cat: types.CategorySummary{Category: "A"}, selected: true},
 	}
 	m.selectedIdx = 0
 
+	// Space no longer toggles selection on categories screen
 	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeySpace})
 	mm := newM.(model)
 	if !mm.categories[0].selected {
-		t.Error("space should toggle selection on")
-	}
-
-	newM2, _ := mm.handleKey(tea.KeyMsg{Type: tea.KeySpace})
-	mm2 := newM2.(model)
-	if mm2.categories[0].selected {
-		t.Error("space should toggle selection off")
+		t.Error("space should not toggle selection off")
 	}
 }
 
