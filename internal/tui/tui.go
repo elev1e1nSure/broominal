@@ -222,7 +222,11 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			case 0: // Scan & Clean
 				m.screen = ScreenDashboard
 				return m, func() tea.Msg {
-					res, err := scanner.Scan()
+					cfg, _ := config.Load()
+					if cfg == nil {
+						cfg = config.Default()
+					}
+					res, err := scanner.ScanWithConfig(cfg)
 					if err != nil {
 						return errMsg{err}
 					}

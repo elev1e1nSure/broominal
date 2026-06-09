@@ -25,14 +25,6 @@ var logPatterns = []string{
 	`AppData\Local\Temp\*.log`,
 }
 
-func Scan() (*types.ScanResult, error) {
-	cfg, err := config.Load()
-	if err != nil {
-		cfg = config.Default()
-	}
-	return ScanWithConfig(cfg)
-}
-
 func ScanWithConfig(cfg *config.Config) (*types.ScanResult, error) {
 	result := &types.ScanResult{}
 	categories := make(map[string]*types.CategorySummary)
