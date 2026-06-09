@@ -16,32 +16,66 @@
 
 ---
 
-## what is it
+## What is it
 
-**broominal** — windows cleanup cli/tui built around one rule:
+**broominal** — a Windows cleanup CLI/TUI built around one rule:
 
 > cleanup must be **reversible**
 
-instead of permanently deleting files, broominal moves selected items into a local **quarantine**, stores json manifests, and makes every cleanup inspectable and restorable.
+Instead of permanently deleting files, broominal moves selected items into a local **quarantine**, stores JSON manifests, and makes every cleanup inspectable and restorable.
 
-no fake boost magic. no hidden system tweaking. no "trust me bro" cleanup.
-
----
-
-## highlights
-
-- **safe by default** — files are quarantined, not deleted
-- **transparent** — scan results, reports, and manifests are plain json
-- **undoable** — restore any cleanup by id or restore the latest one
-- **predictable** — explicit categories, risk levels, and exclusions
-- **interactive** — bubbletea tui for scan, preview, dry-run, and restore
-- **multilingual** — english and russian with first-run auto-detection
-- **25+ categories** — temp, caches, logs, browser data, dev tools, and more
-- **doctor** — lightweight health checks for permissions, manifests, and state
+No fake boost magic. No hidden system tweaking. No "trust me bro" cleanup.
 
 ---
 
-## safety model
+## Installation
+
+```powershell
+# macOS or Linux
+go install github.com/elev1e1nSure/broominal/cmd/broominal@latest
+
+# Windows (via Go)
+go install github.com/elev1e1nSure/broominal/cmd/broominal@latest
+```
+
+Or grab the latest `.exe` from [releases][releases].
+
+[releases]: https://github.com/elev1e1nSure/broominal/releases
+
+<details>
+<summary>Build from source</summary>
+
+```powershell
+git clone https://github.com/elev1e1nSure/broominal.git
+cd broominal
+
+go build -o broominal.exe ./cmd/broominal
+.\broominal.exe ui
+```
+
+</details>
+
+---
+
+## Quick Start
+
+```powershell
+# scan safe zones
+broominal scan
+
+# launch interactive tui
+broominal ui
+
+# clean safe items only
+broominal clean --safe
+
+# allow cleaning danger items (requires explicit confirmation)
+broominal clean --danger
+```
+
+---
+
+## Safety Model
 
 > **safe** cleanup is selected by default. **review** requires manual choice. **danger** items are never cleaned automatically.
 
@@ -58,48 +92,106 @@ no fake boost magic. no hidden system tweaking. no "trust me bro" cleanup.
 └─────────────────────────────────────────────────────────────┘
 ```
 
-files are moved to `%LOCALAPPDATA%\broominal\quarantine\<restore-id>` with a `manifest.json` mapping original paths to quarantined paths.
+Files are moved to `%LOCALAPPDATA%\broominal\quarantine\<restore-id>` with a `manifest.json` mapping original paths to quarantined paths.
 
 ---
 
-## quick start
+## Commands
+
+### scan
+
+Scan your system for cleanup candidates across 25+ categories.
 
 ```powershell
-# install from source (requires go 1.26.3+)
-go install github.com/elev1e1nSure/broominal/cmd/broominal@latest
-
-# ...or grab the latest .exe from releases
+broominal scan
 ```
 
----
+Scan results are saved as JSON for transparency and can be reviewed before any cleanup.
 
-## usage
+### clean
+
+Clean selected items. By default, only **safe** items are cleaned.
 
 ```powershell
-# scan safe zones
-broominal scan
-
-# launch interactive tui
-broominal ui
-
-# clean safe items only
-broominal clean --safe
+# clean safe items only (default)
+broominal clean
 
 # allow cleaning danger items (requires explicit confirmation)
 broominal clean --danger
 
-# restore a specific cleanup
+# preview what would be cleaned without actually cleaning
+broominal clean --dry-run
+```
+
+### restore
+
+Restore a previous cleanup. Every cleanup gets a unique ID that can be used to restore files.
+
+```powershell
+# restore a specific cleanup by ID
 broominal restore <id>
 
-# restore with overwrite
+# restore the latest cleanup
+broominal restore latest
+
+# restore with overwrite if file already exists
 broominal restore <id> --force-overwrite
+```
 
-# run health checks
+### ui
+
+Launch the interactive TUI for a guided cleanup experience.
+
+```powershell
+broominal ui
+```
+
+The TUI lets you:
+- Browse scan results by category
+- Toggle items for cleanup
+- Preview total size before cleaning
+- Run in dry-run mode to test
+- Handle restore conflicts interactively
+
+### doctor
+
+Run health checks to verify broominal is working correctly.
+
+```powershell
 broominal doctor
+```
 
-# show config
+Checks:
+- Admin rights
+- Directory write access
+- Manifest integrity
+- Quarantine statistics
+
+### config
+
+View and edit configuration.
+
+```powershell
+# show current config
 broominal config
 
+# edit config in your default editor
+broominal config --edit
+```
+
+Config options include:
+- Enabled categories
+- Age/size thresholds
+- Exclusions
+- Risk overrides
+- Language preference
+- Quarantine max age
+
+### quarantine-cleanup
+
+Clean up old quarantines to free up space.
+
+```powershell
 # preview old quarantine cleanup (shows what will be removed)
 broominal quarantine-cleanup
 
@@ -112,81 +204,116 @@ broominal quarantine-cleanup --max-age-days 7 --force
 
 ---
 
-## build from source
+## Highlights
+
+- **safe by default** — files are quarantined, not deleted
+- **transparent** — scan results, reports, and manifests are plain JSON
+- **undoable** — restore any cleanup by ID or restore the latest one
+- **predictable** — explicit categories, risk levels, and exclusions
+- **interactive** — Bubbletea TUI for scan, preview, dry-run, and restore
+- **multilingual** — English and Russian with first-run auto-detection
+- **25+ categories** — temp, caches, logs, browser data, dev tools, and more
+- **doctor** — lightweight health checks for permissions, manifests, and state
+
+---
+
+## Configuration
+
+You can customize broominal behavior with flags or environment variables.
 
 ```powershell
-git clone https://github.com/elev1e1nSure/broominal.git
-cd broominal
+# scan with custom config path
+broominal scan --config "C:\path\to\config.json"
 
-go build -o broominal.exe ./cmd/broominal
-.\broominal.exe ui
+# clean with specific categories enabled
+broominal clean --categories "temp,cache,logs"
+
+# run in verbose mode
+broominal scan --verbose
+```
+
+Config file (`%APPDATA%\broominal\config.json`):
+
+```json
+{
+  "enabledCategories": ["temp", "thumbnails", "logs"],
+  "oldInstallerMonths": 6,
+  "largeFileMinSizeMb": 100,
+  "largeFileMonths": 6,
+  "oldTempDays": 7,
+  "oldExtensionDays": 30,
+  "exclusions": [],
+  "autoRiskOverrides": {},
+  "language": "en",
+  "quarantineMaxAgeDays": 30
+}
 ```
 
 ---
 
-## architecture
+## Architecture
 
 ```
-cmd/broominal/   cli entrypoint (cobra)
+cmd/broominal/   CLI entrypoint (Cobra)
 
 pkg/
   scanner/       file discovery by cleanup category
   cleaner/       quarantine move + report save pipeline
-  quarantine/    move, restore, cleanup, json manifests
-  report/        json report generation
+  quarantine/    move, restore, cleanup, JSON manifests
+  report/        JSON report generation
   risk/          risk classification from paths, extensions, config
-  config/        json configuration and defaults
+  config/        JSON configuration and defaults
   doctor/        runtime health checks
-  i18n/          english/russian localization
-  style/         ansi color helpers for cli output
+  i18n/          English/Russian localization
+  style/         ANSI color helpers for CLI output
   util/          size formatting and shared helpers
   types/         shared domain types
 
 internal/
-  tui/           bubbletea interactive interface
+  tui/           Bubbletea interactive interface
 ```
 
 ---
 
-## philosophy
+## Philosophy
 
-broominal is intentionally boring. it does not promise performance miracles, registry magic, or hidden optimization. it finds cleanup candidates, classifies risk, shows what it found, and moves selected files into quarantine so the operation can be reversed.
+broominal is intentionally boring. It does not promise performance miracles, registry magic, or hidden optimization. It finds cleanup candidates, classifies risk, shows what it found, and moves selected files into quarantine so the operation can be reversed.
 
-small packages. explicit responsibilities. no hidden cleanup magic.
+Small packages. Explicit responsibilities. No hidden cleanup magic.
 
 ---
 
-## development
+## Development
 
-> enable shared githooks before committing:
+> Enable shared githooks before committing:
 > ```powershell
 > git config core.hooksPath githooks
 > ```
 
-**hooks**
+**Hooks**
 - `pre-commit` — warns when code changes may need documentation updates
 - `commit-msg` — enforces conventional commits
 
-**ci on every push / pr to `main`**
+**CI on every push / PR to `main`**
 ```
-gofmt → go vet → golangci-lint → go test ./... → windows build artifact
+gofmt → go vet → golangci-lint → go test ./... → Windows build artifact
 ```
 
-**release workflow**
+**Release workflow**
 ```
-git-cliff → build broominal.exe → signed tag → github release + checksums
+git-cliff → build broominal.exe → signed tag → GitHub release + checksums
 ```
 
 ---
 
-## contributing
+## Contributing
 
-bug reports, cleanup-category ideas, safety improvements, and windows edge cases are welcome.
+Bug reports, cleanup-category ideas, safety improvements, and Windows edge cases are welcome.
 
-see [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## license
+## License
 
-[mit](LICENSE) © elev1e1nSure
+[MIT](LICENSE) © elev1e1nSure
