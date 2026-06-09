@@ -318,6 +318,16 @@ func TestHandleKeyMainMenuNavigation(t *testing.T) {
 	if mm2.selectedIdx != 0 {
 		t.Errorf("after up: selectedIdx = %d, want 0", mm2.selectedIdx)
 	}
+
+	// Boundary: pressing Down from last item should stay at last item
+	m3 := initialModel()
+	m3.screen = ScreenMainMenu
+	m3.selectedIdx = 3
+	newM3, _ := m3.handleKey(tea.KeyMsg{Type: tea.KeyDown})
+	mm3 := newM3.(model)
+	if mm3.selectedIdx != 3 {
+		t.Errorf("at boundary down: selectedIdx = %d, want 3", mm3.selectedIdx)
+	}
 }
 
 func TestViewRestoreEmpty(t *testing.T) {
@@ -404,11 +414,11 @@ func TestHandleKeyLanguageSelect(t *testing.T) {
 		t.Errorf("after down: selectedIdx = %d, want 1", mm.selectedIdx)
 	}
 
-	// Select Russian — should go to main menu
+	// Select Russian — should go back to config
 	newM2, _ := mm.handleKey(tea.KeyMsg{Type: tea.KeyEnter})
 	mm2 := newM2.(model)
-	if mm2.screen != ScreenMainMenu {
-		t.Errorf("after select: screen = %d, want MainMenu", mm2.screen)
+	if mm2.screen != ScreenConfig {
+		t.Errorf("after select: screen = %d, want Config", mm2.screen)
 	}
 }
 

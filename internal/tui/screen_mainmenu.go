@@ -25,7 +25,7 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-		if m.selectedIdx < 4 {
+		if m.selectedIdx < 3 {
 			m.selectedIdx++
 		}
 		return m, nil
