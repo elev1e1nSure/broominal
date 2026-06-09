@@ -67,6 +67,7 @@ type model struct {
 	// Config screen
 	configView string
 	configCategories []configCategoryItem
+	configThresholds []configThresholdItem
 	configCfg        *config.Config
 	// Cleanup screen
 	cleanupResult string
@@ -75,6 +76,13 @@ type model struct {
 type configCategoryItem struct {
 	name     string
 	enabled  bool
+}
+
+type configThresholdItem struct {
+	labelKey string
+	value    int
+	min      int
+	step     int
 }
 
 type categoryItem struct {
@@ -546,6 +554,16 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				m.screen = ScreenConfigCategories
 				return m, nil
 			case 1: // Thresholds
+				if m.configCfg != nil {
+					m.configThresholds = []configThresholdItem{
+						{labelKey: "old_installer_months", value: m.configCfg.OldInstallerMonths, min: 1, step: 1},
+						{labelKey: "large_file_min_size_mb", value: m.configCfg.LargeFileMinSizeMB, min: 1, step: 10},
+						{labelKey: "large_file_months", value: m.configCfg.LargeFileMonths, min: 1, step: 1},
+						{labelKey: "old_temp_days", value: m.configCfg.OldTempDays, min: 1, step: 1},
+						{labelKey: "old_extension_days", value: m.configCfg.OldExtensionDays, min: 1, step: 1},
+						{labelKey: "quarantine_max_age_days", value: m.configCfg.QuarantineMaxAgeDays, min: 1, step: 1},
+					}
+				}
 				m.selectedIdx = 0
 				m.screen = ScreenConfigThresholds
 				return m, nil
@@ -590,6 +608,49 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case ScreenConfigThresholds:
 		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "m"))) {
+			m.screen = ScreenConfig
+			m.selectedIdx = 0
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
+			if m.selectedIdx > 0 {
+				m.selectedIdx--
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
+			if m.selectedIdx < len(m.configThresholds)-1 {
+				m.selectedIdx++
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("+", "="))) {
+			if m.selectedIdx < len(m.configThresholds) {
+				it := &m.configThresholds[m.selectedIdx]
+				it.value += it.step
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("-"))) {
+			if m.selectedIdx < len(m.configThresholds) {
+				it := &m.configThresholds[m.selectedIdx]
+				it.value -= it.step
+				if it.value < it.min {
+					it.value = it.min
+				}
+			}
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+			if m.configCfg != nil && len(m.configThresholds) >= 6 {
+				m.configCfg.OldInstallerMonths = m.configThresholds[0].value
+				m.configCfg.LargeFileMinSizeMB = m.configThresholds[1].value
+				m.configCfg.LargeFileMonths = m.configThresholds[2].value
+				m.configCfg.OldTempDays = m.configThresholds[3].value
+				m.configCfg.OldExtensionDays = m.configThresholds[4].value
+				m.configCfg.QuarantineMaxAgeDays = m.configThresholds[5].value
+				_ = config.Save(m.configCfg)
+			}
 			m.screen = ScreenConfig
 			m.selectedIdx = 0
 			return m, nil
@@ -1041,9 +1102,23 @@ func (m model) viewConfigCategories() string {
 }
 
 func (m model) viewConfigThresholds() string {
-	return titleStyle.Render(i18n.T("config_thresholds")) + "\n\n" +
-		mutedStyle.Render("  [threshold editor placeholder]") + "\n\n" +
-		footer(keyHint("M", i18n.T("back")))
+	var body string
+	body += titleStyle.Render(i18n.T("config_thresholds")) + "\n\n"
+	for i, c := range m.configThresholds {
+		label := i18n.T(c.labelKey)
+		val := fmt.Sprintf("%d", c.value)
+		if i == m.selectedIdx {
+			body += selectedStyle.Render(fmt.Sprintf("> %-30s %s", label, val)) + "\n"
+		} else {
+			body += mutedStyle.Render(fmt.Sprintf("  %-30s %s", label, val)) + "\n"
+		}
+	}
+	body += "\n" + footer(
+		keyHint("+/-", i18n.T("change")),
+		keyHint("Enter", i18n.T("save")),
+		keyHint("M", i18n.T("back")),
+	)
+	return body
 }
 
 func (m model) viewQuarantineCleanup() string {

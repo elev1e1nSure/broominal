@@ -99,6 +99,9 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 // Restore восстанавливает файлы из карантина по ID.
 // Возвращает количество восстановленных, пропущенных (конфликт) и ошибку.
 func Restore(id string, forceOverwrite bool) (int, int, error) {
+	if err := validateID(id); err != nil {
+		return 0, 0, err
+	}
 	qDir := filepath.Join(BaseDir(), id)
 	manifestPath := filepath.Join(qDir, "manifest.json")
 
@@ -120,6 +123,10 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 
 	for _, it := range manifest.Items {
 		if _, err := os.Stat(it.Quarantined); os.IsNotExist(err) {
+			continue
+		}
+		if !isAllowedRestorePath(it.Original) {
+			remaining = append(remaining, it)
 			continue
 		}
 		// ensure original dir exists
@@ -166,6 +173,9 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 
 // CheckRestoreConflicts возвращает пути оригинальных файлов, которые уже существуют
 func CheckRestoreConflicts(id string) ([]string, error) {
+	if err := validateID(id); err != nil {
+		return nil, err
+	}
 	qDir := filepath.Join(BaseDir(), id)
 	manifestPath := filepath.Join(qDir, "manifest.json")
 
@@ -229,6 +239,9 @@ func Cleanup(maxAgeDays int, dryRun bool) (int, int64, error) {
 			continue
 		}
 		id := e.Name()
+		if err := validateID(id); err != nil {
+			continue
+		}
 		dirPath := filepath.Join(qDir, id)
 		manifestPath := filepath.Join(dirPath, "manifest.json")
 
@@ -280,6 +293,9 @@ func GetLast() (string, error) {
 	var lastID string
 	var lastTime time.Time
 	for _, id := range ids {
+		if err := validateID(id); err != nil {
+			continue
+		}
 		info, err := os.Stat(filepath.Join(BaseDir(), id))
 		if err != nil {
 			continue
@@ -290,6 +306,52 @@ func GetLast() (string, error) {
 		}
 	}
 	return lastID, nil
+}
+
+func validateID(id string) error {
+	clean := filepath.Clean(id)
+	if filepath.IsAbs(clean) || strings.Contains(clean, "..") {
+		return fmt.Errorf("invalid restore id")
+	}
+	return nil
+}
+
+func isAllowedRestorePath(path string) bool {
+	clean := filepath.Clean(path)
+	if strings.Contains(clean, "..") {
+		return false
+	}
+	if !filepath.IsAbs(clean) {
+		return false
+	}
+	allowedRoots := []string{
+		os.Getenv("TEMP"),
+		os.Getenv("TMP"),
+		os.Getenv("USERPROFILE"),
+		os.Getenv("LOCALAPPDATA"),
+		os.Getenv("APPDATA"),
+		os.Getenv("ProgramData"),
+		os.Getenv("SystemRoot"),
+		os.Getenv("WINDIR"),
+		os.Getenv("ProgramFiles"),
+		os.Getenv("ProgramFiles(x86)"),
+		os.Getenv("SYSTEMDRIVE"),
+	}
+	lowerClean := strings.ToLower(clean)
+	for _, root := range allowedRoots {
+		if root == "" {
+			continue
+		}
+		rootClean := strings.ToLower(filepath.Clean(root))
+		if strings.HasPrefix(lowerClean, rootClean) {
+			return true
+		}
+	}
+	// Hardcoded NVIDIA path used by scanner
+	if strings.HasPrefix(lowerClean, `c:\nvidia`) {
+		return true
+	}
+	return false
 }
 
 func uniquePath(dir, name string) string {
