@@ -15,8 +15,8 @@ import (
 
 func (m model) handleKeyDashboard(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter", " "))) {
-		m.confirmMsg = buildConfirmMessage(m.categories, m.result)
-		m.screen = ScreenConfirm
+		m.selectedIdx = 0
+		m.screen = ScreenCategories
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("m", "q", "esc"))) {
 		m.screen = ScreenMainMenu
@@ -54,7 +54,7 @@ func (m model) viewDashboard() string {
 		visible = len(cats)
 	}
 
-	catW, sizeW, filesW := 30, 10, 8
+	catW, sizeW, filesW := 32, 10, 8
 	head := style.Cyanf("%-*s %*s %*s", catW, i18n.T("category"), sizeW, i18n.T("size"), filesW, i18n.T("files"))
 	body += "  " + mutedStyle.Render(head) + "\n"
 	body += "  " + mutedStyle.Render(style.Grayf(strings.Repeat("─", catW+sizeW+filesW+2))) + "\n"
@@ -62,9 +62,6 @@ func (m model) viewDashboard() string {
 	for i := 0; i < visible; i++ {
 		c := cats[i]
 		name := i18n.CategoryName(c.Category)
-		if len(name) > catW {
-			name = name[:catW-3] + "..."
-		}
 		var riskDot string
 		switch c.Risk {
 		case types.RiskSafe:
@@ -82,6 +79,6 @@ func (m model) viewDashboard() string {
 		body += "  " + mutedStyle.Render(fmt.Sprintf("... %s (%d)", i18n.T("more_categories"), len(cats)-visible)) + "\n"
 	}
 
-	body += "\n" + footer(keyHint("Enter", i18n.T("continue")), keyHint("Esc", i18n.T("back")))
+	body += "\n" + footer(keyHint("Enter", i18n.T("select_categories")), keyHint("Esc", i18n.T("back")))
 	return body
 }
