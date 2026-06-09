@@ -29,6 +29,7 @@ func main() {
 	rootCmd.AddCommand(reportCmd())
 	rootCmd.AddCommand(configCmd())
 	rootCmd.AddCommand(doctorCmd())
+	rootCmd.AddCommand(quarantineCleanupCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -211,4 +212,52 @@ func doctorCmd() *cobra.Command {
 			}
 		},
 	}
+}
+
+func quarantineCleanupCmd() *cobra.Command {
+	var force bool
+	var dryRun bool
+	var maxAgeDays int
+	cmd := &cobra.Command{
+		Use:   "quarantine-cleanup",
+		Short: "Delete old quarantines",
+		Run: func(cmd *cobra.Command, args []string) {
+			if maxAgeDays <= 0 {
+				cfg, _ := config.Load()
+				if cfg != nil && cfg.QuarantineMaxAgeDays > 0 {
+					maxAgeDays = cfg.QuarantineMaxAgeDays
+				} else {
+					maxAgeDays = 30
+				}
+			}
+			deleted, freed, err := quarantine.Cleanup(maxAgeDays, true)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Cleanup check failed: %v\n", err)
+				os.Exit(1)
+			}
+			if deleted == 0 {
+				fmt.Println("No old quarantines to remove.")
+				return
+			}
+			fmt.Printf("Will remove %d quarantine(s) (%s)\n", deleted, scanner.FormatSize(freed))
+			if !force && !dryRun {
+				fmt.Println("Use --force to proceed.")
+				return
+			}
+			if dryRun {
+				fmt.Println("[dry-run] Nothing removed.")
+				return
+			}
+			deleted, freed, err = quarantine.Cleanup(maxAgeDays, false)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Cleanup failed: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("Removed %d quarantine(s), freed %s\n", deleted, scanner.FormatSize(freed))
+		},
+	}
+	cmd.Flags().BoolVar(&force, "force", false, "Confirm deletion without prompt")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be deleted")
+	cmd.Flags().IntVar(&maxAgeDays, "max-age-days", 0, "Override max age (default from config or 30)")
+	return cmd
 }

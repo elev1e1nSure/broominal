@@ -206,6 +206,65 @@ func List() ([]string, error) {
 	return ids, nil
 }
 
+// Cleanup removes quarantine entries older than maxAgeDays.
+// Returns number of deleted quarantines and total freed bytes.
+func Cleanup(maxAgeDays int, dryRun bool) (int, int64, error) {
+	qDir := BaseDir()
+	entries, err := os.ReadDir(qDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, 0, nil
+		}
+		return 0, 0, err
+	}
+
+	cutoff := time.Now().AddDate(0, 0, -maxAgeDays)
+	var deleted int
+	var freed int64
+
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		id := e.Name()
+		dirPath := filepath.Join(qDir, id)
+		manifestPath := filepath.Join(dirPath, "manifest.json")
+
+		var createdAt time.Time
+		mf, err := os.Open(manifestPath)
+		if err != nil {
+			// broken quarantine: use dir mod time
+			info, _ := os.Stat(dirPath)
+			if info != nil {
+				createdAt = info.ModTime()
+			}
+		} else {
+			var manifest types.Manifest
+			_ = json.NewDecoder(mf).Decode(&manifest)
+			createdAt = manifest.CreatedAt
+			_ = mf.Close()
+		}
+
+		if createdAt.IsZero() || createdAt.Before(cutoff) {
+			var size int64
+			_ = filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+				if err != nil || info.IsDir() {
+					return nil
+				}
+				size += info.Size()
+				return nil
+			})
+			if !dryRun {
+				_ = os.RemoveAll(dirPath)
+			}
+			deleted++
+			freed += size
+		}
+	}
+
+	return deleted, freed, nil
+}
+
 // GetLast возвращает последний restore ID
 func GetLast() (string, error) {
 	ids, err := List()
