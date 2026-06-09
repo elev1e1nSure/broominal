@@ -39,6 +39,8 @@ func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				_ = config.Save(cfg)
 			}
 		}
+		m.screen = ScreenMainMenu
+		m.selectedIdx = 0
 		return m, nil
 	}
 	return m, nil
