@@ -34,7 +34,7 @@ jobs:
           OUTPUT: RELEASE_BODY.md
 
       - name: Build
-        run: go build -ldflags "-s -w" -o broominal.exe ./cmd/broominal
+        run: go build -ldflags "-s -w -X main.Version=${{ github.ref_name }}" -o broominal.exe ./cmd/broominal
 
       - name: Generate checksums
         run: |
