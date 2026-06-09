@@ -100,7 +100,7 @@ func Load() (*Config, error) {
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
 	}
-	// Merge missing categories from defaults
+	// Merge missing categories and fields from defaults
 	defaults := Default()
 	if cfg.EnabledCategories == nil {
 		cfg.EnabledCategories = make(map[string]bool)
@@ -109,6 +109,12 @@ func Load() (*Config, error) {
 		if _, ok := cfg.EnabledCategories[cat]; !ok {
 			cfg.EnabledCategories[cat] = val
 		}
+	}
+	if cfg.OldTempDays <= 0 {
+		cfg.OldTempDays = defaults.OldTempDays
+	}
+	if cfg.OldExtensionDays <= 0 {
+		cfg.OldExtensionDays = defaults.OldExtensionDays
 	}
 	return &cfg, nil
 }
