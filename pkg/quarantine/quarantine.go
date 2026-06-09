@@ -95,21 +95,26 @@ func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 	return id, freed, files, nil
 }
 
-// Restore восстанавливает файлы из карантина по ID
-func Restore(id string) error {
+// Restore восстанавливает файлы из карантина по ID.
+// Возвращает количество восстановленных, пропущенных (конфликт) и ошибку.
+func Restore(id string, forceOverwrite bool) (int, int, error) {
 	qDir := filepath.Join(BaseDir(), id)
 	manifestPath := filepath.Join(qDir, "manifest.json")
 
 	mf, err := os.Open(manifestPath)
 	if err != nil {
-		return fmt.Errorf("open manifest: %w", err)
+		return 0, 0, fmt.Errorf("open manifest: %w", err)
 	}
 	defer mf.Close()
 
 	var manifest types.Manifest
 	if err := json.NewDecoder(mf).Decode(&manifest); err != nil {
-		return fmt.Errorf("decode manifest: %w", err)
+		return 0, 0, fmt.Errorf("decode manifest: %w", err)
 	}
+
+	var restored int
+	var skipped int
+	var remaining []types.ManifestItem
 
 	for _, it := range manifest.Items {
 		if _, err := os.Stat(it.Quarantined); os.IsNotExist(err) {
@@ -117,17 +122,69 @@ func Restore(id string) error {
 		}
 		// ensure original dir exists
 		if err := os.MkdirAll(filepath.Dir(it.Original), 0755); err != nil {
+			remaining = append(remaining, it)
 			continue
+		}
+		_, statErr := os.Stat(it.Original)
+		exists := statErr == nil
+		if exists && !forceOverwrite {
+			skipped++
+			remaining = append(remaining, it)
+			continue
+		}
+		if exists && forceOverwrite {
+			_ = os.Remove(it.Original)
 		}
 		if err := os.Rename(it.Quarantined, it.Original); err != nil {
 			// fallback
-			_ = copyAndDelete(it.Quarantined, it.Original)
+			if err := copyAndDelete(it.Quarantined, it.Original); err != nil {
+				remaining = append(remaining, it)
+				continue
+			}
 		}
+		restored++
 	}
 
-	// remove quarantine dir after successful restore
-	_ = os.RemoveAll(qDir)
-	return nil
+	if len(remaining) > 0 {
+		manifest.Items = remaining
+		mf2, err := os.Create(manifestPath)
+		if err != nil {
+			return restored, skipped, fmt.Errorf("update manifest: %w", err)
+		}
+		defer mf2.Close()
+		enc := json.NewEncoder(mf2)
+		enc.SetIndent("", "  ")
+		_ = enc.Encode(manifest)
+	} else {
+		_ = os.RemoveAll(qDir)
+	}
+
+	return restored, skipped, nil
+}
+
+// CheckRestoreConflicts возвращает пути оригинальных файлов, которые уже существуют
+func CheckRestoreConflicts(id string) ([]string, error) {
+	qDir := filepath.Join(BaseDir(), id)
+	manifestPath := filepath.Join(qDir, "manifest.json")
+
+	mf, err := os.Open(manifestPath)
+	if err != nil {
+		return nil, fmt.Errorf("open manifest: %w", err)
+	}
+	defer mf.Close()
+
+	var manifest types.Manifest
+	if err := json.NewDecoder(mf).Decode(&manifest); err != nil {
+		return nil, fmt.Errorf("decode manifest: %w", err)
+	}
+
+	var conflicts []string
+	for _, it := range manifest.Items {
+		if _, err := os.Stat(it.Original); err == nil {
+			conflicts = append(conflicts, it.Original)
+		}
+	}
+	return conflicts, nil
 }
 
 // List возвращает список доступных restore ID

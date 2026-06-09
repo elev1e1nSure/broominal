@@ -114,7 +114,8 @@ func cleanCmd() *cobra.Command {
 }
 
 func restoreCmd() *cobra.Command {
-	return &cobra.Command{
+	var forceOverwrite bool
+	cmd := &cobra.Command{
 		Use:   "restore [id]",
 		Short: "Restore a cleanup (use 'last' for most recent)",
 		Args:  cobra.ExactArgs(1),
@@ -128,13 +129,20 @@ func restoreCmd() *cobra.Command {
 				}
 				id = lastID
 			}
-			if err := quarantine.Restore(id); err != nil {
+			restored, skipped, err := quarantine.Restore(id, forceOverwrite)
+			if err != nil {
 				fmt.Fprintf(os.Stderr, "Restore failed: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("Restored cleanup %s\n", id)
+			fmt.Printf("Restored %d files from %s", restored, id)
+			if skipped > 0 {
+				fmt.Printf(" (%d skipped due to conflicts)", skipped)
+			}
+			fmt.Println()
 		},
 	}
+	cmd.Flags().BoolVar(&forceOverwrite, "force-overwrite", false, "Overwrite existing files")
+	return cmd
 }
 
 func reportCmd() *cobra.Command {

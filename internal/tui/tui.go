@@ -26,23 +26,26 @@ const (
 	ScreenConfirm
 	ScreenCleaning
 	ScreenResult
+	ScreenRestoreConflict
 )
 
 // TUI model
 type model struct {
-	screen      Screen
-	result      *types.ScanResult
-	categories  []categoryItem
-	selectedIdx int
-	detailCat   int
-	detailList  list.Model
-	confirmMsg  string
-	cleanResult *types.CleanResult
-	spinner     spinner.Model
-	err         error
-	width       int
-	height      int
-	dryRun      bool
+	screen                Screen
+	result                *types.ScanResult
+	categories            []categoryItem
+	selectedIdx           int
+	detailCat             int
+	detailList            list.Model
+	confirmMsg            string
+	cleanResult           *types.CleanResult
+	spinner               spinner.Model
+	err                   error
+	width                 int
+	height                int
+	dryRun                bool
+	conflicts             []string
+	restoreForceOverwrite bool
 }
 
 type categoryItem struct {
@@ -260,17 +263,63 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("r"))) {
-			if m.dryRun {
+			if m.dryRun || m.cleanResult == nil {
 				return m, nil
 			}
+			conflicts, err := quarantine.CheckRestoreConflicts(m.cleanResult.RestoreID)
+			if err != nil {
+				m.err = err
+				return m, tea.Quit
+			}
+			if len(conflicts) > 0 {
+				m.conflicts = conflicts
+				m.restoreForceOverwrite = false
+				m.screen = ScreenRestoreConflict
+				return m, nil
+			}
+			_, skipped, err := quarantine.Restore(m.cleanResult.RestoreID, false)
+			if err != nil {
+				m.err = err
+				return m, tea.Quit
+			}
+			if skipped == 0 {
+				m.cleanResult = nil // restored
+			}
+			return m, nil
+		}
+
+	case ScreenRestoreConflict:
+		if key.Matches(msg, key.NewBinding(key.WithKeys("o"))) {
 			if m.cleanResult != nil {
-				err := quarantine.Restore(m.cleanResult.RestoreID)
+				restored, skipped, err := quarantine.Restore(m.cleanResult.RestoreID, true)
 				if err != nil {
 					m.err = err
-				} else {
-					m.cleanResult = nil // restored
+					return m, tea.Quit
+				}
+				_ = restored
+				_ = skipped
+				m.cleanResult = nil // restored
+			}
+			m.screen = ScreenResult
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("s"))) {
+			if m.cleanResult != nil {
+				restored, skipped, err := quarantine.Restore(m.cleanResult.RestoreID, false)
+				if err != nil {
+					m.err = err
+					return m, tea.Quit
+				}
+				_ = restored
+				if skipped == 0 {
+					m.cleanResult = nil
 				}
 			}
+			m.screen = ScreenResult
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "c"))) {
+			m.screen = ScreenResult
 			return m, nil
 		}
 	}
@@ -297,6 +346,8 @@ func (m model) View() string {
 		return m.viewCleaning()
 	case ScreenResult:
 		return m.viewResult()
+	case ScreenRestoreConflict:
+		return m.viewRestoreConflict()
 	}
 	return ""
 }
@@ -397,6 +448,17 @@ func (m model) viewResult() string {
 		fmt.Sprintf("  Files:     %d\n", m.cleanResult.Files) +
 		fmt.Sprintf("  Restore:   %s\n\n", m.cleanResult.RestoreID) +
 		mutedStyle.Render("  R: restore last  Q: quit")
+}
+
+func (m model) viewRestoreConflict() string {
+	var s string
+	s += titleStyle.Render(" Restore Conflicts ") + "\n\n"
+	s += dangerStyle.Render(fmt.Sprintf("  %d file(s) already exist at original paths:", len(m.conflicts))) + "\n"
+	for _, p := range m.conflicts {
+		s += mutedStyle.Render(fmt.Sprintf("    %s", p)) + "\n"
+	}
+	s += "\n" + mutedStyle.Render("  O: overwrite all  S: skip all  C/Esc: cancel")
+	return s
 }
 
 func (m model) viewWarnRecycleBin() string {
