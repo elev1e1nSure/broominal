@@ -841,7 +841,6 @@ func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
 }
 
 func (m model) viewMainMenu() string {
-	icons := []string{"🔍", "↩", "🩺", "⚙", "🗑", "🌐"}
 	items := []string{
 		i18n.T("menu_scan_clean"),
 		i18n.T("menu_restore"),
@@ -851,13 +850,13 @@ func (m model) viewMainMenu() string {
 		i18n.T("menu_settings"),
 	}
 	var body string
-	body += lipgloss.NewStyle().Bold(true).Foreground(cAccent).MarginBottom(1).Render("  ┌─ "+i18n.T("main_menu")+" ─┐") + "\n"
+	body += lipgloss.NewStyle().Bold(true).Foreground(cAccent).MarginBottom(1).Render("  "+i18n.T("main_menu")) + "\n"
 	for i, item := range items {
 		var line string
 		if i == m.selectedIdx {
-			line = activeItemStyle.Render(fmt.Sprintf(" → %s %s", icons[i], item))
+			line = activeItemStyle.Render(fmt.Sprintf(" > %s", item))
 		} else {
-			line = mutedItemStyle.Render(fmt.Sprintf("   %s %s", icons[i], item))
+			line = mutedItemStyle.Render(fmt.Sprintf("   %s", item))
 		}
 		body += line + "\n"
 	}
