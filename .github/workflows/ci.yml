@@ -44,8 +44,7 @@ jobs:
       - name: Coverage
         run: |
           go test -count=1 ./... -coverprofile=coverage.out
-          $output = go tool cover -func=coverage.out
-          Write-Output $output
+          go tool cover -func=coverage.out | Tee-Object -Variable output
           $totalLine = $output | Select-String -Pattern 'total:'
           if ($totalLine) {
             $parts = $totalLine.ToString() -split '\s+'
