@@ -42,6 +42,7 @@ type model struct {
 	err         error
 	width       int
 	height      int
+	dryRun      bool
 }
 
 type categoryItem struct {
@@ -221,6 +222,11 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.screen = ScreenCategories
 			return m, nil
 		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("t"))) {
+			m.dryRun = !m.dryRun
+			m.confirmMsg = buildConfirmMessage(m.categories, m.result)
+			return m, nil
+		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 			m.screen = ScreenCleaning
 			return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
@@ -233,7 +239,7 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 						}
 					}
 				}
-				id, freed, files, err := quarantine.Move(selected)
+				id, freed, files, err := quarantine.Move(selected, m.dryRun)
 				if err != nil {
 					return cleanDoneMsg{nil, err}
 				}
@@ -242,7 +248,9 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					Freed:     freed,
 					Files:     files,
 				}
-				_, _ = report.Save(m.result, res)
+				if !m.dryRun {
+					_, _ = report.Save(m.result, res)
+				}
 				return cleanDoneMsg{res, nil}
 			})
 		}
@@ -252,6 +260,9 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("r"))) {
+			if m.dryRun {
+				return m, nil
+			}
 			if m.cleanResult != nil {
 				err := quarantine.Restore(m.cleanResult.RestoreID)
 				if err != nil {
@@ -360,15 +371,25 @@ func (m model) viewDetails() string {
 }
 
 func (m model) viewConfirm() string {
-	return titleStyle.Render(" Confirm Cleanup ") + "\n\n" +
+	dryLabel := ""
+	if m.dryRun {
+		dryLabel = reviewStyle.Render(" [DRY-RUN] ")
+	}
+	return titleStyle.Render(" Confirm Cleanup ") + dryLabel + "\n\n" +
 		m.confirmMsg + "\n\n" +
-		mutedStyle.Render("  Enter: proceed  Esc: back")
+		mutedStyle.Render("  Enter: proceed  T: toggle dry-run  Esc: back")
 }
 
 func (m model) viewResult() string {
 	if m.cleanResult == nil {
 		return titleStyle.Render(" Restored ") + "\n\n" +
 			mutedStyle.Render("  Files restored successfully.") + "\n\n" +
+			mutedStyle.Render("  Q: quit")
+	}
+	if m.dryRun {
+		return titleStyle.Render(" Dry-Run Complete ") + "\n\n" +
+			fmt.Sprintf("  Would free: %s\n", scanner.FormatSize(m.cleanResult.Freed)) +
+			fmt.Sprintf("  Files:      %d\n\n", m.cleanResult.Files) +
 			mutedStyle.Render("  Q: quit")
 	}
 	return titleStyle.Render(" Cleanup Complete ") + "\n\n" +

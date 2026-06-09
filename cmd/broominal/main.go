@@ -71,6 +71,7 @@ func uiCmd() *cobra.Command {
 
 func cleanCmd() *cobra.Command {
 	var safeOnly bool
+	var dryRun bool
 	cmd := &cobra.Command{
 		Use:   "clean",
 		Short: "Clean selected items",
@@ -90,10 +91,14 @@ func cleanCmd() *cobra.Command {
 					selected = append(selected, it)
 				}
 			}
-			id, freed, files, err := quarantine.Move(selected)
+			id, freed, files, err := quarantine.Move(selected, dryRun)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Clean failed: %v\n", err)
 				os.Exit(1)
+			}
+			if dryRun {
+				fmt.Printf("[dry-run] Would free %s in %d files\n", scanner.FormatSize(freed), files)
+				return
 			}
 			_, _ = report.Save(res, &types.CleanResult{
 				RestoreID: id,
@@ -104,6 +109,7 @@ func cleanCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&safeOnly, "safe", false, "Only clean safe items")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Simulate cleaning without moving files")
 	return cmd
 }
 

@@ -21,8 +21,27 @@ func BaseDir() string {
 }
 
 // Move перемещает файлы в карантин и возвращает restore ID
-func Move(items []types.Item) (string, int64, int, error) {
+func Move(items []types.Item, dryRun bool) (string, int64, int, error) {
 	id := uuid.New().String()
+
+	var freed int64
+	var files int
+
+	for _, it := range items {
+		if !it.Selected {
+			continue
+		}
+		if _, err := os.Stat(it.Path); os.IsNotExist(err) {
+			continue
+		}
+		freed += it.Size
+		files++
+	}
+
+	if dryRun {
+		return "", freed, files, nil
+	}
+
 	qDir := filepath.Join(BaseDir(), id)
 	if err := os.MkdirAll(qDir, 0755); err != nil {
 		return "", 0, 0, fmt.Errorf("create quarantine dir: %w", err)
@@ -33,9 +52,6 @@ func Move(items []types.Item) (string, int64, int, error) {
 		CreatedAt: time.Now(),
 		Items:     make([]types.ManifestItem, 0, len(items)),
 	}
-
-	var freed int64
-	var files int
 
 	for _, it := range items {
 		if !it.Selected {
@@ -61,8 +77,6 @@ func Move(items []types.Item) (string, int64, int, error) {
 			Quarantined: qPath,
 			Size:        it.Size,
 		})
-		freed += it.Size
-		files++
 	}
 
 	manifestPath := filepath.Join(qDir, "manifest.json")
