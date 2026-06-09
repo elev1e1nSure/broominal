@@ -25,6 +25,7 @@ pkg/
                    Old .tmp/.log/.bak, Empty Folders, npm Cache, pip Cache,
                    Windows Update Cache, Crash & Memory Dumps,
                    Nvidia Installer Leftovers, Telegram Desktop Cache)
+  cleaner/         Run() -> quarantine.Move + report.Save pipeline
   quarantine/      Move() -> quarantine dir + manifest.json
                    Restore() -> move back, handles conflicts
                    Cleanup() -> delete old quarantines
@@ -39,6 +40,7 @@ pkg/
   i18n/            SetLanguage(), T(key), DetectFromIP(), SupportedLanguages()
   style/           ANSI color helpers: Boldf, Greenf, Yellowf, Redf, Cyanf,
                    Grayf, Passf, Warnf, Failf
+  util/            FormatSize and shared helpers
   types/           Shared structs: Item, CategorySummary, ScanResult,
                    Manifest, CleanResult, ReportData
 
@@ -61,6 +63,7 @@ internal/
 
 ## Extension points
 - New scanner categories: add to `scanner.go` + config `EnabledCategories` + TUI auto-select logic
+- New cleanup orchestration: add to `pkg/cleaner` for combined quarantine + report logic
 - New risk rules: add to `risk.Classify()` or `config.AutoRiskOverrides`
 - New TUI screens: add to `Screen` enum, `handleKey()`, and `View()`
 - New i18n strings: add to `pkg/i18n/i18n.go` translations map for all supported languages

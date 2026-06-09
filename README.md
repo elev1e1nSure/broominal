@@ -108,6 +108,7 @@ go build -o broominal.exe ./cmd/broominal
 cmd/broominal/      CLI entrypoint (Cobra)
 pkg/
   scanner/          File discovery by category (25+ scan targets)
+  cleaner/          Orchestrates quarantine move + report save pipeline
   quarantine/       Move / Restore / Cleanup with JSON manifests
   report/           JSON report generation
   risk/             Risk classification (path, extension, config)
@@ -115,6 +116,7 @@ pkg/
   doctor/           Health checks (admin, dirs, manifests, stats)
   i18n/             Localization (EN/RU, auto-detect, T-key lookups)
   style/            ANSI color helpers for CLI output
+  util/             Size formatting and shared helpers
   types/            Shared domain types
 internal/
   tui/              Bubbletea interactive interface (Main Menu → multiple screens)
