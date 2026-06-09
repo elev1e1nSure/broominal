@@ -66,9 +66,9 @@ type model struct {
 	restoreIdx     int
 	restoreResult  string
 	// Doctor screen
-	doctorChecks       []doctor.Check
+	doctorChecks          []doctor.Check
 	doctorQuarantineStats doctor.Check
-	doctorFixResult string
+	doctorFixResult       string
 	// Config screen
 	configView       string
 	configCategories []configCategoryItem

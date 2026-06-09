@@ -241,7 +241,7 @@ func TestLoadInvalidThresholds(t *testing.T) {
 
 	bad := &Config{
 		EnabledCategories:    map[string]bool{"Temp": true},
-		OldInstallerMonths:     -1,
+		OldInstallerMonths:   -1,
 		LargeFileMinSizeMB:   0,
 		LargeFileMonths:      -5,
 		OldTempDays:          0,

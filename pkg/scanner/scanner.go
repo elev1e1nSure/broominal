@@ -144,7 +144,7 @@ func scanFirefoxCache(ctx context.Context, root string, cfg *config.Config) ([]t
 		}
 		if err != nil {
 			if errors.Is(err, os.ErrPermission) {
-					return filepath.SkipDir
+				return filepath.SkipDir
 			}
 			if errors.Is(err, os.ErrNotExist) {
 				return nil
@@ -241,7 +241,7 @@ func scanOldInstallers(ctx context.Context, root string, cfg *config.Config) ([]
 		}
 		if err != nil {
 			if errors.Is(err, os.ErrPermission) {
-					return filepath.SkipDir
+				return filepath.SkipDir
 			}
 			if errors.Is(err, os.ErrNotExist) {
 				return nil
@@ -290,7 +290,7 @@ func scanLargeOldFiles(ctx context.Context, root string, cfg *config.Config) ([]
 		}
 		if err != nil {
 			if errors.Is(err, os.ErrPermission) {
-					return filepath.SkipDir
+				return filepath.SkipDir
 			}
 			if errors.Is(err, os.ErrNotExist) {
 				return nil

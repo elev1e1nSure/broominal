@@ -23,8 +23,8 @@ type catScanner struct {
 	scan func(context.Context, *config.Config) ([]types.Item, error)
 }
 
-func (c catScanner) Name() string                                            { return c.name }
-func (c catScanner) Risk() types.RiskLevel                                   { return c.risk }
+func (c catScanner) Name() string          { return c.name }
+func (c catScanner) Risk() types.RiskLevel { return c.risk }
 func (c catScanner) Scan(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	return c.scan(ctx, cfg)
 }

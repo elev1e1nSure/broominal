@@ -187,7 +187,6 @@ func TestViewResult(t *testing.T) {
 	}
 }
 
-
 func TestViewRestoreConflict(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenRestoreConflict

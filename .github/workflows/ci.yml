@@ -42,9 +42,10 @@ jobs:
         run: go test -race -count=1 ./...
       - name: Coverage
         run: |
-          $cov = go test -count=1 -coverprofile=coverage.out ./... | Select-String -Pattern 'coverage:' | ForEach-Object { $_.ToString() }
+          go test -count=1 -coverprofile=coverage.out ./...
+          $cov = go tool cover -func=coverage.out | Select-String -Pattern 'coverage:' | ForEach-Object { $_.ToString() }
           Write-Output $cov
-          go tool cover -func=coverage.out | Select-String -Pattern 'total:' | ForEach-Object {
+          $total = go tool cover -func=coverage.out | Select-String -Pattern 'total:' | ForEach-Object {
             $parts = $_.ToString() -split '\s+'
             $percent = [double]$parts[$parts.Length - 1].Replace('%','')
             if ($percent -lt 70) {
