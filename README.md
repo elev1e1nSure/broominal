@@ -26,6 +26,10 @@ Instead of permanently deleting files, broominal moves selected items into a loc
 
 No fake boost magic. No hidden system tweaking. No "trust me bro" cleanup.
 
+<img alt="Main menu" src="screenshots/screenshot_main.png" width="600" />
+
+<img alt="Scan results" src="screenshots/screenshot_scan.png" width="600" />
+
 ---
 
 ## Installation

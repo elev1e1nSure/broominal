@@ -26,6 +26,10 @@
 
 Без фейкового ускорения ПК и скрытых системных твиков. Без очистки на честном слове.
 
+<img alt="Главное меню" src="screenshots/screenshot_main.png" width="600" />
+
+<img alt="Результаты сканирования" src="screenshots/screenshot_scan.png" width="600" />
+
 ---
 
 ## Установка
