@@ -42,10 +42,8 @@ jobs:
       - name: Test with race detector
         run: go test -race -count=1 ./...
       - name: Coverage
-        run: |
-          go test -count=1 ./... -coverprofile=coverage.out
-          go tool cover -func=coverage.out
-        shell: pwsh
+        run: go test -count=1 ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
+        shell: bash
 
   build:
     runs-on: windows-latest
