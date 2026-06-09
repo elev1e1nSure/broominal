@@ -101,7 +101,7 @@ func (m model) viewMainMenu() string {
 		i18n.T("menu_settings"),
 	}
 	var body string
-	body += titleStyle.Render(fmt.Sprintf("Broominal [v%s] %s", m.version, i18n.T("main_menu"))) + "\n\n"
+	body += titleStyle.Render(fmt.Sprintf("Broominal [%s] %s", m.version, i18n.T("main_menu"))) + "\n\n"
 	for i, item := range items {
 		if i == m.selectedIdx {
 			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + "\n"
