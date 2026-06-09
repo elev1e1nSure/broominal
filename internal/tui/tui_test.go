@@ -94,11 +94,17 @@ func TestHandleKeyToggle(t *testing.T) {
 	}
 	m.selectedIdx = 0
 
-	// Space no longer toggles selection on categories screen
+	// Space toggles selection on categories screen
 	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeySpace})
 	mm := newM.(model)
-	if !mm.categories[0].selected {
-		t.Error("space should not toggle selection off")
+	if mm.categories[0].selected {
+		t.Error("space should toggle selection off")
+	}
+	// Toggle back on
+	newM2, _ := mm.handleKey(tea.KeyMsg{Type: tea.KeySpace})
+	mm2 := newM2.(model)
+	if !mm2.categories[0].selected {
+		t.Error("space should toggle selection on again")
 	}
 }
 

@@ -240,8 +240,6 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleKeyDoctor(msg)
 	case ScreenConfig:
 		return m.handleKeyConfig(msg)
-	case ScreenConfigCategories:
-		return m.handleKeyConfigCategories(msg)
 	case ScreenConfigPresets:
 		return m.handleKeyConfigPresets(msg)
 	case ScreenQuarantineCleanup:
@@ -290,8 +288,6 @@ func (m model) View() string {
 		return m.viewDoctor()
 	case ScreenConfig:
 		return m.viewConfig()
-	case ScreenConfigCategories:
-		return m.viewConfigCategories()
 	case ScreenConfigPresets:
 		return m.viewConfigPresets()
 	case ScreenQuarantineCleanup:

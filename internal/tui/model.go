@@ -30,7 +30,6 @@ const (
 	ScreenDoctor
 	ScreenConfig
 	ScreenConfigPresets
-	ScreenConfigCategories
 	ScreenQuarantineCleanup
 	ScreenQuarantineCleaning
 	ScreenLanguage
@@ -72,10 +71,7 @@ type model struct {
 	doctorQuarantineStats doctor.Check
 	doctorFixResult       string
 	// Config screen
-	configView       string
-	configCategories []configCategoryItem
-	configPreset     config.Preset
-	configCfg        *config.Config
+	configCfg *config.Config
 	// Cleanup screen
 	cleanupResult string
 	// Admin prompt
@@ -86,12 +82,6 @@ type model struct {
 	updateProgress         string
 	checkUpdateOnStartup   bool
 	updateFromConfig       bool
-}
-
-type configCategoryItem struct {
-	name    string
-	enabled bool
-	group   string
 }
 
 type categoryItem struct {

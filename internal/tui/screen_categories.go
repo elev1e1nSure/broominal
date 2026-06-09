@@ -49,6 +49,12 @@ func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys(" "))) {
+		if m.selectedIdx < len(m.categories) {
+			m.categories[m.selectedIdx].selected = !m.categories[m.selectedIdx].selected
+		}
+		return m, nil
+	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		m.screen = ScreenConfirm
 		m.confirmMsg = buildConfirmMessage(m.categories, m.result)
@@ -179,6 +185,7 @@ func (m model) viewCategories() string {
 		body += line + "\n"
 	}
 	body += "\n" + footer(
+		keyHint("Space", i18n.T("toggle")),
 		keyHint("Enter", i18n.T("confirm")),
 		keyHint("D", i18n.T("details")),
 		keyHint("Esc", i18n.T("back")),
