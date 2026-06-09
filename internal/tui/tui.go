@@ -117,10 +117,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case checkUpdateMsg:
 		if msg.err != nil || msg.release == nil {
-			// No internet, API error, or no update available - go to main menu
-			m.screen = ScreenMainMenu
+			// No internet, API error, or no update available
+			if m.updateFromConfig {
+				m.screen = ScreenNoUpdate
+			} else {
+				m.screen = ScreenMainMenu
+			}
+			m.updateFromConfig = false
 			return m, nil
 		}
+		m.updateFromConfig = false
 		m.updateAvailableRelease = msg.release
 		m.screen = ScreenUpdateAvailable
 		return m, nil
@@ -231,6 +237,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleKeyUpdateAvailable(msg)
 	case ScreenUpdating:
 		return m.handleKeyUpdating(msg)
+	case ScreenNoUpdate:
+		return m.handleKeyNoUpdate(msg)
 	}
 	return m, nil
 }
@@ -277,6 +285,8 @@ func (m model) View() string {
 		return m.viewUpdateAvailable()
 	case ScreenUpdating:
 		return m.viewUpdating()
+	case ScreenNoUpdate:
+		return m.viewNoUpdate()
 	}
 	return ""
 }

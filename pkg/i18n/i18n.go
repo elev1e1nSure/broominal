@@ -198,6 +198,8 @@ var translations = map[string]map[string]string{
 		"install_failed":                 "Installation failed",
 		"update_complete_restart":        "Update complete! Restart to apply.",
 		"checking_updates":               "Checking for updates...",
+		"no_update":                      "No Update Available",
+		"no_update_desc":                 "You are on the latest version.",
 	},
 	"ru": {
 		"main_menu":                      "Меню",
@@ -388,6 +390,8 @@ var translations = map[string]map[string]string{
 		"install_failed":                 "Установка не удалась",
 		"update_complete_restart":        "Обновление завершено! Перезапустите для применения.",
 		"checking_updates":               "Проверка обновлений...",
+		"no_update":                      "Обновлений нет",
+		"no_update_desc":                 "У вас установлена последняя версия.",
 	},
 }
 

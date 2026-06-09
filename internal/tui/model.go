@@ -36,6 +36,7 @@ const (
 	ScreenAdminPrompt
 	ScreenUpdateAvailable
 	ScreenUpdating
+	ScreenNoUpdate
 )
 
 type restoreEntry struct {
@@ -83,6 +84,7 @@ type model struct {
 	updateError           error
 	updateProgress        string
 	checkUpdateOnStartup  bool
+	updateFromConfig      bool
 }
 
 type configCategoryItem struct {

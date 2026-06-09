@@ -58,6 +58,7 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case 3: // Check for updates
 			m.screen = ScreenUpdating
 			m.updateProgress = i18n.T("checking_updates")
+			m.updateFromConfig = true
 			return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
 				release, err := update.CheckForUpdates(m.version)
 				return checkUpdateMsg{release, err}

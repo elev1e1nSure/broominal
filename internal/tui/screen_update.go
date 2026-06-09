@@ -61,6 +61,24 @@ func (m model) viewUpdateAvailable() string {
 	return body
 }
 
+func (m model) handleKeyNoUpdate(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	s := msg.String()
+	if s == "enter" || s == "esc" || s == "q" || s == "m" {
+		m.screen = ScreenConfig
+		m.selectedIdx = 0
+		return m, nil
+	}
+	return m, nil
+}
+
+func (m model) viewNoUpdate() string {
+	var body string
+	body += m.appTitle(i18n.T("no_update")) + "\n\n"
+	body += "  " + safeStyle.Render(i18n.T("no_update_desc")) + "\n\n"
+	body += footer(keyHint("Enter", i18n.T("back")))
+	return body
+}
+
 func (m model) viewUpdating() string {
 	var body string
 	body += m.appTitle(i18n.T("updating")) + "\n\n"
