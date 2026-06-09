@@ -16,8 +16,6 @@ type Config struct {
 	OldInstallerMonths   int               `json:"old_installer_months"`
 	LargeFileMinSizeMB   int               `json:"large_file_min_size_mb"`
 	LargeFileMonths      int               `json:"large_file_months"`
-	OldTempDays          int               `json:"old_temp_days"`
-	OldExtensionDays     int               `json:"old_extension_days"`
 	Exclusions           []string          `json:"exclusions"`
 	AutoRiskOverrides    map[string]string `json:"auto_risk_overrides"`
 	QuarantineMaxAgeDays int               `json:"quarantine_max_age_days"`
@@ -82,8 +80,6 @@ func Default() *Config {
 		OldInstallerMonths:   6,
 		LargeFileMinSizeMB:   100,
 		LargeFileMonths:      6,
-		OldTempDays:          7,
-		OldExtensionDays:     30,
 		QuarantineMaxAgeDays: 30,
 		Language:             "",
 	}
@@ -144,12 +140,6 @@ func Load() (*Config, error) {
 	}
 	if cfg.LargeFileMonths <= 0 {
 		cfg.LargeFileMonths = defaults.LargeFileMonths
-	}
-	if cfg.OldTempDays <= 0 {
-		cfg.OldTempDays = defaults.OldTempDays
-	}
-	if cfg.OldExtensionDays <= 0 {
-		cfg.OldExtensionDays = defaults.OldExtensionDays
 	}
 	if cfg.QuarantineMaxAgeDays <= 0 {
 		cfg.QuarantineMaxAgeDays = defaults.QuarantineMaxAgeDays

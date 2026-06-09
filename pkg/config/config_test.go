@@ -251,8 +251,6 @@ func TestLoadInvalidThresholds(t *testing.T) {
 		OldInstallerMonths:   -1,
 		LargeFileMinSizeMB:   0,
 		LargeFileMonths:      -5,
-		OldTempDays:          0,
-		OldExtensionDays:     -1,
 		QuarantineMaxAgeDays: 0,
 	}
 	_ = os.MkdirAll(Dir(), 0755)
@@ -271,12 +269,6 @@ func TestLoadInvalidThresholds(t *testing.T) {
 	}
 	if cfg.LargeFileMonths <= 0 {
 		t.Errorf("LargeFileMonths = %d, want > 0", cfg.LargeFileMonths)
-	}
-	if cfg.OldTempDays <= 0 {
-		t.Errorf("OldTempDays = %d, want > 0", cfg.OldTempDays)
-	}
-	if cfg.OldExtensionDays <= 0 {
-		t.Errorf("OldExtensionDays = %d, want > 0", cfg.OldExtensionDays)
 	}
 	if cfg.QuarantineMaxAgeDays <= 0 {
 		t.Errorf("QuarantineMaxAgeDays = %d, want > 0", cfg.QuarantineMaxAgeDays)

@@ -14,10 +14,7 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
-// walkMatch decides whether a file path should be included in scan results.
-type walkMatch func(path string, d fs.DirEntry) bool
-
-func walkDirItems(ctx context.Context, root, category string, risk types.RiskLevel, recursive bool, matchExt []string, match walkMatch, cfg *config.Config) ([]types.Item, error) {
+func walkDirItems(ctx context.Context, root, category string, risk types.RiskLevel, recursive bool, matchExt []string, cfg *config.Config) ([]types.Item, error) {
 	if root == "" {
 		return nil, nil
 	}
@@ -73,9 +70,6 @@ func walkDirItems(ctx context.Context, root, category string, risk types.RiskLev
 				return nil
 			}
 		}
-		if match != nil && !match(path, d) {
-			return nil
-		}
 
 		info, err := d.Info()
 		if err != nil {
@@ -102,18 +96,3 @@ func walkDirItems(ctx context.Context, root, category string, risk types.RiskLev
 	return items, nil
 }
 
-func scanPath(ctx context.Context, path, category string, risk types.RiskLevel, recursive bool, cfg *config.Config) ([]types.Item, error) {
-	return walkDirItems(ctx, path, category, risk, recursive, nil, nil, cfg)
-}
-
-func scanPaths(ctx context.Context, paths []string, category string, risk types.RiskLevel, recursive bool, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	for _, path := range paths {
-		sub, err := scanPath(ctx, path, category, risk, recursive, cfg)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, sub...)
-	}
-	return items, nil
-}

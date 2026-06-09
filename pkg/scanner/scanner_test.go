@@ -187,63 +187,6 @@ func TestScanWithConfigDisabledCategories(t *testing.T) {
 	}
 }
 
-func TestScanOldTempFiles(t *testing.T) {
-	tmp := t.TempDir()
-	t.Setenv("TEMP", tmp)
-
-	old := time.Now().AddDate(0, 0, -10)
-	p := filepath.Join(tmp, "old_temp.txt")
-	_ = os.WriteFile(p, []byte("temp"), 0644)
-	_ = os.Chtimes(p, old, old)
-
-	cfg := config.Default()
-	cfg.OldTempDays = 7
-
-	items, err := scanOldTempFiles(context.Background(), cfg)
-	if err != nil {
-		t.Fatalf("scanOldTempFiles error: %v", err)
-	}
-	found := false
-	for _, it := range items {
-		if it.Path == p {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Errorf("expected to find %q in old temp files", p)
-	}
-}
-
-func TestScanOldExtensions(t *testing.T) {
-	tmp := t.TempDir()
-	t.Setenv("TEMP", tmp)
-	t.Setenv("USERPROFILE", tmp)
-
-	old := time.Now().AddDate(0, 0, -40)
-	p := filepath.Join(tmp, "old_backup.bak")
-	_ = os.WriteFile(p, []byte("backup"), 0644)
-	_ = os.Chtimes(p, old, old)
-
-	cfg := config.Default()
-	cfg.OldExtensionDays = 30
-
-	items, err := scanOldExtensions(context.Background(), ".bak", cfg)
-	if err != nil {
-		t.Fatalf("scanOldExtensions error: %v", err)
-	}
-	found := false
-	for _, it := range items {
-		if it.Path == p {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Errorf("expected to find %q in old extensions", p)
-	}
-}
-
 func TestScanEmptyFolders(t *testing.T) {
 	tmp := t.TempDir()
 	t.Setenv("TEMP", tmp)
