@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
@@ -20,8 +21,10 @@ type Screen int
 const (
 	ScreenDashboard Screen = iota
 	ScreenCategories
+	ScreenWarnRecycleBin
 	ScreenDetails
 	ScreenConfirm
+	ScreenCleaning
 	ScreenResult
 )
 
@@ -35,6 +38,7 @@ type model struct {
 	detailList  list.Model
 	confirmMsg  string
 	cleanResult *types.CleanResult
+	spinner     spinner.Model
 	err         error
 	width       int
 	height      int
@@ -55,8 +59,12 @@ func Start() error {
 }
 
 func initialModel() model {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#60a5fa"))
 	return model{
-		screen: ScreenDashboard,
+		screen:  ScreenDashboard,
+		spinner: s,
 	}
 }
 
@@ -76,6 +84,11 @@ type scanDoneMsg struct {
 
 type errMsg struct {
 	err error
+}
+
+type cleanDoneMsg struct {
+	result *types.CleanResult
+	err    error
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -103,6 +116,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case errMsg:
 		m.err = msg.err
 		return m, tea.Quit
+
+	case cleanDoneMsg:
+		if msg.err != nil {
+			m.err = msg.err
+			return m, tea.Quit
+		}
+		m.cleanResult = msg.result
+		m.screen = ScreenResult
+		return m, nil
+
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
 
 	case tea.KeyMsg:
 		return m.handleKey(msg)
@@ -152,7 +179,12 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if key.Matches(msg, key.NewBinding(key.WithKeys("d"))) {
 			if m.selectedIdx < len(m.categories) {
 				m.detailCat = m.selectedIdx
-				m.detailList = buildDetailList(m.categories[m.selectedIdx].cat.Items, m.width, m.height)
+				cat := m.categories[m.selectedIdx].cat
+				if cat.Category == "Recycle Bin" && cat.Files > 10000 {
+					m.screen = ScreenWarnRecycleBin
+					return m, nil
+				}
+				m.detailList = buildDetailList(cat.Items, m.width, m.height)
 				m.screen = ScreenDetails
 			}
 			return m, nil
@@ -160,6 +192,17 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 			m.screen = ScreenConfirm
 			m.confirmMsg = buildConfirmMessage(m.categories, m.result)
+			return m, nil
+		}
+
+	case ScreenWarnRecycleBin:
+		if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+			m.screen = ScreenCategories
+			return m, nil
+		}
+		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+			m.detailList = buildDetailList(m.categories[m.detailCat].cat.Items, m.width, m.height)
+			m.screen = ScreenDetails
 			return m, nil
 		}
 
@@ -179,30 +222,29 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
-			// Execute clean
-			var selected []types.Item
-			for _, c := range m.categories {
-				if c.selected {
-					for i := range c.cat.Items {
-						c.cat.Items[i].Selected = true
-						selected = append(selected, c.cat.Items[i])
+			m.screen = ScreenCleaning
+			return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
+				var selected []types.Item
+				for _, c := range m.categories {
+					if c.selected {
+						for i := range c.cat.Items {
+							c.cat.Items[i].Selected = true
+							selected = append(selected, c.cat.Items[i])
+						}
 					}
 				}
-			}
-			id, freed, files, err := quarantine.Move(selected)
-			if err != nil {
-				m.err = err
-				return m, tea.Quit
-			}
-			m.cleanResult = &types.CleanResult{
-				RestoreID: id,
-				Freed:     freed,
-				Files:     files,
-			}
-			// Save report
-			_, _ = report.Save(m.result, m.cleanResult)
-			m.screen = ScreenResult
-			return m, nil
+				id, freed, files, err := quarantine.Move(selected)
+				if err != nil {
+					return cleanDoneMsg{nil, err}
+				}
+				res := &types.CleanResult{
+					RestoreID: id,
+					Freed:     freed,
+					Files:     files,
+				}
+				_, _ = report.Save(m.result, res)
+				return cleanDoneMsg{res, nil}
+			})
 		}
 
 	case ScreenResult:
@@ -234,10 +276,14 @@ func (m model) View() string {
 		return m.viewDashboard()
 	case ScreenCategories:
 		return m.viewCategories()
+	case ScreenWarnRecycleBin:
+		return m.viewWarnRecycleBin()
 	case ScreenDetails:
 		return m.viewDetails()
 	case ScreenConfirm:
 		return m.viewConfirm()
+	case ScreenCleaning:
+		return m.viewCleaning()
 	case ScreenResult:
 		return m.viewResult()
 	}
@@ -330,6 +376,20 @@ func (m model) viewResult() string {
 		fmt.Sprintf("  Files:     %d\n", m.cleanResult.Files) +
 		fmt.Sprintf("  Restore:   %s\n\n", m.cleanResult.RestoreID) +
 		mutedStyle.Render("  R: restore last  Q: quit")
+}
+
+func (m model) viewWarnRecycleBin() string {
+	cat := m.categories[m.detailCat].cat
+	return titleStyle.Render(" Warning ") + "\n\n" +
+		dangerStyle.Render(fmt.Sprintf("  Recycle Bin contains %d files.", cat.Files)) + "\n" +
+		mutedStyle.Render("  Opening details may be very slow.") + "\n\n" +
+		mutedStyle.Render("  Enter: continue anyway  Esc: back")
+}
+
+func (m model) viewCleaning() string {
+	return titleStyle.Render(" Cleaning... ") + "\n\n" +
+		fmt.Sprintf("  %s Moving files to quarantine...\n", m.spinner.View()) +
+		mutedStyle.Render("  Please wait, this may take a while.")
 }
 
 func buildDetailList(items []types.Item, w, h int) list.Model {
