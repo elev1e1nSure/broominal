@@ -65,6 +65,11 @@ func Default() *Config {
 			".git":         "review",
 			"node_modules": "review",
 		},
+		OldInstallerMonths:   6,
+		LargeFileMinSizeMB:   100,
+		LargeFileMonths:      6,
+		OldTempDays:          7,
+		OldExtensionDays:     30,
 		QuarantineMaxAgeDays: 30,
 		Language:             "",
 	}
