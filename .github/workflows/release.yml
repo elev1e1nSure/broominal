@@ -33,12 +33,6 @@ jobs:
         env:
           OUTPUT: RELEASE_BODY.md
 
-      - name: Install rsrc
-        run: go install github.com/akavel/rsrc@latest
-
-      - name: Generate Windows .syso
-        run: rsrc -ico assets/app-icon.ico -o cmd/broominal/rsrc_windows.syso
-
       - name: Build
         run: go build -ldflags "-s -w -X main.Version=${{ github.ref_name }}" -o broominal.exe ./cmd/broominal
 
