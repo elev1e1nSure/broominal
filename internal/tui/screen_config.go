@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -35,6 +36,9 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				for cat, enabled := range m.configCfg.EnabledCategories {
 					items = append(items, configCategoryItem{name: cat, enabled: enabled})
 				}
+				sort.Slice(items, func(i, j int) bool {
+					return items[i].name < items[j].name
+				})
 				m.configCategories = items
 			}
 			m.selectedIdx = 0
@@ -150,19 +154,47 @@ func (m model) handleKeyConfigThresholds(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewConfig() string {
-	items := []string{
-		i18n.T("config_categories"),
-		i18n.T("config_thresholds"),
-	}
 	var body string
 	body += titleStyle.Render(i18n.T("config")) + "\n\n"
-	for i, item := range items {
-		if i == m.selectedIdx {
-			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + "\n"
-		} else {
-			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
+
+	// Categories summary
+	enabledCount := 0
+	totalCount := 0
+	if m.configCfg != nil {
+		for _, enabled := range m.configCfg.EnabledCategories {
+			totalCount++
+			if enabled {
+				enabledCount++
+			}
 		}
 	}
+	catLine := fmt.Sprintf("%s  %d / %d", i18n.T("config_categories"), enabledCount, totalCount)
+	if 0 == m.selectedIdx {
+		body += selectedStyle.Render(fmt.Sprintf("> %s", catLine)) + "\n"
+	} else {
+		body += mutedStyle.Render(fmt.Sprintf("  %s", catLine)) + "\n"
+	}
+
+	// Thresholds summary
+	var threshSummary string
+	if m.configCfg != nil {
+		threshSummary = fmt.Sprintf("installers %d%s, large files %dMB/%d%s, temp %d%s, bak %d%s, auto-delete %d%s",
+			m.configCfg.OldInstallerMonths, i18n.T("months"),
+			m.configCfg.LargeFileMinSizeMB, m.configCfg.LargeFileMonths, i18n.T("months"),
+			m.configCfg.OldTempDays, i18n.T("days"),
+			m.configCfg.OldExtensionDays, i18n.T("days"),
+			m.configCfg.QuarantineMaxAgeDays, i18n.T("days"),
+		)
+	} else {
+		threshSummary = "..."
+	}
+	threshLine := fmt.Sprintf("%s  %s", i18n.T("config_thresholds"), mutedStyle.Render(threshSummary))
+	if 1 == m.selectedIdx {
+		body += selectedStyle.Render(fmt.Sprintf("> %s", threshLine)) + "\n"
+	} else {
+		body += mutedStyle.Render(fmt.Sprintf("  %s", threshLine)) + "\n"
+	}
+
 	body += "\n" + footer(
 		keyHint("Enter", i18n.T("select")),
 		keyHint("Esc", i18n.T("back")),
@@ -192,16 +224,29 @@ func (m model) viewConfigCategories() string {
 	return body
 }
 
+func thresholdUnit(labelKey string) string {
+	switch labelKey {
+	case "large_file_min_size_mb":
+		return "MB"
+	case "old_temp_days", "old_extension_days", "quarantine_max_age_days":
+		return i18n.T("days")
+	case "old_installer_months", "large_file_months":
+		return i18n.T("months")
+	}
+	return ""
+}
+
 func (m model) viewConfigThresholds() string {
 	var body string
 	body += titleStyle.Render(i18n.T("config_thresholds")) + "\n\n"
 	for i, c := range m.configThresholds {
 		label := i18n.T(c.labelKey)
-		val := fmt.Sprintf("%d", c.value)
+		unit := thresholdUnit(c.labelKey)
+		val := fmt.Sprintf("%d %s", c.value, unit)
 		if i == m.selectedIdx {
-			body += selectedStyle.Render(fmt.Sprintf("> %-30s %s", label, val)) + "\n"
+			body += selectedStyle.Render(fmt.Sprintf("> %-35s %s", label, val)) + "\n"
 		} else {
-			body += mutedStyle.Render(fmt.Sprintf("  %-30s %s", label, val)) + "\n"
+			body += mutedStyle.Render(fmt.Sprintf("  %-35s %s", label, val)) + "\n"
 		}
 	}
 	body += "\n" + footer(
