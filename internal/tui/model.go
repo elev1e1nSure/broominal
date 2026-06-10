@@ -120,8 +120,10 @@ var (
 	reviewStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#fbbf24"))
 	dangerStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#f87171"))
 	mutedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#9ca3af"))
+	disabledStyle = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("#6b7280"))
 	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#d6b15f"))
 	valueStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#e5e7eb"))
+	backgroundStyle = lipgloss.NewStyle().Background(lipgloss.Color("#1f2937"))
 )
 
 func keyHint(k, desc string) string {
