@@ -2,12 +2,13 @@ package tui
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	lipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
+	"github.com/elev1e1nSure/broominal/pkg/types"
 	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
@@ -40,22 +41,16 @@ func (m model) viewDashboard() string {
 		totalFiles += c.Files
 	}
 
-	barWidth := 32
-	total := m.result.TotalSize
+	cats := make([]types.CategorySummary, len(m.result.Categories))
+	copy(cats, m.result.Categories)
+	sort.Slice(cats, func(i, j int) bool {
+		return cats[i].Size > cats[j].Size
+	})
 
-	bar := func(size int64, st lipgloss.Style) string {
-		if total == 0 {
-			return strings.Repeat(" ", barWidth)
-		}
-		blocks := int(size * int64(barWidth) / total)
-		if blocks > barWidth {
-			blocks = barWidth
-		}
-		if blocks == 0 && size > 0 {
-			blocks = 1
-		}
-		empty := barWidth - blocks
-		return st.Render(strings.Repeat("█", blocks)) + strings.Repeat(" ", empty)
+	barWidth := 24
+	maxSize := int64(0)
+	if len(cats) > 0 {
+		maxSize = cats[0].Size
 	}
 
 	body := m.appTitle(i18n.T("dashboard")) + "\n\n"
@@ -68,22 +63,28 @@ func (m model) viewDashboard() string {
 	)
 	body += "  " + mutedStyle.Render(strings.Repeat("─", 50)) + "\n\n"
 
-	labels := []struct {
-		name string
-		size int64
-		st   lipgloss.Style
-	}{
-		{i18n.T("safe"), m.result.SafeSize, safeStyle},
-		{i18n.T("review"), m.result.ReviewSize, reviewStyle},
-		{i18n.T("danger"), m.result.DangerSize, dangerStyle},
+	visible := 5
+	if len(cats) < visible {
+		visible = len(cats)
 	}
 
-	for _, l := range labels {
-		pct := 0
-		if total > 0 {
-			pct = int(l.size * 100 / total)
+	for i := 0; i < visible; i++ {
+		c := cats[i]
+		name := i18n.CategoryName(c.Category)
+		blocks := 0
+		if maxSize > 0 {
+			blocks = int(c.Size * int64(barWidth) / maxSize)
 		}
-		body += fmt.Sprintf("  %-10s %s  %s (%d%%)\n", l.name, bar(l.size, l.st), util.FormatSize(l.size), pct)
+		if blocks == 0 && c.Size > 0 {
+			blocks = 1
+		}
+		empty := barWidth - blocks
+		bar := mutedStyle.Render(strings.Repeat("█", blocks)) + strings.Repeat(" ", empty)
+		body += fmt.Sprintf("  %-22s %s  %s\n", name, bar, util.FormatSize(c.Size))
+	}
+
+	if len(cats) > visible {
+		body += "  " + mutedStyle.Render(fmt.Sprintf("... +%d %s", len(cats)-visible, i18n.T("more_categories"))) + "\n"
 	}
 
 	body += "\n" + footer(keyHint("D", i18n.T("select_categories")), keyHint("Enter", i18n.T("confirm")), keyHint("Esc", i18n.T("back")))
