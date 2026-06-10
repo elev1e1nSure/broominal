@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
 	lipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
@@ -89,6 +90,10 @@ type model struct {
 	pathConfirmIdx int
 	pathOperation  string
 	pathResultMsg  string
+	// Scan progress
+	scanCh        chan tea.Msg
+	scanCompleted int
+	scanTotal     int
 	// Menu position memory
 	lastMainMenuIdx int
 }

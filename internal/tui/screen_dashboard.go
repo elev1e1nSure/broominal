@@ -33,6 +33,11 @@ func (m model) handleKeyDashboard(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) viewDashboard() string {
 	if m.result == nil {
+		if m.scanTotal > 0 {
+			return m.appTitle(i18n.T("scanning")) + "\n\n  " +
+				m.spinner.View() + " " +
+				fmt.Sprintf("%s  %d / %d", i18n.T("scanning"), m.scanCompleted, m.scanTotal) + "\n"
+		}
 		return m.spinner.View() + " " + i18n.T("scanning") + "\n"
 	}
 
@@ -57,19 +62,25 @@ func (m model) viewDashboard() string {
 	)
 	body += "  " + mutedStyle.Render(strings.Repeat("─", 50)) + "\n\n"
 
-	visible := 5
-	if len(cats) < visible {
-		visible = len(cats)
+	const barWidth = 20
+	maxSize := int64(1)
+	for _, c := range cats {
+		if c.Size > maxSize {
+			maxSize = c.Size
+		}
 	}
 
-	for i := 0; i < visible; i++ {
-		c := cats[i]
+	for _, c := range cats {
+		if c.Size == 0 {
+			continue
+		}
 		name := i18n.CategoryName(c.Category)
-		body += fmt.Sprintf("  %-22s %s\n", name, util.FormatSize(c.Size))
-	}
-
-	if len(cats) > visible {
-		body += "  " + mutedStyle.Render(fmt.Sprintf("... +%d %s", len(cats)-visible, i18n.T("more_categories"))) + "\n"
+		filled := int(float64(c.Size) / float64(maxSize) * barWidth)
+		if filled < 1 {
+			filled = 1
+		}
+		bar := strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled)
+		body += fmt.Sprintf("  %-22s %s %s\n", name, mutedStyle.Render(bar), util.FormatSize(c.Size))
 	}
 
 	body += "\n" + footer(keyHint("D", i18n.T("select_categories")), keyHint("Enter", i18n.T("confirm")), keyHint("Esc", i18n.T("back")))

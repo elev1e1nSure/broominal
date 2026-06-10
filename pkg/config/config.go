@@ -70,6 +70,18 @@ func Default() *Config {
 			"Scheduled Tasks":   false,
 			"Duplicate Files":   false,
 			"Recent Documents":  false,
+			// Standard (new)
+			"Font Cache":                false,
+			"Windows Setup Files":       false,
+			"Diagnostic Data":           false,
+			"Downloaded Program Files":  false,
+			"Feedback Hub Logs":         false,
+			"BranchCache":               false,
+			// Deep (new)
+			"Old Chkdsk Files":    false,
+			"RetailDemo Content":  false,
+			"Thumbs.db":           false,
+			"Windows.old":         false,
 		},
 		ActivePreset: string(PresetQuick),
 		Exclusions:   []string{},
@@ -251,6 +263,12 @@ func (c *Config) ApplyPreset(p Preset) {
 		"JetBrains Cache",
 		"Office Cache",
 		"Java Cache",
+		"Font Cache",
+		"Windows Setup Files",
+		"Diagnostic Data",
+		"Downloaded Program Files",
+		"Feedback Hub Logs",
+		"BranchCache",
 	)
 
 	deepCategories := append(standardCategories,
@@ -262,6 +280,10 @@ func (c *Config) ApplyPreset(p Preset) {
 		"Startup Leftovers",
 		"Scheduled Tasks",
 		"Recent Documents",
+		"Old Chkdsk Files",
+		"RetailDemo Content",
+		"Thumbs.db",
+		"Windows.old",
 	)
 
 	var categories []string

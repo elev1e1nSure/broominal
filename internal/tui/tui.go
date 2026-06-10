@@ -86,6 +86,8 @@ type scanDoneMsg struct {
 	result *types.ScanResult
 }
 
+type scanProgressMsg struct{ completed int }
+
 type errMsg struct {
 	err error
 }
@@ -112,7 +114,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		return m, nil
 
+	case scanProgressMsg:
+		m.scanCompleted = msg.completed
+		if m.scanCh != nil {
+			return m, func() tea.Msg { return <-m.scanCh }
+		}
+		return m, nil
+
 	case scanDoneMsg:
+		m.scanCh = nil
 		m.result = msg.result
 		m.categories = make([]categoryItem, 0, len(msg.result.Categories))
 		for _, c := range msg.result.Categories {

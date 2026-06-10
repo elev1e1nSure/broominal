@@ -34,20 +34,28 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.lastMainMenuIdx = m.selectedIdx
 		switch m.selectedIdx {
 		case 0: // Scan & Clean
+			cfg, _ := config.Load()
+			if cfg == nil {
+				cfg = config.Default()
+			}
+			ch := make(chan tea.Msg, scanner.EnabledScannerCount(cfg)+1)
+			m.scanCh = ch
+			m.scanTotal = scanner.EnabledScannerCount(cfg)
+			m.scanCompleted = 0
 			m.screen = ScreenDashboard
-			return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
-				cfg, _ := config.Load()
-				if cfg == nil {
-					cfg = config.Default()
-				}
-				ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 				defer cancel()
-				res, err := scanner.ScanWithConfig(ctx, cfg)
+				res, err := scanner.ScanWithConfig(ctx, cfg, func(done int) {
+					ch <- scanProgressMsg{done}
+				})
 				if err != nil {
-					return errMsg{err}
+					ch <- errMsg{err}
+				} else {
+					ch <- scanDoneMsg{res}
 				}
-				return scanDoneMsg{res}
-			})
+			}()
+			return m, tea.Batch(m.spinner.Tick, func() tea.Msg { return <-ch })
 		case 1: // Restore
 			ids, err := quarantine.List()
 			if err != nil {

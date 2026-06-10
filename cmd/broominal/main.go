@@ -136,7 +136,7 @@ func scanCmd() *cobra.Command {
 			if cfg == nil {
 				cfg = config.Default()
 			}
-			res, err := scanner.ScanWithConfig(ctx, cfg)
+			res, err := scanner.ScanWithConfig(ctx, cfg, nil)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
 				os.Exit(1)
@@ -191,7 +191,7 @@ func cleanCmd() *cobra.Command {
 			if cfg == nil {
 				cfg = config.Default()
 			}
-			res, err := scanner.ScanWithConfig(ctx, cfg)
+			res, err := scanner.ScanWithConfig(ctx, cfg, nil)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
 				os.Exit(1)
@@ -305,7 +305,7 @@ func reportCmd() *cobra.Command {
 			if cfg == nil {
 				cfg = config.Default()
 			}
-			res, err := scanner.ScanWithConfig(context.Background(), cfg)
+			res, err := scanner.ScanWithConfig(context.Background(), cfg, nil)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
 				os.Exit(1)

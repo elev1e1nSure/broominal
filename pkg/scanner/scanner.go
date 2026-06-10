@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
@@ -27,24 +28,59 @@ var browserCachePaths = []string{
 
 const maxScanFiles = 50000
 
-func ScanWithConfig(ctx context.Context, cfg *config.Config) (*types.ScanResult, error) {
-	result := &types.ScanResult{}
-	categories := make(map[string]*types.CategorySummary)
+const scanParallelism = 8
 
+// EnabledScannerCount returns how many scanners are enabled in the given config.
+func EnabledScannerCount(cfg *config.Config) int {
+	n := 0
 	for _, sc := range allScanners {
-		if !cfg.IsCategoryEnabled(sc.Name()) {
-			continue
+		if cfg.IsCategoryEnabled(sc.Name()) {
+			n++
 		}
-		if ctx.Err() != nil {
-			return result, ctx.Err()
+	}
+	return n
+}
+
+func ScanWithConfig(ctx context.Context, cfg *config.Config, progress func(done int)) (*types.ScanResult, error) {
+	var enabled []CategoryScanner
+	for _, sc := range allScanners {
+		if cfg.IsCategoryEnabled(sc.Name()) {
+			enabled = append(enabled, sc)
 		}
-		items, err := sc.Scan(ctx, cfg)
-		if err != nil {
-			continue
-		}
-		mergeItems(categories, sc.Name(), sc.Risk(), items)
 	}
 
+	categories := make(map[string]*types.CategorySummary)
+	var mu sync.Mutex
+	var done int
+
+	sem := make(chan struct{}, scanParallelism)
+	var wg sync.WaitGroup
+
+	for _, sc := range enabled {
+		if ctx.Err() != nil {
+			break
+		}
+		wg.Add(1)
+		sc := sc
+		sem <- struct{}{}
+		go func() {
+			defer wg.Done()
+			defer func() { <-sem }()
+			items, err := sc.Scan(ctx, cfg)
+			mu.Lock()
+			done++
+			if err == nil {
+				mergeItems(categories, sc.Name(), sc.Risk(), items)
+			}
+			if progress != nil {
+				progress(done)
+			}
+			mu.Unlock()
+		}()
+	}
+	wg.Wait()
+
+	result := &types.ScanResult{}
 	for _, cat := range categories {
 		result.Categories = append(result.Categories, *cat)
 		result.TotalSize += cat.Size
@@ -829,6 +865,185 @@ func scanYandexCache(ctx context.Context, cfg *config.Config) ([]types.Item, err
 func scanWindowsDefender(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	path := filepath.Join(os.Getenv("PROGRAMDATA"), "Microsoft", "Windows Defender", "Scans", "History")
 	return scanDir(ctx, path, "windows_defender", types.RiskReview, nil, true, cfg)
+}
+
+func scanWindowsErrorReports(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	for _, path := range []string{
+		filepath.Join(os.Getenv("ProgramData"), "Microsoft", "Windows", "WER"),
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "Windows", "WER"),
+	} {
+		sub, err := scanDir(ctx, path, "windows_error_reports", types.RiskSafe, nil, true, cfg)
+		if err != nil {
+			slog.Warn("scanner: WER scan failed", "path", path, "error", err)
+		}
+		items = append(items, sub...)
+	}
+	return items, nil
+}
+
+func scanDeliveryOptimization(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	for _, path := range []string{
+		filepath.Join(os.Getenv("ProgramData"), "Microsoft", "Network", "Downloader"),
+		filepath.Join(os.Getenv("SystemRoot"), "SoftwareDistribution", "DeliveryOptimization"),
+	} {
+		sub, err := scanDir(ctx, path, "delivery_optimization", types.RiskSafe, nil, true, cfg)
+		if err != nil {
+			slog.Warn("scanner: delivery optimization scan failed", "path", path, "error", err)
+		}
+		items = append(items, sub...)
+	}
+	return items, nil
+}
+
+func scanFontCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	sysRoot := os.Getenv("SystemRoot")
+	if sysRoot == "" {
+		sysRoot = `C:\Windows`
+	}
+	base := filepath.Join(sysRoot, "ServiceProfiles", "LocalService", "AppData", "Local")
+	var items []types.Item
+	sub, err := scanDir(ctx, filepath.Join(base, "FontCache"), "font_cache", types.RiskSafe, nil, true, cfg)
+	if err != nil {
+		slog.Warn("scanner: font cache dir scan failed", "error", err)
+	}
+	items = append(items, sub...)
+	dat := filepath.Join(base, "FontCache-System.dat")
+	if info, err := os.Stat(dat); err == nil && !info.IsDir() {
+		items = append(items, types.Item{
+			Category: "font_cache",
+			Path:     dat,
+			Size:     info.Size(),
+			Risk:     types.RiskSafe,
+		})
+	}
+	return items, nil
+}
+
+func scanWindowsSetupFiles(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	path := filepath.Join(os.Getenv("SystemRoot"), "Panther")
+	return scanDir(ctx, path, "windows_setup_files", types.RiskSafe, nil, true, cfg)
+}
+
+func scanOldChkdskFiles(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	for drive := 'A'; drive <= 'Z'; drive++ {
+		root := string(drive) + `:\`
+		if _, err := os.Stat(root); err != nil {
+			continue
+		}
+		entries, err := os.ReadDir(root)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if !e.IsDir() {
+				continue
+			}
+			name := strings.ToUpper(e.Name())
+			if len(name) == 9 && strings.HasPrefix(name, "FOUND.") {
+				sub, err := scanDir(ctx, filepath.Join(root, e.Name()), "old_chkdsk_files", types.RiskReview, nil, true, cfg)
+				if err != nil {
+					slog.Warn("scanner: chkdsk scan failed", "path", filepath.Join(root, e.Name()), "error", err)
+				}
+				items = append(items, sub...)
+			}
+		}
+	}
+	return items, nil
+}
+
+func scanDiagnosticData(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	path := filepath.Join(os.Getenv("ProgramData"), "Microsoft", "Diagnosis", "ETLLogs")
+	return scanDir(ctx, path, "diagnostic_data", types.RiskSafe, nil, true, cfg)
+}
+
+func scanDownloadedProgramFiles(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	sysRoot := os.Getenv("SystemRoot")
+	if sysRoot == "" {
+		sysRoot = `C:\Windows`
+	}
+	path := filepath.Join(sysRoot, "Downloaded Program Files")
+	return scanDir(ctx, path, "downloaded_program_files", types.RiskSafe, nil, false, cfg)
+}
+
+func scanFeedbackHubLogs(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	path := filepath.Join(os.Getenv("LOCALAPPDATA"), "Packages", "Microsoft.WindowsFeedbackHub_8wekyb3d8bbwe", "LocalState", "DiagOutputDir")
+	return scanDir(ctx, path, "feedback_hub_logs", types.RiskSafe, nil, true, cfg)
+}
+
+func scanBranchCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	sysRoot := os.Getenv("SystemRoot")
+	if sysRoot == "" {
+		sysRoot = `C:\Windows`
+	}
+	path := filepath.Join(sysRoot, "ServiceProfiles", "NetworkService", "AppData", "Local", "PeerDistRepub")
+	return scanDir(ctx, path, "branch_cache", types.RiskSafe, nil, true, cfg)
+}
+
+func scanRetailDemoContent(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	sysRoot := os.Getenv("SystemRoot")
+	if sysRoot == "" {
+		sysRoot = `C:\Windows`
+	}
+	path := filepath.Join(sysRoot, "ServiceProfiles", "LocalService", "AppData", "Local", "Microsoft", "Windows", "RetailDemo")
+	return scanDir(ctx, path, "retail_demo_content", types.RiskSafe, nil, true, cfg)
+}
+
+func scanThumbsDb(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	userProfile := os.Getenv("USERPROFILE")
+	if userProfile == "" {
+		return nil, nil
+	}
+	var items []types.Item
+	_ = filepath.WalkDir(userProfile, func(path string, d fs.DirEntry, err error) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if err != nil {
+			if errors.Is(err, os.ErrPermission) || errors.Is(err, os.ErrNotExist) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if d.IsDir() || cfg.IsExcluded(path) {
+			return nil
+		}
+		name := strings.ToLower(d.Name())
+		if name != "thumbs.db" && name != "ehthumbs.db" {
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil {
+			return nil
+		}
+		items = append(items, types.Item{
+			Category: "thumbs_db",
+			Path:     path,
+			Size:     info.Size(),
+			Risk:     types.RiskSafe,
+		})
+		return nil
+	})
+	return items, nil
+}
+
+func scanWindowsOld(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	sysDrive := os.Getenv("SystemDrive")
+	if sysDrive == "" {
+		sysDrive = `C:`
+	}
+	var items []types.Item
+	for _, name := range []string{"Windows.old", "$WinREAgent"} {
+		path := filepath.Join(sysDrive+`\`, name)
+		sub, err := scanDir(ctx, path, "windows_old", types.RiskReview, nil, true, cfg)
+		if err != nil {
+			slog.Warn("scanner: windows.old scan failed", "path", path, "error", err)
+		}
+		items = append(items, sub...)
+	}
+	return items, nil
 }
 
 func scanGameLauncherCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {

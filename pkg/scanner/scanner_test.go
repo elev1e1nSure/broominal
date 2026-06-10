@@ -175,7 +175,7 @@ func TestScanWithConfigDisabledCategories(t *testing.T) {
 	cfg.EnabledCategories["Temp"] = false
 	cfg.EnabledCategories["Downloads"] = false
 
-	res, err := ScanWithConfig(context.Background(), cfg)
+	res, err := ScanWithConfig(context.Background(), cfg, nil)
 	if err != nil {
 		t.Fatalf("ScanWithConfig error: %v", err)
 	}

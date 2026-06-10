@@ -33,7 +33,7 @@ func TestScanCleanRestoreDoctorPipeline(t *testing.T) {
 	ctx := context.Background()
 
 	// Scan
-	res, err := scanner.ScanWithConfig(ctx, cfg)
+	res, err := scanner.ScanWithConfig(ctx, cfg, nil)
 	if err != nil {
 		t.Fatalf("scan failed: %v", err)
 	}

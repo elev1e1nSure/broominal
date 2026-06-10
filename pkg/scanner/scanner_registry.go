@@ -92,14 +92,8 @@ var allScanners = []CategoryScanner{
 		path := filepath.Join(os.Getenv("LOCALAPPDATA"), "D3DSCache")
 		return scanDir(ctx, path, "directx_shader_cache", types.RiskSafe, nil, true, cfg)
 	}},
-	catScanner{"Delivery Optimization", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		path := filepath.Join(os.Getenv("ProgramData"), "Microsoft", "Network", "Downloader")
-		return scanDir(ctx, path, "delivery_optimization", types.RiskSafe, nil, true, cfg)
-	}},
-	catScanner{"Windows Error Reports", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		path := filepath.Join(os.Getenv("ProgramData"), "Microsoft", "Windows", "WER")
-		return scanDir(ctx, path, "windows_error_reports", types.RiskSafe, nil, true, cfg)
-	}},
+	catScanner{"Delivery Optimization", types.RiskSafe, scanDeliveryOptimization},
+	catScanner{"Windows Error Reports", types.RiskSafe, scanWindowsErrorReports},
 	catScanner{"Messenger Cache", types.RiskSafe, func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 		return scanMessengerCache(ctx, cfg)
 	}},
@@ -165,4 +159,14 @@ var allScanners = []CategoryScanner{
 	catScanner{"Office Cache", types.RiskSafe, scanOfficeCache},
 	catScanner{"Java Cache", types.RiskSafe, scanJavaCache},
 	catScanner{"Recent Documents", types.RiskReview, scanRecentDocuments},
+	catScanner{"Font Cache", types.RiskSafe, scanFontCache},
+	catScanner{"Windows Setup Files", types.RiskSafe, scanWindowsSetupFiles},
+	catScanner{"Old Chkdsk Files", types.RiskReview, scanOldChkdskFiles},
+	catScanner{"Diagnostic Data", types.RiskSafe, scanDiagnosticData},
+	catScanner{"Downloaded Program Files", types.RiskSafe, scanDownloadedProgramFiles},
+	catScanner{"Feedback Hub Logs", types.RiskSafe, scanFeedbackHubLogs},
+	catScanner{"BranchCache", types.RiskSafe, scanBranchCache},
+	catScanner{"RetailDemo Content", types.RiskSafe, scanRetailDemoContent},
+	catScanner{"Thumbs.db", types.RiskSafe, scanThumbsDb},
+	catScanner{"Windows.old", types.RiskReview, scanWindowsOld},
 }
