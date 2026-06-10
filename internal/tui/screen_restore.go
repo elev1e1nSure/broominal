@@ -36,6 +36,9 @@ func (m model) handleKeyRestore(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		id := m.restoreEntries[m.restoreIdx].id
 		_, err := quarantine.Delete(id)
 		if err != nil {
+			if util.IsFileLocked(err) {
+				err = fmt.Errorf("%s", i18n.T("quarantine_locked"))
+			}
 			m.err = err
 			m.screen = ScreenError
 			return m, nil
@@ -69,6 +72,9 @@ func (m model) handleKeyRestore(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		_, _, err := quarantine.CleanupAll()
 		if err != nil {
+			if util.IsFileLocked(err) {
+				err = fmt.Errorf("%s", i18n.T("quarantine_locked"))
+			}
 			m.err = err
 			m.screen = ScreenError
 			return m, nil

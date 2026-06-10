@@ -369,6 +369,7 @@ func cleanupQuarantines(shouldDelete func(time.Time) bool) (int, int64, error) {
 
 	if len(errs) > 0 {
 		slog.Warn("quarantine cleanup: some directories could not be removed", "errors", len(errs))
+		return deleted, freed, errs[0]
 	}
 	return deleted, freed, nil
 }

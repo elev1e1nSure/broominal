@@ -380,7 +380,11 @@ func quarantineCleanupCmd() *cobra.Command {
 			}
 			deleted, freed, err := quarantine.Cleanup(maxAgeDays)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Cleanup failed: %v\n", err)
+				if util.IsFileLocked(err) {
+					fmt.Fprintf(os.Stderr, "%s\n", i18n.T("quarantine_locked"))
+				} else {
+					fmt.Fprintf(os.Stderr, "Cleanup failed: %v\n", err)
+				}
 				os.Exit(1)
 			}
 			if deleted == 0 {

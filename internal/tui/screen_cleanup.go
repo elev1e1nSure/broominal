@@ -22,6 +22,9 @@ func (m model) handleKeyQuarantineCleanup(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
 			deleted, freed, err := quarantine.CleanupAll()
 			if err != nil {
+				if util.IsFileLocked(err) {
+					err = fmt.Errorf("%s", i18n.T("quarantine_locked"))
+				}
 				return errMsg{err}
 			}
 			return cleanDoneMsg{&types.CleanResult{
