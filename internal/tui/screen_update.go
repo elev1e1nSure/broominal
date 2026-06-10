@@ -24,11 +24,13 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.updateAvailableRelease = nil
 		m.updateError = nil
+		m.updateFromConfig = false
 		return m, nil
 	}
 	if (s == "y" || s == "enter") && m.updateAvailableRelease != nil {
 		m.screen = ScreenUpdating
 		m.updateProgress = i18n.T("downloading_update")
+		m.updateFromConfig = false
 		return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
 			path, err := update.DownloadUpdate(m.updateAvailableRelease)
 			return downloadUpdateMsg{path, err}
@@ -41,6 +43,7 @@ func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	s := msg.String()
 	if m.updateProgress == i18n.T("update_complete_restart") && (s == "enter" || s == "y") {
 		m.restartAfterQuit = true
+		m.updateFromConfig = false
 		return m, tea.Quit
 	}
 	if m.updateError != nil {
@@ -54,6 +57,7 @@ func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 			m.updateError = nil
 			m.updateProgress = ""
+			m.updateFromConfig = false
 			return m, nil
 		}
 	}
