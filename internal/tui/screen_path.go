@@ -72,7 +72,10 @@ func (m model) viewPathConfirm() string {
 	body += m.appTitle(i18n.T(titleKey)) + "\n\n"
 	body += "  " + mutedStyle.Render(fmt.Sprintf(i18n.T(descKey), exe)) + "\n\n"
 
-	body += footer()
+	body += footer(
+		keyHint("Enter", i18n.T("confirm")),
+		keyHint("Esc", i18n.T("back")),
+	)
 	return body
 }
 
