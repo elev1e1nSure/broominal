@@ -19,13 +19,13 @@ func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
 		return m, tea.Quit
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k", "<"))) {
 		if m.selectedIdx > 0 {
 			m.selectedIdx--
 		}
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j", ">"))) {
 		langs := i18n.SupportedLanguages()
 		if m.selectedIdx < len(langs)-1 {
 			m.selectedIdx++

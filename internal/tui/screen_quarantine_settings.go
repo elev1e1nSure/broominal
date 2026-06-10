@@ -22,13 +22,13 @@ func (m model) handleKeyQuarantineSettings(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 		m.quarantineSettingsMsg = ""
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k", "<"))) {
 		if m.selectedIdx > 0 {
 			m.selectedIdx--
 		}
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j", ">"))) {
 		if m.configCfg != nil && m.configCfg.QuarantineEnabled && m.selectedIdx < 1 {
 			m.selectedIdx++
 		}

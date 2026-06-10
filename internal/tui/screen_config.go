@@ -18,13 +18,13 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.selectedIdx = m.lastMainMenuIdx
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k", "<"))) {
 		if m.selectedIdx > 0 {
 			m.selectedIdx--
 		}
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j", ">"))) {
 		if m.selectedIdx < 3 {
 			m.selectedIdx++
 		}
@@ -70,13 +70,13 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.selectedIdx = m.lastConfigIdx
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k", "<"))) {
 		if m.selectedIdx > 0 {
 			m.selectedIdx--
 		}
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j", ">"))) {
 		if m.selectedIdx < 2 {
 			m.selectedIdx++
 		}
