@@ -259,10 +259,12 @@ func (m model) viewCategoryInfo() string {
 
 func (m model) viewConfirm() string {
 	head := m.appTitle(i18n.T("confirm_cleanup"))
-	return head + "\n\n" + m.confirmMsg + "\n\n" + footer(
-		keyHint("Enter", i18n.T("confirm")),
-		keyHint("Esc", i18n.T("back")),
-	)
+	return head + "\n\n" + m.confirmMsg +
+		"  " + mutedStyle.Render(strings.Repeat("─", 42)) + "\n\n" +
+		footer(
+			keyHint("Enter", i18n.T("confirm")),
+			keyHint("Esc", i18n.T("back")),
+		)
 }
 
 func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
@@ -278,11 +280,23 @@ func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
 			files += c.cat.Files
 		}
 	}
-	return fmt.Sprintf(
-		"  %s: %s\n  %s:     %d\n  %s:      %s\n  %s:    %s\n",
-		i18n.T("will_free"), util.FormatSize(safe+review),
-		i18n.T("files"), files,
-		i18n.T("risk_safe"), util.FormatSize(safe),
-		i18n.T("risk_review"), util.FormatSize(review),
-	)
+	total := safe + review
+
+	const labelWidth = 22
+	row := func(label string, val string, vs lipgloss.Style) string {
+		labelCell := lipgloss.NewStyle().Width(labelWidth).Render(mutedStyle.Render(label))
+		return "  " + labelCell + vs.Render(val) + "\n"
+	}
+
+	body := row(i18n.T("will_free"), util.FormatSize(total), valueStyle)
+	body += row(i18n.T("files"), fmt.Sprintf("%d", files), valueStyle)
+	body += "\n"
+	body += row(i18n.T("risk_safe"), util.FormatSize(safe), safeStyle)
+	if review > 0 {
+		body += row(i18n.T("risk_review"), util.FormatSize(review), reviewStyle)
+		body += "\n" + reviewStyle.Render("  ⚠  "+i18n.T("contains_review_files")) + "\n\n"
+	} else {
+		body += "\n"
+	}
+	return body
 }
