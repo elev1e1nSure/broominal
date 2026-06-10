@@ -22,13 +22,13 @@ func (m model) handleKeyQuarantineSettings(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 		m.quarantineSettingsMsg = ""
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k", "<"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
 		if m.selectedIdx > 0 {
 			m.selectedIdx--
 		}
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j", ">"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
 		if m.configCfg != nil && m.configCfg.QuarantineEnabled && m.selectedIdx < 1 {
 			m.selectedIdx++
 		}
@@ -193,18 +193,27 @@ func (m model) viewQuarantineSettings() string {
 		autoLabel = i18n.T("quarantine_auto_cleanup") + " " + safeStyle.Render(autoCleanupLabel(autoCleanupDays))
 	}
 	if !quarantineEnabled {
-		autoLabel = i18n.T("quarantine_auto_cleanup") + " " + autoCleanupLabel(autoCleanupDays)
+		autoLabel = i18n.T("quarantine_auto_cleanup") + " [" + i18n.T("quarantine_enable_first") + "]"
 	}
 
-	items := []string{quarantineLabel, autoLabel}
+	type settingsItem struct {
+		label    string
+		disabled bool
+	}
+	items := []settingsItem{
+		{label: quarantineLabel},
+		{label: autoLabel, disabled: !quarantineEnabled},
+	}
 
 	var body string
 	body += m.appTitle(i18n.T("quarantine_settings")) + "\n\n"
 	for i, item := range items {
-		if i == m.selectedIdx {
-			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + "\n"
+		if item.disabled {
+			body += disabledStyle.Render(fmt.Sprintf("  %s", item.label)) + "\n"
+		} else if i == m.selectedIdx {
+			body += selectedStyle.Render(fmt.Sprintf("> %s", item.label)) + "\n"
 		} else {
-			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
+			body += mutedStyle.Render(fmt.Sprintf("  %s", item.label)) + "\n"
 		}
 		if i == 0 && quarantineWarn != "" {
 			body += quarantineWarn + "\n"
