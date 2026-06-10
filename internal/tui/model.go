@@ -123,7 +123,7 @@ var (
 	disabledStyle = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("#6b7280"))
 	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#d6b15f"))
 	valueStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#e5e7eb"))
-	backgroundStyle = lipgloss.NewStyle().Background(lipgloss.Color("#1f2937"))
+	backgroundStyle = lipgloss.NewStyle().Background(lipgloss.Color("#111827"))
 )
 
 func keyHint(k, desc string) string {
