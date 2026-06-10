@@ -120,7 +120,7 @@ var (
 	reviewStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#fbbf24"))
 	dangerStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#f87171"))
 	mutedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#9ca3af"))
-	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#fbbf24"))
+	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#d6b15f"))
 	valueStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#e5e7eb"))
 )
 

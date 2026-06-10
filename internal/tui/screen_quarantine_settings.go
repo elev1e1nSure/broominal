@@ -102,19 +102,19 @@ func (m model) viewQuarantineSettings() string {
 		quarantineText = i18n.T("quarantine_off")
 		quarantineWarn = dangerStyle.Render("  ! " + i18n.T("quarantine_disabled_warn"))
 	}
-	quarantineLabel := quarantineText + "  " + quarantineStatus
+	quarantineLabel := quarantineText + " " + quarantineStatus
 
 	autoCleanupDays := 0
 	quarantineEnabled := m.configCfg == nil || m.configCfg.QuarantineEnabled
 	if m.configCfg != nil {
 		autoCleanupDays = m.configCfg.QuarantineAutoCleanupDays
 	}
-	autoLabel := i18n.T("quarantine_auto_cleanup") + "  " + mutedStyle.Render(autoCleanupLabel(autoCleanupDays))
+	autoLabel := i18n.T("quarantine_auto_cleanup") + " " + mutedStyle.Render(autoCleanupLabel(autoCleanupDays))
 	if quarantineEnabled && autoCleanupDays > 0 {
-		autoLabel = i18n.T("quarantine_auto_cleanup") + "  " + safeStyle.Render(autoCleanupLabel(autoCleanupDays))
+		autoLabel = i18n.T("quarantine_auto_cleanup") + " " + safeStyle.Render(autoCleanupLabel(autoCleanupDays))
 	}
 	if !quarantineEnabled {
-		autoLabel = mutedStyle.Render(i18n.T("quarantine_auto_cleanup") + "  " + autoCleanupLabel(autoCleanupDays))
+		autoLabel = mutedStyle.Render(i18n.T("quarantine_auto_cleanup") + " " + autoCleanupLabel(autoCleanupDays))
 	}
 
 	items := []string{quarantineLabel, autoLabel}
