@@ -14,21 +14,9 @@ type installUpdateMsg struct {
 
 func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	s := msg.String()
-	if s == "esc" {
-		if m.updateFromConfig {
-			m.screen = ScreenConfig
-			m.selectedIdx = m.lastConfigIdx
-		} else {
-			m.screen = ScreenMainMenu
-			m.selectedIdx = m.lastMainMenuIdx
-		}
-		m.updateAvailableRelease = nil
-		m.updateError = nil
-		return m, nil
-	}
-	if s == "q" {
-		m.screen = ScreenMainMenu
-		m.selectedIdx = m.lastMainMenuIdx
+	if s == "esc" || s == "q" {
+		m.screen = ScreenConfig
+		m.selectedIdx = m.lastConfigIdx
 		m.updateAvailableRelease = nil
 		m.updateError = nil
 		return m, nil
@@ -41,17 +29,6 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return downloadUpdateMsg{path, err}
 		})
 	}
-	if s == "n" {
-		if m.updateFromConfig {
-			m.screen = ScreenConfig
-			m.selectedIdx = m.lastConfigIdx
-		} else {
-			m.screen = ScreenMainMenu
-			m.selectedIdx = m.lastMainMenuIdx
-		}
-		m.updateAvailableRelease = nil
-		return m, nil
-	}
 	return m, nil
 }
 
@@ -62,21 +39,9 @@ func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	}
 	if m.updateError != nil {
-		if s == "esc" {
-			if m.updateFromConfig {
-				m.screen = ScreenConfig
-				m.selectedIdx = m.lastConfigIdx
-			} else {
-				m.screen = ScreenMainMenu
-				m.selectedIdx = m.lastMainMenuIdx
-			}
-			m.updateError = nil
-			m.updateProgress = ""
-			return m, nil
-		}
-		if s == "q" {
-			m.screen = ScreenMainMenu
-			m.selectedIdx = m.lastMainMenuIdx
+		if s == "esc" || s == "q" {
+			m.screen = ScreenConfig
+			m.selectedIdx = m.lastConfigIdx
 			m.updateError = nil
 			m.updateProgress = ""
 			return m, nil
@@ -97,7 +62,6 @@ func (m model) viewUpdateAvailable() string {
 
 	body += footer(
 		keyHint("Y", i18n.T("yes_update")),
-		keyHint("N", i18n.T("no")),
 		keyHint("Esc", i18n.T("back")),
 	)
 	return body
