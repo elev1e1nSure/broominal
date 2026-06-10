@@ -205,6 +205,7 @@ func (m model) viewCategories() string {
 	body += "\n" + footer(
 		keyHint("Space", i18n.T("toggle")),
 		keyHint("D", i18n.T("details")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
