@@ -1220,10 +1220,6 @@ func scanTemp(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	return scanDir(ctx, tempPath, "temp", types.RiskSafe, nil, true, cfg)
 }
 
-func scanDownloads(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	return scanDir(ctx, filepath.Join(os.Getenv("USERPROFILE"), "Downloads"), "downloads", types.RiskReview, nil, true, cfg)
-}
-
 func scanBrowserCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	for _, rel := range browserCachePaths {

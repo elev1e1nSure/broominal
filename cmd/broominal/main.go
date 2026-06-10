@@ -187,8 +187,11 @@ func uiCmd() *cobra.Command {
 	}
 }
 
-// relaunch replaces the current process with a fresh instance of the same binary.
-// Used after a self-update so the new version starts in the same terminal session.
+// relaunch starts a fresh instance of the same binary and waits for it to finish.
+// Used after a self-update so the new version runs in the same terminal session.
+// The parent process stays alive (silently) until the child exits, ensuring the
+// terminal is fully restored before the new TUI takes over.
+// If this binary is the renamed .old backup, schedules its own deletion after exit.
 func relaunch() {
 	exe, err := os.Executable()
 	if err != nil {
@@ -198,8 +201,31 @@ func relaunch() {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	_ = cmd.Start()
-	os.Exit(0)
+	// Small delay so Bubbletea can finish restoring the terminal from alt-screen
+	// before the new process starts its own TUI.
+	time.Sleep(200 * time.Millisecond)
+	_ = cmd.Run()
+	// After the new process exits, clean up our own .old file.
+	// We can't delete a running exe on Windows directly, so we spawn a batch
+	// script that waits for this process to exit, then removes the file.
+	if strings.HasSuffix(exe, ".old") {
+		scheduleOldCleanup(exe)
+	}
+}
+
+// scheduleOldCleanup drops a one-shot batch script next to exePath and starts
+// it detached. The script waits ~1 s (enough for the calling process to exit),
+// deletes the .old binary, then deletes itself.
+func scheduleOldCleanup(exePath string) {
+	scriptPath := exePath + ".bat"
+	script := fmt.Sprintf(
+		"@ping -n 2 127.0.0.1 >nul\r\n@del /f /q \"%s\"\r\n@del /f /q \"%%~f0\"\r\n",
+		exePath,
+	)
+	if err := os.WriteFile(scriptPath, []byte(script), 0644); err != nil {
+		return
+	}
+	_ = exec.Command("cmd", "/c", "start", "/b", "", scriptPath).Start()
 }
 
 func cleanCmd() *cobra.Command {
@@ -241,7 +267,7 @@ func cleanCmd() *cobra.Command {
 					selected = append(selected, it)
 				}
 			}
-			cleanResult, err := cleaner.Run(ctx, selected, res)
+			cleanResult, err := cleaner.Run(ctx, selected, res, cfg)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Clean failed: %v\n", err)
 				os.Exit(1)
@@ -395,12 +421,7 @@ func quarantineCleanupCmd() *cobra.Command {
 		Short: "Delete old quarantines",
 		Run: func(cmd *cobra.Command, args []string) {
 			if maxAgeDays <= 0 {
-				cfg, _ := config.Load()
-				if cfg != nil && cfg.QuarantineMaxAgeDays > 0 {
-					maxAgeDays = cfg.QuarantineMaxAgeDays
-				} else {
-					maxAgeDays = 30
-				}
+				maxAgeDays = 30
 			}
 			deleted, freed, err := quarantine.Cleanup(maxAgeDays)
 			if err != nil {

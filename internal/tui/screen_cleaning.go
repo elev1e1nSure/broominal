@@ -11,7 +11,10 @@ import (
 )
 
 func (m model) handleKeyResult(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = m.lastMainMenuIdx
 		m.cleanResult = nil
@@ -81,7 +84,10 @@ func (m model) handleKeyRestoreConflict(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.screen = ScreenResult
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenResult
 		return m, nil
 	}
@@ -98,7 +104,7 @@ func (m model) viewResult() string {
 	if m.cleanResult == nil {
 		return m.appTitle(i18n.T("restored")) + "\n\n" +
 			safeStyle.Render("  [OK] "+i18n.T("hint_restored")) + "\n\n" +
-			footer(keyHint("Esc", i18n.T("back")))
+			footer()
 	}
 	body := m.appTitle(i18n.T("cleanup_complete")) + "\n\n" +
 		fmt.Sprintf("  Freed:      %s\n", safeStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
@@ -109,7 +115,6 @@ func (m model) viewResult() string {
 	body += fmt.Sprintf("  Restore ID: %s\n", mutedStyle.Render(m.cleanResult.RestoreID))
 	body += "\n" + footer(
 		keyHint("R", i18n.T("restore_last")),
-		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
@@ -124,7 +129,6 @@ func (m model) viewRestoreConflict() string {
 	body += "\n" + footer(
 		keyHint("O", i18n.T("overwrite_all")),
 		keyHint("S", i18n.T("skip_all")),
-		keyHint("Esc", i18n.T("cancel")),
 	)
 	return body
 }

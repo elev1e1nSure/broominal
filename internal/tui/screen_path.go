@@ -12,6 +12,9 @@ import (
 )
 
 func (m model) handleKeyPathConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenConfig
 		m.selectedIdx = m.lastConfigIdx
@@ -41,7 +44,10 @@ func (m model) handleKeyPathConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKeyPathResult(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "enter"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc", "enter"))) {
 		m.screen = ScreenConfig
 		m.selectedIdx = m.lastConfigIdx
 		return m, nil
@@ -66,14 +72,7 @@ func (m model) viewPathConfirm() string {
 	body += m.appTitle(i18n.T(titleKey)) + "\n\n"
 	body += "  " + mutedStyle.Render(fmt.Sprintf(i18n.T(descKey), exe)) + "\n\n"
 
-	actionLabel := i18n.T("add")
-	if m.pathOperation == "remove" {
-		actionLabel = i18n.T("remove")
-	}
-	body += footer(
-		keyHint("Enter", actionLabel),
-		keyHint("Esc", i18n.T("back")),
-	)
+	body += footer()
 	return body
 }
 
@@ -81,8 +80,6 @@ func (m model) viewPathResult() string {
 	var body string
 	body += m.appTitle(m.pathResultMsg) + "\n\n"
 	body += "  " + mutedStyle.Render(i18n.T("path_result_restart_terminal")) + "\n\n"
-	body += footer(
-		keyHint("Enter/Esc", i18n.T("back")),
-	)
+	body += footer()
 	return body
 }

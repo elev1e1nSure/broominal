@@ -272,10 +272,10 @@ func TestUpdateCleanDoneMsgErrorShowsScreenError(t *testing.T) {
 	}
 }
 
-func TestHandleKeyErrorReturnsToMainMenu(t *testing.T) {
+func TestHandleKeyErrorEscReturnsToMainMenu(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenError
-	newM, cmd := m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	newM, cmd := m.handleKey(tea.KeyMsg{Type: tea.KeyEsc})
 	mm := newM.(model)
 	if mm.screen != ScreenMainMenu {
 		t.Errorf("screen should be MainMenu, got %d", mm.screen)
@@ -350,8 +350,8 @@ func TestViewRestoreEmpty(t *testing.T) {
 	m.screen = ScreenRestore
 	m.restoreEntries = []restoreEntry{}
 	out := m.View()
-	if !strings.Contains(out, "No backups") {
-		t.Error("view should show empty message")
+	if !strings.Contains(out, "Quarantine is empty") && !strings.Contains(out, "Карантин пуст") {
+		t.Error("view should show empty quarantine message")
 	}
 }
 
@@ -400,8 +400,37 @@ func TestViewQuarantineCleanup(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenQuarantineCleanup
 	out := m.View()
-	if !strings.Contains(out, "Backup Cleanup") && !strings.Contains(out, "Очистка резервных копий") {
-		t.Error("view should contain 'Backup Cleanup'")
+	if !strings.Contains(out, "Quarantine Cleanup") && !strings.Contains(out, "Очистка карантина") {
+		t.Error("view should contain 'Quarantine Cleanup'")
+	}
+}
+
+func TestQuarantineSettingsDisabledLocksAutoCleanup(t *testing.T) {
+	i18n.SetLanguage("ru")
+	defer i18n.SetLanguage("en")
+
+	m := initialModel()
+	m.screen = ScreenQuarantineSettings
+	m.configCfg = config.Default()
+	m.configCfg.QuarantineEnabled = false
+	m.configCfg.QuarantineAutoCleanupDays = 7
+
+	out := m.View()
+	if !strings.Contains(out, "Выключено") {
+		t.Error("view should show quarantine as disabled")
+	}
+
+	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyDown})
+	mm := newM.(model)
+	if mm.selectedIdx != 0 {
+		t.Errorf("disabled auto-cleanup should not be selectable, got selectedIdx %d", mm.selectedIdx)
+	}
+
+	m.selectedIdx = 1
+	newM, _ = m.handleKey(tea.KeyMsg{Type: tea.KeyEnter})
+	mm = newM.(model)
+	if mm.configCfg.QuarantineAutoCleanupDays != 7 {
+		t.Errorf("disabled auto-cleanup should not change, got %d", mm.configCfg.QuarantineAutoCleanupDays)
 	}
 }
 
@@ -463,30 +492,12 @@ func TestConfigSubScreensRestoreLastConfigIdx(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenLanguage
 	m.lastConfigIdx = 1
-	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyEsc})
 	mm := newM.(model)
 	if mm.screen != ScreenConfig {
 		t.Errorf("screen should be Config, got %d", mm.screen)
 	}
 	if mm.selectedIdx != 1 {
 		t.Errorf("selectedIdx should restore to 1, got %d", mm.selectedIdx)
-	}
-}
-
-func TestHandleKeyMReturnsToMainMenu(t *testing.T) {
-	// M is a quick-root shortcut only on selection screens (Categories, Confirm)
-	screens := []Screen{ScreenCategories, ScreenConfirm}
-	for _, sc := range screens {
-		m := initialModel()
-		m.screen = sc
-		m.selectedIdx = 5
-		newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-		mm := newM.(model)
-		if mm.screen != ScreenMainMenu {
-			t.Errorf("screen %d: M should go to MainMenu, got %d", sc, mm.screen)
-		}
-		if mm.selectedIdx != mm.lastMainMenuIdx {
-			t.Errorf("screen %d: selectedIdx should restore lastMainMenuIdx, got %d", sc, mm.selectedIdx)
-		}
 	}
 }

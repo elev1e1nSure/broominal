@@ -21,7 +21,11 @@ const (
 	ScreenDashboard
 	ScreenCategories
 	ScreenWarnRecycleBin
+	ScreenWarnDuplicates
 	ScreenCategoryInfo
+	// Quarantine deletion confirmations
+	ScreenConfirmDeleteQuarantine
+	ScreenConfirmDeleteAllQuarantine
 	ScreenConfirm
 	ScreenCleaning
 	ScreenResult
@@ -31,6 +35,7 @@ const (
 	ScreenDoctor
 	ScreenConfig
 	ScreenConfigPresets
+	ScreenQuarantineSettings
 	ScreenQuarantineCleanup
 	ScreenQuarantineCleaning
 	ScreenLanguage
@@ -70,12 +75,12 @@ type model struct {
 	restoreIdx     int
 	restoreResult  string
 	// Doctor screen
-	doctorChecks          []doctor.Check
-	doctorQuarantineStats doctor.Check
-	doctorFixResult       string
+	doctorChecks    []doctor.Check
+	doctorFixResult string
 	// Config screen
-	configCfg     *config.Config
-	lastConfigIdx int
+	configCfg             *config.Config
+	lastConfigIdx         int
+	quarantineSettingsMsg string
 	// Cleanup screen
 	cleanupResult string
 	// Admin prompt

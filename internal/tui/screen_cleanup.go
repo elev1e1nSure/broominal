@@ -12,7 +12,10 @@ import (
 )
 
 func (m model) handleKeyQuarantineCleanup(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = m.lastMainMenuIdx
 		return m, nil
@@ -41,10 +44,7 @@ func (m model) viewQuarantineCleanup() string {
 	head := m.appTitle(i18n.T("quarantine_cleanup"))
 	return head + "\n\n" +
 		mutedStyle.Render("  "+i18n.T("cleanup_desc")) + "\n\n" +
-		footer(
-			keyHint("Enter", i18n.T("proceed")),
-			keyHint("Esc", i18n.T("back")),
-		)
+		footer()
 }
 
 func (m model) viewQuarantineCleaning() string {

@@ -173,7 +173,7 @@ func TestScanLargeOldFiles(t *testing.T) {
 func TestScanWithConfigDisabledCategories(t *testing.T) {
 	cfg := config.Default()
 	cfg.EnabledCategories["Temp"] = false
-	cfg.EnabledCategories["Downloads"] = false
+	cfg.EnabledCategories["Browser Cache"] = false
 
 	res, err := ScanWithConfig(context.Background(), cfg, nil)
 	if err != nil {
@@ -181,7 +181,7 @@ func TestScanWithConfigDisabledCategories(t *testing.T) {
 	}
 
 	for _, cat := range res.Categories {
-		if cat.Category == "Temp" || cat.Category == "Downloads" {
+		if cat.Category == "Temp" || cat.Category == "Browser Cache" {
 			t.Errorf("category %q should be disabled", cat.Category)
 		}
 	}

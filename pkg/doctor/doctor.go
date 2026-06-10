@@ -38,8 +38,7 @@ type Check struct {
 	FixKey     string // non-empty if an automatic fix is available
 }
 
-// Run performs fast health checks. Heavy checks (quarantine stats) are excluded
-// and should be loaded separately via QuarantineStats().
+// Run performs all health checks including quarantine stats.
 func Run() []Check {
 	var checks []Check
 
@@ -49,14 +48,9 @@ func Run() []Check {
 	checks = append(checks, checkEnvDir("TEMP", i18n.T("check_temp_dir")))
 	checks = append(checks, checkEnvDir("USERPROFILE", i18n.T("check_userprofile_dir")))
 	checks = append(checks, checkManifests())
+	checks = append(checks, checkQuarantineStats())
 
 	return checks
-}
-
-// QuarantineStats returns quarantine size/file stats. This is a heavy operation
-// that should be called lazily when needed.
-func QuarantineStats() Check {
-	return checkQuarantineStats()
 }
 
 // IsAdmin returns true if the current process has elevated privileges.
@@ -248,6 +242,15 @@ func Fix(fixKey string) (string, error) {
 			return "", fmt.Errorf("cannot locate executable: %w", err)
 		}
 		verbPtr, _ := windows.UTF16PtrFromString("runas")
+		// If running inside Windows Terminal, open the elevated instance in a new WT tab
+		if os.Getenv("WT_SESSION") != "" {
+			wtArgs := fmt.Sprintf(`new-tab -- "%s"`, exe)
+			wtPtr, _ := windows.UTF16PtrFromString("wt.exe")
+			argPtr, _ := windows.UTF16PtrFromString(wtArgs)
+			if err := windows.ShellExecute(0, verbPtr, wtPtr, argPtr, nil, windows.SW_NORMAL); err == nil {
+				return "Restarting as administrator...", nil
+			}
+		}
 		exePtr, _ := windows.UTF16PtrFromString(exe)
 		if err := windows.ShellExecute(0, verbPtr, exePtr, nil, nil, windows.SW_NORMAL); err != nil {
 			return "", fmt.Errorf("failed to elevate: %w", err)

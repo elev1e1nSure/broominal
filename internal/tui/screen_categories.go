@@ -9,23 +9,18 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	lipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/cleaner"
+	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
 func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenDashboard
-		return m, nil
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
-		m.screen = ScreenDashboard
-		return m, nil
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
-		m.screen = ScreenMainMenu
-		m.selectedIdx = m.lastMainMenuIdx
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
@@ -54,7 +49,13 @@ func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys(" "))) {
 		if m.selectedIdx < len(m.categories) {
-			m.categories[m.selectedIdx].selected = !m.categories[m.selectedIdx].selected
+			cat := m.categories[m.selectedIdx]
+			if cat.cat.Category == "Duplicate Files" && !cat.selected {
+				m.detailCat = m.selectedIdx
+				m.screen = ScreenWarnDuplicates
+				return m, nil
+			}
+			m.categories[m.selectedIdx].selected = !cat.selected
 		}
 		return m, nil
 	}
@@ -67,12 +68,10 @@ func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKeyWarnRecycleBin(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
-		m.screen = ScreenCategories
-		m.selectedIdx = m.detailCat
-		return m, nil
-	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenCategories
 		m.selectedIdx = m.detailCat
 		return m, nil
@@ -84,13 +83,29 @@ func (m model) handleKeyWarnRecycleBin(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) handleKeyCategoryInfo(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m model) handleKeyWarnDuplicates(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenCategories
 		m.selectedIdx = m.detailCat
 		return m, nil
 	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+		m.categories[m.detailCat].selected = true
+		m.screen = ScreenCategories
+		m.selectedIdx = m.detailCat
+		return m, nil
+	}
+	return m, nil
+}
+
+func (m model) handleKeyCategoryInfo(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenCategories
 		m.selectedIdx = m.detailCat
 		return m, nil
@@ -99,19 +114,12 @@ func (m model) handleKeyCategoryInfo(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenCategories
 		m.selectedIdx = 0
-		return m, nil
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
-		m.screen = ScreenCategories
-		m.selectedIdx = 0
-		return m, nil
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
-		m.screen = ScreenMainMenu
-		m.selectedIdx = m.lastMainMenuIdx
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
@@ -126,7 +134,8 @@ func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
-			res, err := cleaner.Run(context.Background(), selected, m.result)
+			cfg, _ := config.Load()
+			res, err := cleaner.Run(context.Background(), selected, m.result, cfg)
 			if err != nil {
 				return cleanDoneMsg{nil, err}
 			}
@@ -194,9 +203,7 @@ func (m model) viewCategories() string {
 	}
 	body += "\n" + footer(
 		keyHint("Space", i18n.T("toggle")),
-		keyHint("Enter", i18n.T("confirm")),
 		keyHint("D", i18n.T("details")),
-		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
@@ -206,10 +213,13 @@ func (m model) viewWarnRecycleBin() string {
 	return m.appTitle(i18n.T("warning")) + "\n\n" +
 		dangerStyle.Render(fmt.Sprintf("  "+i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
 		mutedStyle.Render("  "+i18n.T("hint_recycle_warn")) + "\n\n" +
-		footer(
-			keyHint("Enter", i18n.T("continue_anyway")),
-			keyHint("Esc", i18n.T("back")),
-		)
+		footer()
+}
+
+func (m model) viewWarnDuplicates() string {
+	return m.appTitle(i18n.T("warning")) + "\n\n" +
+		reviewStyle.Render("  "+i18n.T("duplicate_files_warn")) + "\n\n" +
+		footer()
 }
 
 func (m model) viewCategoryInfo() string {
@@ -234,18 +244,13 @@ func (m model) viewCategoryInfo() string {
 		body += "  " + mutedStyle.Render(desc) + "\n\n"
 	}
 
-	body += footer(
-		keyHint("Esc", i18n.T("back")),
-	)
+	body += footer()
 	return body
 }
 
 func (m model) viewConfirm() string {
 	head := m.appTitle(i18n.T("confirm_cleanup"))
-	return head + "\n\n" + m.confirmMsg + "\n\n" + footer(
-		keyHint("Enter", i18n.T("proceed")),
-		keyHint("Esc", i18n.T("back")),
-	)
+	return head + "\n\n" + m.confirmMsg + "\n\n" + footer()
 }
 
 func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {

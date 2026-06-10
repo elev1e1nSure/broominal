@@ -267,15 +267,12 @@ func List() ([]string, error) {
 			continue
 		}
 		m, _ := GetManifest(id)
-		if m != nil {
-			infos = append(infos, entryInfo{id: id, time: m.CreatedAt})
-		} else {
-			// fallback to dir mod time
-			info, _ := os.Stat(filepath.Join(qDir, id))
-			if info != nil {
-				infos = append(infos, entryInfo{id: id, time: info.ModTime()})
-			}
+		if m == nil {
+			// No valid manifest — dir is orphaned (e.g. crash mid-cleanup).
+			// Skip it; age-based Cleanup will remove it on next startup.
+			continue
 		}
+		infos = append(infos, entryInfo{id: id, time: m.CreatedAt})
 	}
 	// sort newest first
 	sort.Slice(infos, func(i, j int) bool {
@@ -361,9 +358,10 @@ func cleanupQuarantines(shouldDelete func(time.Time) bool) (int, int64, error) {
 			})
 			if err := removeAllRetry(dirPath); err != nil {
 				errs = append(errs, err)
+			} else {
+				deleted++
+				freed += size
 			}
-			deleted++
-			freed += size
 		}
 	}
 

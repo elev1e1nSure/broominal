@@ -2,6 +2,7 @@ package quarantine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -318,13 +319,18 @@ func TestListAndGetLast(t *testing.T) {
 		t.Fatal("GetLast on empty should error")
 	}
 
-	// Create two quarantine dirs with different mod times
+	// Create two quarantine dirs with manifests
 	qDir := BaseDir()
 	_ = os.MkdirAll(qDir, 0755)
-	_ = os.MkdirAll(filepath.Join(qDir, "20200101-000000"), 0755)
-	_ = os.Chtimes(filepath.Join(qDir, "20200101-000000"), time.Now().Add(-time.Hour), time.Now().Add(-time.Hour))
-	_ = os.MkdirAll(filepath.Join(qDir, "20200101-010000"), 0755)
-	_ = os.Chtimes(filepath.Join(qDir, "20200101-010000"), time.Now(), time.Now())
+	writeManifest := func(id string, createdAt time.Time) {
+		dirPath := filepath.Join(qDir, id)
+		_ = os.MkdirAll(dirPath, 0755)
+		m := types.Manifest{ID: id, CreatedAt: createdAt}
+		data, _ := json.Marshal(m)
+		_ = os.WriteFile(filepath.Join(dirPath, "manifest.json"), data, 0644)
+	}
+	writeManifest("20200101-000000", time.Now().Add(-time.Hour))
+	writeManifest("20200101-010000", time.Now())
 
 	ids, err = List()
 	if err != nil {

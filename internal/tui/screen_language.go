@@ -17,9 +17,7 @@ func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
-		m.screen = ScreenConfig
-		m.selectedIdx = m.lastConfigIdx
-		return m, nil
+		return m, tea.Quit
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
 		if m.selectedIdx > 0 {
@@ -82,8 +80,6 @@ func (m model) viewLanguage() string {
 	}
 	body += "\n" + footer(
 		keyHint("Space", i18n.T("apply")),
-		keyHint("Enter", i18n.T("confirm")),
-		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }

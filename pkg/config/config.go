@@ -13,15 +13,20 @@ import (
 
 // Config holds user-configurable cleanup rules.
 type Config struct {
-	EnabledCategories    map[string]bool   `json:"enabled_categories"`
-	ActivePreset         string            `json:"active_preset"`
-	OldInstallerMonths   int               `json:"old_installer_months"`
-	LargeFileMinSizeMB   int               `json:"large_file_min_size_mb"`
-	LargeFileMonths      int               `json:"large_file_months"`
-	Exclusions           []string          `json:"exclusions"`
-	AutoRiskOverrides    map[string]string `json:"auto_risk_overrides"`
-	QuarantineMaxAgeDays int               `json:"quarantine_max_age_days"`
-	Language             string            `json:"language"`
+	EnabledCategories map[string]bool   `json:"enabled_categories"`
+	ActivePreset      string            `json:"active_preset"`
+	OldInstallerMonths int              `json:"old_installer_months"`
+	LargeFileMinSizeMB int              `json:"large_file_min_size_mb"`
+	LargeFileMonths    int              `json:"large_file_months"`
+	Exclusions         []string          `json:"exclusions"`
+	AutoRiskOverrides  map[string]string `json:"auto_risk_overrides"`
+	// QuarantineEnabled controls whether cleanups move files to quarantine (true, default)
+	// or permanently delete them without recovery (false).
+	QuarantineEnabled bool `json:"quarantine_enabled"`
+	// QuarantineAutoCleanupDays: 0 = disabled. When > 0, a Windows scheduled task runs
+	// `broominal quarantine-cleanup --force --max-age-days N` daily at 03:00.
+	QuarantineAutoCleanupDays int    `json:"quarantine_auto_cleanup_days,omitempty"`
+	Language                  string `json:"language"`
 }
 
 // Default returns the built-in default configuration.
@@ -38,11 +43,11 @@ func Default() *Config {
 			".git":         "review",
 			"node_modules": "review",
 		},
-		OldInstallerMonths:   6,
-		LargeFileMinSizeMB:   100,
-		LargeFileMonths:      6,
-		QuarantineMaxAgeDays: 30,
-		Language:             "",
+		OldInstallerMonths: 6,
+		LargeFileMinSizeMB: 100,
+		LargeFileMonths:    6,
+		QuarantineEnabled:  true,
+		Language:           "",
 	}
 }
 
@@ -102,8 +107,15 @@ func Load() (*Config, error) {
 	if cfg.LargeFileMonths <= 0 {
 		cfg.LargeFileMonths = defaults.LargeFileMonths
 	}
-	if cfg.QuarantineMaxAgeDays <= 0 {
-		cfg.QuarantineMaxAgeDays = defaults.QuarantineMaxAgeDays
+	// QuarantineEnabled defaults to true; existing configs without the field get true.
+	// We detect "missing from JSON" by checking if it was explicitly set to false.
+	// json.Unmarshal leaves bool fields as false when absent, so we can't distinguish
+	// absent-from-JSON from explicitly-false. Use the raw JSON to detect.
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err == nil {
+		if _, exists := raw["quarantine_enabled"]; !exists {
+			cfg.QuarantineEnabled = true
+		}
 	}
 	return &cfg, nil
 }

@@ -19,8 +19,8 @@ func TestDefault(t *testing.T) {
 	if cfg.LargeFileMonths != 6 {
 		t.Errorf("LargeFileMonths = %d, want 6", cfg.LargeFileMonths)
 	}
-	if cfg.QuarantineMaxAgeDays != 30 {
-		t.Errorf("QuarantineMaxAgeDays = %d, want 30", cfg.QuarantineMaxAgeDays)
+	if !cfg.QuarantineEnabled {
+		t.Errorf("QuarantineEnabled = false, want true")
 	}
 	if cfg.ActivePreset != string(PresetQuick) {
 		t.Errorf("ActivePreset = %q, want %q", cfg.ActivePreset, string(PresetQuick))
@@ -247,11 +247,10 @@ func TestLoadInvalidThresholds(t *testing.T) {
 	t.Setenv("LOCALAPPDATA", tmp)
 
 	bad := &Config{
-		EnabledCategories:    map[string]bool{"Temp": true},
-		OldInstallerMonths:   -1,
-		LargeFileMinSizeMB:   0,
-		LargeFileMonths:      -5,
-		QuarantineMaxAgeDays: 0,
+		EnabledCategories:  map[string]bool{"Temp": true},
+		OldInstallerMonths: -1,
+		LargeFileMinSizeMB: 0,
+		LargeFileMonths:    -5,
 	}
 	_ = os.MkdirAll(Dir(), 0755)
 	data, _ := json.Marshal(bad)
@@ -269,8 +268,5 @@ func TestLoadInvalidThresholds(t *testing.T) {
 	}
 	if cfg.LargeFileMonths <= 0 {
 		t.Errorf("LargeFileMonths = %d, want > 0", cfg.LargeFileMonths)
-	}
-	if cfg.QuarantineMaxAgeDays <= 0 {
-		t.Errorf("QuarantineMaxAgeDays = %d, want > 0", cfg.QuarantineMaxAgeDays)
 	}
 }

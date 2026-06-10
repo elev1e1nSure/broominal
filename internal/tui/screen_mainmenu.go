@@ -83,7 +83,6 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case 2: // Doctor
 			m.doctorChecks = doctor.Run()
-			m.doctorQuarantineStats = doctor.QuarantineStats()
 			m.screen = ScreenDoctor
 			return m, nil
 		case 3: // Settings
@@ -118,6 +117,6 @@ func (m model) viewMainMenu() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
 		}
 	}
-	body += "\n" + footer(keyHint("Enter", i18n.T("select")), keyHint("Q", i18n.T("quit")))
+	body += "\n" + footer(keyHint("Q", i18n.T("quit")))
 	return body
 }

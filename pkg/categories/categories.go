@@ -65,10 +65,7 @@ var All = []Def{
 	{Name: "Feedback Hub Logs", InternalKey: "feedback_hub_logs", Risk: types.RiskSafe, MinPreset: Standard},
 	{Name: "BranchCache", InternalKey: "branch_cache", Risk: types.RiskSafe, MinPreset: Standard},
 	// Deep
-	{Name: "Downloads", InternalKey: "downloads", Risk: types.RiskReview, MinPreset: Deep},
 	{Name: "Recycle Bin", InternalKey: "recycle_bin", Risk: types.RiskSafe, MinPreset: Deep},
-	{Name: "Old Installers", InternalKey: "old_installers", Risk: types.RiskReview, MinPreset: Deep},
-	{Name: "Large Old Files", InternalKey: "large_old_files", Risk: types.RiskReview, MinPreset: Deep},
 	{Name: "Windows Defender", InternalKey: "windows_defender", Risk: types.RiskReview, MinPreset: Deep},
 	{Name: "Startup Leftovers", InternalKey: "startup_leftover", Risk: types.RiskReview, MinPreset: Deep},
 	{Name: "Scheduled Tasks", InternalKey: "scheduled_tasks_leftover", Risk: types.RiskReview, MinPreset: Deep},

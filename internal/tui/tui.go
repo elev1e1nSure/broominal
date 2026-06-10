@@ -14,7 +14,6 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
-	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/types"
 	"github.com/elev1e1nSure/broominal/pkg/update"
 )
@@ -24,11 +23,6 @@ func Start(version string) (bool, error) {
 	cfg, _ := config.Load()
 	if cfg != nil && cfg.Language != "" {
 		i18n.SetLanguage(cfg.Language)
-	}
-	if cfg != nil && cfg.QuarantineMaxAgeDays > 0 {
-		if deleted, freed, err := quarantine.Cleanup(cfg.QuarantineMaxAgeDays); err == nil && deleted > 0 {
-			slog.Info("auto quarantine cleanup", "deleted", deleted, "freed", freed)
-		}
 	}
 	// Clean up leftover .old backup files from previous self-updates
 	if exePath, err := os.Executable(); err == nil {
@@ -247,6 +241,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleKeyCategories(msg)
 	case ScreenWarnRecycleBin:
 		return m.handleKeyWarnRecycleBin(msg)
+	case ScreenWarnDuplicates:
+		return m.handleKeyWarnDuplicates(msg)
 	case ScreenCategoryInfo:
 		return m.handleKeyCategoryInfo(msg)
 	case ScreenConfirm:
@@ -257,12 +253,18 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleKeyRestoreConflict(msg)
 	case ScreenRestore:
 		return m.handleKeyRestore(msg)
+	case ScreenConfirmDeleteQuarantine:
+		return m.handleKeyConfirmDeleteQuarantine(msg)
+	case ScreenConfirmDeleteAllQuarantine:
+		return m.handleKeyConfirmDeleteAllQuarantine(msg)
 	case ScreenDoctor:
 		return m.handleKeyDoctor(msg)
 	case ScreenConfig:
 		return m.handleKeyConfig(msg)
 	case ScreenConfigPresets:
 		return m.handleKeyConfigPresets(msg)
+	case ScreenQuarantineSettings:
+		return m.handleKeyQuarantineSettings(msg)
 	case ScreenQuarantineCleanup:
 		return m.handleKeyQuarantineCleanup(msg)
 	case ScreenLanguage:
@@ -295,6 +297,8 @@ func (m model) View() string {
 		return m.viewCategories()
 	case ScreenWarnRecycleBin:
 		return m.viewWarnRecycleBin()
+	case ScreenWarnDuplicates:
+		return m.viewWarnDuplicates()
 	case ScreenCategoryInfo:
 		return m.viewCategoryInfo()
 	case ScreenConfirm:
@@ -309,12 +313,18 @@ func (m model) View() string {
 		return m.viewError()
 	case ScreenRestore:
 		return m.viewRestore()
+	case ScreenConfirmDeleteQuarantine:
+		return m.viewConfirmDeleteQuarantine()
+	case ScreenConfirmDeleteAllQuarantine:
+		return m.viewConfirmDeleteAllQuarantine()
 	case ScreenDoctor:
 		return m.viewDoctor()
 	case ScreenConfig:
 		return m.viewConfig()
 	case ScreenConfigPresets:
 		return m.viewConfigPresets()
+	case ScreenQuarantineSettings:
+		return m.viewQuarantineSettings()
 	case ScreenQuarantineCleanup:
 		return m.viewQuarantineCleanup()
 	case ScreenQuarantineCleaning:

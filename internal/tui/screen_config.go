@@ -25,7 +25,7 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-		if m.selectedIdx < 2 {
+		if m.selectedIdx < 3 {
 			m.selectedIdx++
 		}
 		return m, nil
@@ -51,18 +51,21 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.pathConfirmIdx = 0
 			m.screen = ScreenPathConfirm
 			return m, nil
+		case 3: // Quarantine settings submenu
+			m.selectedIdx = 0
+			m.quarantineSettingsMsg = ""
+			m.screen = ScreenQuarantineSettings
+			return m, nil
 		}
 	}
 	return m, nil
 }
 
 func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
-		m.screen = ScreenConfig
-		m.selectedIdx = m.lastConfigIdx
-		return m, nil
-	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenConfig
 		m.selectedIdx = m.lastConfigIdx
 		return m, nil
@@ -79,7 +82,7 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys(" "))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		if m.configCfg != nil {
 			switch m.selectedIdx {
 			case 0:
@@ -91,9 +94,6 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 			_ = config.Save(m.configCfg)
 		}
-		return m, nil
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		m.screen = ScreenConfig
 		m.selectedIdx = m.lastConfigIdx
 		return m, nil
@@ -107,10 +107,14 @@ func (m model) viewConfig() string {
 	if inPath {
 		pathLabel = i18n.T("config_path_remove")
 	}
+
+	quarantineLabel := i18n.T("config_quarantine")
+
 	items := []string{
 		i18n.T("config_presets"),
 		i18n.T("config_language"),
 		pathLabel,
+		quarantineLabel,
 	}
 	var body string
 	body += m.appTitle(i18n.T("config")) + "\n\n"
@@ -121,10 +125,7 @@ func (m model) viewConfig() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
 		}
 	}
-	body += "\n" + footer(
-		keyHint("Enter", i18n.T("select")),
-		keyHint("Esc", i18n.T("back")),
-	)
+	body += "\n" + footer()
 	return body
 }
 
@@ -164,10 +165,7 @@ func (m model) viewConfigPresets() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.catsKey))) + "\n\n"
 		}
 	}
-	body += footer(
-		keyHint("Space", i18n.T("apply")),
-		keyHint("Enter", i18n.T("confirm")),
-		keyHint("Esc", i18n.T("back")),
-	)
+	body += mutedStyle.Render("  "+i18n.T("preset_note")) + "\n\n"
+	body += footer()
 	return body
 }

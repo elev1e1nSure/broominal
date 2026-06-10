@@ -2,8 +2,6 @@ package scanner
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 
 	"github.com/elev1e1nSure/broominal/pkg/categories"
 	"github.com/elev1e1nSure/broominal/pkg/config"
@@ -74,14 +72,7 @@ var scanFuncs = map[string]func(context.Context, *config.Config) ([]types.Item, 
 	"Feedback Hub Logs":          scanFeedbackHubLogs,
 	"BranchCache":                scanBranchCache,
 	// Deep
-	"Downloads": scanDownloads,
-	"Recycle Bin": scanRecycleBin,
-	"Old Installers": func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		return scanOldInstallers(ctx, filepath.Join(os.Getenv("USERPROFILE"), "Downloads"), cfg)
-	},
-	"Large Old Files": func(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-		return scanLargeOldFiles(ctx, filepath.Join(os.Getenv("USERPROFILE"), "Downloads"), cfg)
-	},
+	"Recycle Bin":         scanRecycleBin,
 	"Windows Defender":    scanWindowsDefender,
 	"Startup Leftovers":   scanStartupLeftovers,
 	"Scheduled Tasks":     scanScheduledTasksLeftovers,
