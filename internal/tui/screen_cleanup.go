@@ -44,7 +44,10 @@ func (m model) viewQuarantineCleanup() string {
 	head := m.appTitle(i18n.T("quarantine_cleanup"))
 	return head + "\n\n" +
 		mutedStyle.Render("  "+i18n.T("cleanup_desc")) + "\n\n" +
-		footer()
+		footer(
+			keyHint("Enter", i18n.T("confirm")),
+			keyHint("Esc", i18n.T("back")),
+		)
 }
 
 func (m model) viewQuarantineCleaning() string {

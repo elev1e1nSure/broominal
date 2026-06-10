@@ -134,7 +134,9 @@ func (m model) viewDashboard() string {
 	}
 
 	body += "\n" + footer(
+		keyHint("Enter", i18n.T("confirm")),
 		keyHint("D", i18n.T("select_categories")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }

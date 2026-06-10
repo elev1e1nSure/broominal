@@ -205,6 +205,7 @@ func (m model) viewCategories() string {
 	body += "\n" + footer(
 		keyHint("Space", i18n.T("toggle")),
 		keyHint("D", i18n.T("details")),
+		keyHint("Enter", i18n.T("confirm")),
 		keyHint("Esc", i18n.T("back")),
 	)
 	return body
@@ -215,13 +216,19 @@ func (m model) viewWarnRecycleBin() string {
 	return m.appTitle(i18n.T("warning")) + "\n\n" +
 		dangerStyle.Render(fmt.Sprintf("  "+i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
 		mutedStyle.Render("  "+i18n.T("hint_recycle_warn")) + "\n\n" +
-		footer()
+		footer(
+			keyHint("Enter", i18n.T("proceed")),
+			keyHint("Esc", i18n.T("back")),
+		)
 }
 
 func (m model) viewWarnDuplicates() string {
 	return m.appTitle(i18n.T("warning")) + "\n\n" +
 		reviewStyle.Render("  "+i18n.T("duplicate_files_warn")) + "\n\n" +
-		footer()
+		footer(
+			keyHint("Enter", i18n.T("proceed")),
+			keyHint("Esc", i18n.T("back")),
+		)
 }
 
 func (m model) viewCategoryInfo() string {
@@ -246,13 +253,16 @@ func (m model) viewCategoryInfo() string {
 		body += "  " + mutedStyle.Render(desc) + "\n\n"
 	}
 
-	body += footer()
+	body += footer(keyHint("Esc", i18n.T("back")))
 	return body
 }
 
 func (m model) viewConfirm() string {
 	head := m.appTitle(i18n.T("confirm_cleanup"))
-	return head + "\n\n" + m.confirmMsg + "\n\n" + footer()
+	return head + "\n\n" + m.confirmMsg + "\n\n" + footer(
+		keyHint("Enter", i18n.T("confirm")),
+		keyHint("Esc", i18n.T("back")),
+	)
 }
 
 func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {

@@ -71,6 +71,7 @@ func (m model) viewDoctor() string {
 	if hasFix {
 		hints = append(hints, keyHint("F", i18n.T("fix_issue")))
 	}
+	hints = append(hints, keyHint("Esc", i18n.T("back")))
 	body += "\n" + footer(hints...)
 	return body
 }

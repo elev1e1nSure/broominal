@@ -83,6 +83,9 @@ func (m model) viewPathResult() string {
 	var body string
 	body += m.appTitle(m.pathResultMsg) + "\n\n"
 	body += "  " + mutedStyle.Render(i18n.T("path_result_restart_terminal")) + "\n\n"
-	body += footer()
+	body += footer(
+		keyHint("Enter", i18n.T("back")),
+		keyHint("Esc", i18n.T("back")),
+	)
 	return body
 }

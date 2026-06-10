@@ -123,8 +123,8 @@ var (
 	mutedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#9ca3af"))
 	disabledStyle = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("#6b7280"))
 	barTrackStyle = lipgloss.NewStyle().Background(lipgloss.Color("#2b2b2b"))
-	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#d1d5db"))
-	keyDescStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#6b7280"))
+	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#93c5fd"))
+	keyDescStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#475569"))
 	valueStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#e5e7eb"))
 )
 

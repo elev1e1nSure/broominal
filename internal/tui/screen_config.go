@@ -130,7 +130,10 @@ func (m model) viewConfig() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
 		}
 	}
-	body += "\n" + footer()
+	body += "\n" + footer(
+		keyHint("Enter", i18n.T("select")),
+		keyHint("Esc", i18n.T("back")),
+	)
 	return body
 }
 

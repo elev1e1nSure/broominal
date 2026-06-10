@@ -158,6 +158,7 @@ func (m model) viewRestore() string {
 		keyHint("Enter", i18n.T("restore")),
 		keyHint("X", i18n.T("delete")),
 		keyHint("A", i18n.T("delete_all")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }
@@ -171,14 +172,20 @@ func (m model) viewConfirmDeleteQuarantine() string {
 	return m.appTitle(i18n.T("warning")) + "\n\n" +
 		reviewStyle.Render("  "+i18n.T("confirm_delete_one")) + "\n" +
 		mutedStyle.Render("  "+entry) + "\n\n" +
-		footer()
+		footer(
+			keyHint("Enter", i18n.T("confirm")),
+			keyHint("Esc", i18n.T("back")),
+		)
 }
 
 func (m model) viewConfirmDeleteAllQuarantine() string {
 	msg := fmt.Sprintf(i18n.T("confirm_delete_all"), len(m.restoreEntries))
 	return m.appTitle(i18n.T("warning")) + "\n\n" +
 		dangerStyle.Render("  "+msg) + "\n\n" +
-		footer()
+		footer(
+			keyHint("Enter", i18n.T("confirm")),
+			keyHint("Esc", i18n.T("back")),
+		)
 }
 
 // reloadEntries returns an up-to-date list of quarantine entries.

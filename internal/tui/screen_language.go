@@ -80,6 +80,8 @@ func (m model) viewLanguage() string {
 	}
 	body += "\n" + footer(
 		keyHint("Space", i18n.T("apply")),
+		keyHint("Enter", i18n.T("confirm")),
+		keyHint("Esc", i18n.T("back")),
 	)
 	return body
 }

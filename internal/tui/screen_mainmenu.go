@@ -117,6 +117,9 @@ func (m model) viewMainMenu() string {
 			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
 		}
 	}
-	body += "\n" + footer(keyHint("Q", i18n.T("quit")))
+	body += "\n" + footer(
+		keyHint("Enter", i18n.T("select")),
+		keyHint("Q", i18n.T("quit")),
+	)
 	return body
 }
