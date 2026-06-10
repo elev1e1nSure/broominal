@@ -47,12 +47,6 @@ func (m model) viewDashboard() string {
 		return cats[i].Size > cats[j].Size
 	})
 
-	barWidth := 24
-	maxSize := int64(0)
-	if len(cats) > 0 {
-		maxSize = cats[0].Size
-	}
-
 	body := m.appTitle(i18n.T("dashboard")) + "\n\n"
 	body += fmt.Sprintf("  %s  ·  %d %s  ·  %d %s\n",
 		valueStyle.Render(util.FormatSize(m.result.TotalSize)),
@@ -71,16 +65,7 @@ func (m model) viewDashboard() string {
 	for i := 0; i < visible; i++ {
 		c := cats[i]
 		name := i18n.CategoryName(c.Category)
-		blocks := 0
-		if maxSize > 0 {
-			blocks = int(c.Size * int64(barWidth) / maxSize)
-		}
-		if blocks == 0 && c.Size > 0 {
-			blocks = 1
-		}
-		empty := barWidth - blocks
-		bar := mutedStyle.Render(strings.Repeat("█", blocks)) + strings.Repeat(" ", empty)
-		body += fmt.Sprintf("  %-22s %s  %s\n", name, bar, util.FormatSize(c.Size))
+		body += fmt.Sprintf("  %-22s %s\n", name, util.FormatSize(c.Size))
 	}
 
 	if len(cats) > visible {
