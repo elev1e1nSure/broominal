@@ -75,7 +75,17 @@ func (m model) viewUpdateAvailable() string {
 		body += mutedStyle.Render("  "+i18n.T("update_prompt")) + "\n\n"
 	}
 
-	body += footer()
+	if m.updateFromConfig {
+		body += footer(
+			keyHint("Enter", i18n.T("yes_update")),
+			keyHint("Esc", i18n.T("back")),
+		)
+	} else {
+		body += footer(
+			keyHint("Enter", i18n.T("yes_update")),
+			keyHint("Esc", i18n.T("skip")),
+		)
+	}
 	return body
 }
 
@@ -96,7 +106,10 @@ func (m model) viewNoUpdate() string {
 	var body string
 	body += m.appTitle(i18n.T("no_update")) + "\n\n"
 	body += "  " + safeStyle.Render(i18n.T("no_update_desc")) + "\n\n"
-	body += footer()
+	body += footer(
+		keyHint("Enter", i18n.T("back")),
+		keyHint("Esc", i18n.T("back")),
+	)
 	return body
 }
 
@@ -106,7 +119,7 @@ func (m model) viewUpdating() string {
 	if m.updateError != nil {
 		body += fmt.Sprintf("  %s\n", m.updateProgress)
 		body += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"
-		body += "\n" + footer()
+		body += "\n" + footer(keyHint("Esc", i18n.T("back")))
 	} else {
 		body += fmt.Sprintf("  %s %s\n", m.spinner.View(), m.updateProgress)
 		body += "\n" + mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
