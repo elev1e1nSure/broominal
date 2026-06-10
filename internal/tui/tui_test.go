@@ -7,6 +7,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/types"
@@ -453,8 +454,7 @@ func TestConfigEscReturnsToMainMenuWithLastIdx(t *testing.T) {
 
 func TestConfigSubScreensRestoreLastConfigIdx(t *testing.T) {
 	m := initialModel()
-	m.screen = ScreenConfig
-	m.selectedIdx = 1 // Language
+	m.screen = ScreenLanguage
 	m.lastConfigIdx = 1
 	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 	mm := newM.(model)
