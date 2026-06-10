@@ -293,62 +293,61 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	var content string
 	switch m.screen {
 	case ScreenMainMenu:
-		content = m.viewMainMenu()
+		return m.viewMainMenu()
 	case ScreenDashboard:
-		content = m.viewDashboard()
+		return m.viewDashboard()
 	case ScreenCategories:
-		content = m.viewCategories()
+		return m.viewCategories()
 	case ScreenWarnRecycleBin:
-		content = m.viewWarnRecycleBin()
+		return m.viewWarnRecycleBin()
 	case ScreenWarnDuplicates:
-		content = m.viewWarnDuplicates()
+		return m.viewWarnDuplicates()
 	case ScreenCategoryInfo:
-		content = m.viewCategoryInfo()
+		return m.viewCategoryInfo()
 	case ScreenConfirm:
-		content = m.viewConfirm()
+		return m.viewConfirm()
 	case ScreenCleaning:
-		content = m.viewCleaning()
+		return m.viewCleaning()
 	case ScreenResult:
-		content = m.viewResult()
+		return m.viewResult()
 	case ScreenRestoreConflict:
-		content = m.viewRestoreConflict()
+		return m.viewRestoreConflict()
 	case ScreenError:
-		content = m.viewError()
+		return m.viewError()
 	case ScreenRestore:
-		content = m.viewRestore()
+		return m.viewRestore()
 	case ScreenConfirmDeleteQuarantine:
-		content = m.viewConfirmDeleteQuarantine()
+		return m.viewConfirmDeleteQuarantine()
 	case ScreenConfirmDeleteAllQuarantine:
-		content = m.viewConfirmDeleteAllQuarantine()
+		return m.viewConfirmDeleteAllQuarantine()
 	case ScreenDoctor:
-		content = m.viewDoctor()
+		return m.viewDoctor()
 	case ScreenConfig:
-		content = m.viewConfig()
+		return m.viewConfig()
 	case ScreenConfigPresets:
-		content = m.viewConfigPresets()
+		return m.viewConfigPresets()
 	case ScreenQuarantineSettings:
-		content = m.viewQuarantineSettings()
+		return m.viewQuarantineSettings()
 	case ScreenQuarantineCleanup:
-		content = m.viewQuarantineCleanup()
+		return m.viewQuarantineCleanup()
 	case ScreenQuarantineCleaning:
-		content = m.viewQuarantineCleaning()
+		return m.viewQuarantineCleaning()
 	case ScreenLanguage:
-		content = m.viewLanguage()
+		return m.viewLanguage()
 	case ScreenAdminPrompt:
-		content = m.viewAdminPrompt()
+		return m.viewAdminPrompt()
 	case ScreenUpdateAvailable:
-		content = m.viewUpdateAvailable()
+		return m.viewUpdateAvailable()
 	case ScreenUpdating:
-		content = m.viewUpdating()
+		return m.viewUpdating()
 	case ScreenNoUpdate:
-		content = m.viewNoUpdate()
+		return m.viewNoUpdate()
 	case ScreenPathConfirm:
-		content = m.viewPathConfirm()
+		return m.viewPathConfirm()
 	case ScreenPathResult:
-		content = m.viewPathResult()
+		return m.viewPathResult()
 	}
-	return backgroundStyle.Width(m.width).Height(m.height).Render(content)
+	return ""
 }
