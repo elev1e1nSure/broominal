@@ -34,12 +34,6 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return downloadUpdateMsg{path, err}
 		})
 	}
-	if s == "n" && !m.updateFromConfig {
-		m.screen = ScreenMainMenu
-		m.selectedIdx = m.lastMainMenuIdx
-		m.updateAvailableRelease = nil
-		return m, nil
-	}
 	return m, nil
 }
 
@@ -78,14 +72,13 @@ func (m model) viewUpdateAvailable() string {
 
 	if m.updateFromConfig {
 		body += footer(
-			keyHint("Y", i18n.T("yes_update")),
+			keyHint("Enter", i18n.T("yes_update")),
 			keyHint("Esc", i18n.T("back")),
 		)
 	} else {
 		body += footer(
-			keyHint("Y", i18n.T("yes_update")),
-			keyHint("N", i18n.T("no")),
-			keyHint("Esc", i18n.T("back")),
+			keyHint("Enter", i18n.T("yes_update")),
+			keyHint("Esc", i18n.T("skip")),
 		)
 	}
 	return body
