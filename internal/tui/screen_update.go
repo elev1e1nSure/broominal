@@ -15,8 +15,13 @@ type installUpdateMsg struct {
 func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	s := msg.String()
 	if s == "esc" || s == "q" {
-		m.screen = ScreenConfig
-		m.selectedIdx = m.lastConfigIdx
+		if m.updateFromConfig {
+			m.screen = ScreenConfig
+			m.selectedIdx = m.lastConfigIdx
+		} else {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = m.lastMainMenuIdx
+		}
 		m.updateAvailableRelease = nil
 		m.updateError = nil
 		return m, nil
@@ -29,6 +34,12 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return downloadUpdateMsg{path, err}
 		})
 	}
+	if s == "n" && !m.updateFromConfig {
+		m.screen = ScreenMainMenu
+		m.selectedIdx = m.lastMainMenuIdx
+		m.updateAvailableRelease = nil
+		return m, nil
+	}
 	return m, nil
 }
 
@@ -40,8 +51,13 @@ func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if m.updateError != nil {
 		if s == "esc" || s == "q" {
-			m.screen = ScreenConfig
-			m.selectedIdx = m.lastConfigIdx
+			if m.updateFromConfig {
+				m.screen = ScreenConfig
+				m.selectedIdx = m.lastConfigIdx
+			} else {
+				m.screen = ScreenMainMenu
+				m.selectedIdx = m.lastMainMenuIdx
+			}
 			m.updateError = nil
 			m.updateProgress = ""
 			return m, nil
@@ -60,10 +76,18 @@ func (m model) viewUpdateAvailable() string {
 		body += mutedStyle.Render("  "+i18n.T("update_prompt")) + "\n\n"
 	}
 
-	body += footer(
-		keyHint("Y", i18n.T("yes_update")),
-		keyHint("Esc", i18n.T("back")),
-	)
+	if m.updateFromConfig {
+		body += footer(
+			keyHint("Y", i18n.T("yes_update")),
+			keyHint("Esc", i18n.T("back")),
+		)
+	} else {
+		body += footer(
+			keyHint("Y", i18n.T("yes_update")),
+			keyHint("N", i18n.T("no")),
+			keyHint("Esc", i18n.T("back")),
+		)
+	}
 	return body
 }
 
