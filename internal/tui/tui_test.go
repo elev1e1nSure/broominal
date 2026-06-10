@@ -132,6 +132,10 @@ func TestViewDashboard(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenDashboard
 	m.result = &types.ScanResult{
+		Categories: []types.CategorySummary{
+			{Category: "Temp", Risk: types.RiskSafe, Size: 100, Files: 1},
+			{Category: "Downloads", Risk: types.RiskReview, Size: 200, Files: 2},
+		},
 		TotalSize:  300,
 		SafeSize:   100,
 		ReviewSize: 200,
@@ -141,8 +145,11 @@ func TestViewDashboard(t *testing.T) {
 	if !strings.Contains(out, "Dashboard") {
 		t.Error("dashboard view should contain 'Dashboard'")
 	}
-	if !strings.Contains(out, "Total found") {
-		t.Error("dashboard view should contain 'Total found'")
+	if !strings.Contains(out, "300 B") {
+		t.Error("dashboard view should contain total size")
+	}
+	if !strings.Contains(out, "3 Files") {
+		t.Error("dashboard view should contain file count")
 	}
 }
 

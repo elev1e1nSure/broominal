@@ -2,14 +2,12 @@ package tui
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	lipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
-	"github.com/elev1e1nSure/broominal/pkg/style"
-	"github.com/elev1e1nSure/broominal/pkg/types"
 	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
@@ -37,52 +35,55 @@ func (m model) viewDashboard() string {
 		return m.spinner.View() + " " + i18n.T("scanning") + "\n"
 	}
 
-	// Risk summary
-	body := m.appTitle(i18n.T("dashboard")) + "\n\n" +
-		fmt.Sprintf("  %s: %s\n", i18n.T("total_found"), valueStyle.Render(util.FormatSize(m.result.TotalSize))) +
-		fmt.Sprintf("  %s %s:       %s\n", safeStyle.Render("●"), i18n.T("safe"), valueStyle.Render(util.FormatSize(m.result.SafeSize))) +
-		fmt.Sprintf("  %s %s:       %s\n", reviewStyle.Render("●"), i18n.T("review"), valueStyle.Render(util.FormatSize(m.result.ReviewSize))) +
-		fmt.Sprintf("  %s %s:       %s\n", dangerStyle.Render("●"), i18n.T("danger"), valueStyle.Render(util.FormatSize(m.result.DangerSize))) +
-		"\n"
-
-	// Category list sorted by size desc
-	cats := make([]types.CategorySummary, len(m.result.Categories))
-	copy(cats, m.result.Categories)
-	sort.Slice(cats, func(i, j int) bool {
-		return cats[i].Size > cats[j].Size
-	})
-
-	visible := m.height - 12
-	if visible < 3 {
-		visible = 3
-	}
-	if visible > len(cats) {
-		visible = len(cats)
+	var totalFiles int
+	for _, c := range m.result.Categories {
+		totalFiles += c.Files
 	}
 
-	catW, sizeW, filesW := 32, 10, 8
-	head := style.Cyanf("%-*s %*s %*s", catW, i18n.T("category"), sizeW, i18n.T("size"), filesW, i18n.T("files"))
-	body += "  " + mutedStyle.Render(head) + "\n"
-	body += "  " + mutedStyle.Render(style.Grayf(strings.Repeat("─", catW+sizeW+filesW+2))) + "\n"
+	barWidth := 32
+	total := m.result.TotalSize
 
-	for i := 0; i < visible; i++ {
-		c := cats[i]
-		name := i18n.CategoryName(c.Category)
-		var riskDot string
-		switch c.Risk {
-		case types.RiskSafe:
-			riskDot = safeStyle.Render("●")
-		case types.RiskReview:
-			riskDot = reviewStyle.Render("●")
-		case types.RiskDanger:
-			riskDot = dangerStyle.Render("●")
+	bar := func(size int64, st lipgloss.Style) string {
+		if total == 0 {
+			return strings.Repeat(" ", barWidth)
 		}
-		line := fmt.Sprintf("%-*s %*s %*s %s", catW, name, sizeW, util.FormatSize(c.Size), filesW, style.Cyanf("%d", c.Files), riskDot)
-		body += "  " + line + "\n"
+		blocks := int(size * int64(barWidth) / total)
+		if blocks > barWidth {
+			blocks = barWidth
+		}
+		if blocks == 0 && size > 0 {
+			blocks = 1
+		}
+		empty := barWidth - blocks
+		return st.Render(strings.Repeat("█", blocks)) + strings.Repeat(" ", empty)
 	}
 
-	if len(cats) > visible {
-		body += "  " + mutedStyle.Render(fmt.Sprintf("... %s (%d)", i18n.T("more_categories"), len(cats)-visible)) + "\n"
+	body := m.appTitle(i18n.T("dashboard")) + "\n\n"
+	body += fmt.Sprintf("  %s  ·  %d %s  ·  %d %s\n",
+		valueStyle.Render(util.FormatSize(m.result.TotalSize)),
+		totalFiles,
+		i18n.T("files"),
+		len(m.result.Categories),
+		i18n.T("categories"),
+	)
+	body += "  " + mutedStyle.Render(strings.Repeat("─", 50)) + "\n\n"
+
+	labels := []struct {
+		name string
+		size int64
+		st   lipgloss.Style
+	}{
+		{i18n.T("safe"), m.result.SafeSize, safeStyle},
+		{i18n.T("review"), m.result.ReviewSize, reviewStyle},
+		{i18n.T("danger"), m.result.DangerSize, dangerStyle},
+	}
+
+	for _, l := range labels {
+		pct := 0
+		if total > 0 {
+			pct = int(l.size * 100 / total)
+		}
+		body += fmt.Sprintf("  %-10s %s  %s (%d%%)\n", l.name, bar(l.size, l.st), util.FormatSize(l.size), pct)
 	}
 
 	body += "\n" + footer(keyHint("D", i18n.T("select_categories")), keyHint("Enter", i18n.T("confirm")), keyHint("Esc", i18n.T("back")))
