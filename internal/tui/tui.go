@@ -155,10 +155,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.screen = ScreenMainMenu
 			}
-			m.updateFromConfig = false
 			return m, nil
 		}
-		m.updateFromConfig = false
 		m.updateAvailableRelease = msg.release
 		m.screen = ScreenUpdateAvailable
 		return m, nil
