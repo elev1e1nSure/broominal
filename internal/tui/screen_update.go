@@ -63,7 +63,7 @@ func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if strings.HasSuffix(exePath, ".old") {
 			exePath = strings.TrimSuffix(exePath, ".old")
 		}
-		_ = exec.Command("cmd", "/c", "start", "", exePath, "ui").Start()
+		_ = exec.Command(exePath, "ui").Start()
 		return m, tea.Quit
 	}
 	if m.updateError != nil {
