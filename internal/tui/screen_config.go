@@ -82,23 +82,28 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
-		if m.configCfg != nil {
-			switch m.selectedIdx {
-			case 0:
-				m.configCfg.ApplyPreset(config.PresetQuick)
-			case 1:
-				m.configCfg.ApplyPreset(config.PresetStandard)
-			case 2:
-				m.configCfg.ApplyPreset(config.PresetDeep)
-			}
-			_ = config.Save(m.configCfg)
-		}
-		m.screen = ScreenConfig
-		m.selectedIdx = m.lastConfigIdx
+	if key.Matches(msg, key.NewBinding(key.WithKeys("enter", "space"))) {
+		m.applySelectedPreset()
 		return m, nil
 	}
 	return m, nil
+}
+
+func (m *model) applySelectedPreset() {
+	if m.configCfg == nil {
+		return
+	}
+	switch m.selectedIdx {
+	case 0:
+		m.configCfg.ApplyPreset(config.PresetQuick)
+	case 1:
+		m.configCfg.ApplyPreset(config.PresetStandard)
+	case 2:
+		m.configCfg.ApplyPreset(config.PresetDeep)
+	default:
+		return
+	}
+	_ = config.Save(m.configCfg)
 }
 
 func (m model) viewConfig() string {
@@ -166,6 +171,9 @@ func (m model) viewConfigPresets() string {
 		}
 	}
 	body += mutedStyle.Render("  "+i18n.T("preset_note")) + "\n\n"
-	body += footer()
+	body += footer(
+		keyHint("Enter/Space", i18n.T("apply")),
+		keyHint("Esc", i18n.T("back")),
+	)
 	return body
 }

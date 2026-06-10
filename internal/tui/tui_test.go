@@ -7,6 +7,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
@@ -151,6 +152,48 @@ func TestViewDashboard(t *testing.T) {
 	if !strings.Contains(out, "3 Files") {
 		t.Error("dashboard view should contain file count")
 	}
+	if strings.Contains(out, "░") || strings.Contains(out, "█") {
+		t.Error("dashboard bars should use fixed background segments")
+	}
+}
+
+func TestViewDashboardAlignsLongCategoryNames(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenDashboard
+	m.result = &types.ScanResult{
+		Categories: []types.CategorySummary{
+			{Category: "Very long category name that should not move the bar", Risk: types.RiskSafe, Size: 100, Files: 1},
+			{Category: "Short", Risk: types.RiskReview, Size: 50, Files: 1},
+		},
+		TotalSize:  150,
+		SafeSize:   100,
+		ReviewSize: 50,
+	}
+	out := m.View()
+	lines := strings.Split(out, "\n")
+	var sizeStarts []int
+	for _, line := range lines {
+		switch {
+		case strings.Contains(line, "Very long category name that"):
+			idx := strings.Index(line, "100 B")
+			if idx < 0 {
+				t.Fatalf("expected size in %q", line)
+			}
+			sizeStarts = append(sizeStarts, idx)
+		case strings.Contains(line, "Short"):
+			idx := strings.Index(line, "50 B")
+			if idx < 0 {
+				t.Fatalf("expected size in %q", line)
+			}
+			sizeStarts = append(sizeStarts, idx)
+		}
+	}
+	if len(sizeStarts) != 2 {
+		t.Fatalf("expected 2 category rows, got %d", len(sizeStarts))
+	}
+	if sizeStarts[0] != sizeStarts[1] {
+		t.Fatalf("size column should align, got %v", sizeStarts)
+	}
 }
 
 func TestViewCategories(t *testing.T) {
@@ -170,6 +213,33 @@ func TestViewCategories(t *testing.T) {
 	}
 	if !strings.Contains(out, "Downloads") {
 		t.Error("view should contain 'Downloads'")
+	}
+}
+
+func TestViewCategoriesAlignsLongNames(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenCategories
+	m.categories = []categoryItem{
+		{cat: types.CategorySummary{Category: "Very long category name that should not move the size column", Size: 100, Files: 1, Risk: types.RiskSafe}, selected: true},
+		{cat: types.CategorySummary{Category: "Short", Size: 50, Files: 2, Risk: types.RiskReview}, selected: false},
+	}
+	m.selectedIdx = 0
+
+	out := ansi.Strip(m.View())
+	var sizeCols []int
+	for _, line := range strings.Split(out, "\n") {
+		switch {
+		case strings.Contains(line, "100 B"):
+			sizeCols = append(sizeCols, strings.Index(line, "100 B"))
+		case strings.Contains(line, "50 B"):
+			sizeCols = append(sizeCols, strings.Index(line, "50 B"))
+		}
+	}
+	if len(sizeCols) != 2 {
+		t.Fatalf("expected 2 category rows, got %d", len(sizeCols))
+	}
+	if sizeCols[0] != sizeCols[1] {
+		t.Fatalf("size columns should align, got %v", sizeCols)
 	}
 }
 
@@ -419,6 +489,9 @@ func TestQuarantineSettingsDisabledLocksAutoCleanup(t *testing.T) {
 	if !strings.Contains(out, "Выключено") {
 		t.Error("view should show quarantine as disabled")
 	}
+	if !strings.Contains(out, "[Сначала включите карантин]") {
+		t.Error("view should explain that quarantine must be enabled first")
+	}
 
 	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyDown})
 	mm := newM.(model)
@@ -431,6 +504,40 @@ func TestQuarantineSettingsDisabledLocksAutoCleanup(t *testing.T) {
 	mm = newM.(model)
 	if mm.configCfg.QuarantineAutoCleanupDays != 7 {
 		t.Errorf("disabled auto-cleanup should not change, got %d", mm.configCfg.QuarantineAutoCleanupDays)
+	}
+}
+
+func TestHandleKeyConfigPresetsStayOnScreen(t *testing.T) {
+	t.Setenv("LOCALAPPDATA", t.TempDir())
+
+	m := initialModel()
+	m.screen = ScreenConfigPresets
+	m.selectedIdx = 1
+	m.lastConfigIdx = 3
+	m.configCfg = config.Default()
+
+	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyEnter})
+	mm := newM.(model)
+	if mm.screen != ScreenConfigPresets {
+		t.Errorf("screen should stay on presets, got %d", mm.screen)
+	}
+	if mm.selectedIdx != 1 {
+		t.Errorf("selectedIdx should stay on selected preset, got %d", mm.selectedIdx)
+	}
+	if mm.configCfg.ActivePreset != string(config.PresetStandard) {
+		t.Errorf("expected standard preset, got %q", mm.configCfg.ActivePreset)
+	}
+
+	newM2, _ := mm.handleKey(tea.KeyMsg{Type: tea.KeySpace})
+	mm2 := newM2.(model)
+	if mm2.screen != ScreenConfigPresets {
+		t.Errorf("screen should stay on presets after space, got %d", mm2.screen)
+	}
+	if mm2.selectedIdx != 1 {
+		t.Errorf("selectedIdx should stay on selected preset after space, got %d", mm2.selectedIdx)
+	}
+	if mm2.configCfg.ActivePreset != string(config.PresetStandard) {
+		t.Errorf("expected standard preset after space, got %q", mm2.configCfg.ActivePreset)
 	}
 }
 

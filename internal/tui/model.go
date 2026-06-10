@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	lipgloss "github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/types"
@@ -121,6 +122,7 @@ var (
 	dangerStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#f87171"))
 	mutedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#9ca3af"))
 	disabledStyle = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("#6b7280"))
+	barTrackStyle = lipgloss.NewStyle().Background(lipgloss.Color("#2b2b2b"))
 	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#d6b15f"))
 	valueStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#e5e7eb"))
 )
@@ -131,6 +133,14 @@ func keyHint(k, desc string) string {
 
 func footer(hints ...string) string {
 	return mutedStyle.Render(strings.Join(hints, "  "))
+}
+
+func barFillStyle(color lipgloss.Color) lipgloss.Style {
+	return lipgloss.NewStyle().Background(color)
+}
+
+func truncateDisplay(s string, width int) string {
+	return ansi.Truncate(s, width, "…")
 }
 
 // clampWindow returns start/end indices so that idx is visible within a window of size visible.

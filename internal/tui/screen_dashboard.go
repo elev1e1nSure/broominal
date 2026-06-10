@@ -46,6 +46,17 @@ func riskStyle(risk types.RiskLevel) lipgloss.Style {
 	}
 }
 
+func riskColor(risk types.RiskLevel) lipgloss.Color {
+	switch risk {
+	case types.RiskReview:
+		return lipgloss.Color("#fbbf24")
+	case types.RiskDanger:
+		return lipgloss.Color("#f87171")
+	default:
+		return lipgloss.Color("#4ade80")
+	}
+}
+
 func (m model) viewDashboard() string {
 	if m.result == nil {
 		if m.scanTotal > 0 {
@@ -97,7 +108,8 @@ func (m model) viewDashboard() string {
 	body += "  " + mutedStyle.Render(strings.Repeat("─", 52)) + "\n\n"
 
 	// ── Category bars ────────────────────────────────────────────────────────
-	const barWidth = 22
+	const nameWidth = 30
+	const barWidth = 18
 	maxSize := int64(1)
 	for _, c := range cats {
 		if c.Size > maxSize {
@@ -110,14 +122,15 @@ func (m model) viewDashboard() string {
 			continue
 		}
 		rs := riskStyle(c.Risk)
-		name := i18n.CategoryName(c.Category)
+		name := truncateDisplay(i18n.CategoryName(c.Category), nameWidth)
 		filled := int(float64(c.Size) / float64(maxSize) * barWidth)
 		if filled < 1 {
 			filled = 1
 		}
-		bar := rs.Render(strings.Repeat("█", filled)) + mutedStyle.Render(strings.Repeat("░", barWidth-filled))
+		bar := barFillStyle(riskColor(c.Risk)).Render(strings.Repeat(" ", filled)) + barTrackStyle.Render(strings.Repeat(" ", barWidth-filled))
 		sizeStr := fmt.Sprintf("%9s", util.FormatSize(c.Size))
-		body += fmt.Sprintf("  %-22s %s  %s\n", name, bar, rs.Render(sizeStr))
+		nameCell := lipgloss.NewStyle().Width(nameWidth).Render(name)
+		body += fmt.Sprintf("  %s %s  %s\n", nameCell, bar, rs.Render(sizeStr))
 	}
 
 	body += "\n" + footer(

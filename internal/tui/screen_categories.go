@@ -193,8 +193,9 @@ func (m model) viewCategories() string {
 		}
 		riskSt = riskSt.Foreground(riskCol).Bold(true)
 		riskLabel := i18n.T("risk_" + strings.ToLower(string(c.cat.Risk)))
+		name := truncateDisplay(i18n.CategoryName(c.cat.Category), catW)
 		line := prefix +
-			nameSt.Render(i18n.CategoryName(c.cat.Category)) + " " +
+			nameSt.Render(name) + " " +
 			sizeSt.Render(util.FormatSize(c.cat.Size)) + " " +
 			filesSt.Render(fmt.Sprintf("%d", c.cat.Files)) + " " +
 			riskSt.Render(riskLabel) + " " +
