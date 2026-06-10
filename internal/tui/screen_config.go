@@ -16,7 +16,7 @@ import (
 func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastMainMenuIdx
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
@@ -32,6 +32,7 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+		m.lastConfigIdx = m.selectedIdx
 		switch m.selectedIdx {
 		case 0: // Presets
 			m.selectedIdx = 0
@@ -67,12 +68,12 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenConfig
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastConfigIdx
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
 		m.screen = ScreenConfig
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastConfigIdx
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
@@ -103,7 +104,7 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		m.screen = ScreenConfig
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastConfigIdx
 		return m, nil
 	}
 	return m, nil

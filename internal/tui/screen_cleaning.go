@@ -13,7 +13,7 @@ import (
 func (m model) handleKeyResult(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastMainMenuIdx
 		m.cleanResult = nil
 		m.restoreResult = ""
 		m.result = nil

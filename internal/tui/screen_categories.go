@@ -25,7 +25,7 @@ func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
 		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastMainMenuIdx
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
@@ -111,7 +111,7 @@ func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("m"))) {
 		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastMainMenuIdx
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {

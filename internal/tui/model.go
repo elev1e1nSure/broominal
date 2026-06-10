@@ -73,7 +73,8 @@ type model struct {
 	doctorQuarantineStats doctor.Check
 	doctorFixResult       string
 	// Config screen
-	configCfg *config.Config
+	configCfg     *config.Config
+	lastConfigIdx int
 	// Cleanup screen
 	cleanupResult string
 	// Admin prompt
@@ -88,6 +89,10 @@ type model struct {
 	pathConfirmIdx int
 	pathOperation  string
 	pathResultMsg  string
+	// Restart
+	restartAfterQuit bool
+	// Menu position memory
+	lastMainMenuIdx int
 }
 
 type categoryItem struct {

@@ -435,6 +435,37 @@ func TestHandleKeyLanguageSelect(t *testing.T) {
 	}
 }
 
+func TestConfigEscReturnsToMainMenuWithLastIdx(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenMainMenu
+	m.selectedIdx = 3 // Settings
+	m.lastMainMenuIdx = 3
+	m.configCfg = config.Default()
+	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	mm := newM.(model)
+	if mm.screen != ScreenMainMenu {
+		t.Errorf("screen should be MainMenu, got %d", mm.screen)
+	}
+	if mm.selectedIdx != 3 {
+		t.Errorf("selectedIdx should restore to 3, got %d", mm.selectedIdx)
+	}
+}
+
+func TestConfigSubScreensRestoreLastConfigIdx(t *testing.T) {
+	m := initialModel()
+	m.screen = ScreenConfig
+	m.selectedIdx = 1 // Language
+	m.lastConfigIdx = 1
+	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	mm := newM.(model)
+	if mm.screen != ScreenConfig {
+		t.Errorf("screen should be Config, got %d", mm.screen)
+	}
+	if mm.selectedIdx != 1 {
+		t.Errorf("selectedIdx should restore to 1, got %d", mm.selectedIdx)
+	}
+}
+
 func TestHandleKeyMReturnsToMainMenu(t *testing.T) {
 	// M is a quick-root shortcut only on selection screens (Categories, Confirm)
 	screens := []Screen{ScreenCategories, ScreenConfirm}
@@ -447,8 +478,8 @@ func TestHandleKeyMReturnsToMainMenu(t *testing.T) {
 		if mm.screen != ScreenMainMenu {
 			t.Errorf("screen %d: M should go to MainMenu, got %d", sc, mm.screen)
 		}
-		if mm.selectedIdx != 0 {
-			t.Errorf("screen %d: selectedIdx should reset to 0, got %d", sc, mm.selectedIdx)
+		if mm.selectedIdx != mm.lastMainMenuIdx {
+			t.Errorf("screen %d: selectedIdx should restore lastMainMenuIdx, got %d", sc, mm.selectedIdx)
 		}
 	}
 }

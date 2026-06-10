@@ -11,7 +11,7 @@ import (
 func (m model) handleKeyError(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastMainMenuIdx
 		m.err = nil
 		return m, nil
 	}

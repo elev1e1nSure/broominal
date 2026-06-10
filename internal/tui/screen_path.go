@@ -15,7 +15,7 @@ import (
 func (m model) handleKeyPathConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
 		m.screen = ScreenConfig
-		m.selectedIdx = 3
+		m.selectedIdx = m.lastConfigIdx
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
@@ -34,7 +34,7 @@ func (m model) handleKeyPathConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.pathConfirmIdx == 1 {
 			// No — back to config
 			m.screen = ScreenConfig
-			m.selectedIdx = 3
+			m.selectedIdx = m.lastConfigIdx
 			return m, nil
 		}
 		// Yes — execute
@@ -63,7 +63,7 @@ func (m model) handleKeyPathConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) handleKeyPathResult(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "enter"))) {
 		m.screen = ScreenConfig
-		m.selectedIdx = 3
+		m.selectedIdx = m.lastConfigIdx
 		return m, nil
 	}
 	return m, nil

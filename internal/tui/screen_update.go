@@ -2,9 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
@@ -20,17 +17,18 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if s == "esc" {
 		if m.updateFromConfig {
 			m.screen = ScreenConfig
+			m.selectedIdx = m.lastConfigIdx
 		} else {
 			m.screen = ScreenMainMenu
+			m.selectedIdx = m.lastMainMenuIdx
 		}
-		m.selectedIdx = 0
 		m.updateAvailableRelease = nil
 		m.updateError = nil
 		return m, nil
 	}
 	if s == "q" {
 		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastMainMenuIdx
 		m.updateAvailableRelease = nil
 		m.updateError = nil
 		return m, nil
@@ -46,10 +44,11 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if s == "n" {
 		if m.updateFromConfig {
 			m.screen = ScreenConfig
+			m.selectedIdx = m.lastConfigIdx
 		} else {
 			m.screen = ScreenMainMenu
+			m.selectedIdx = m.lastMainMenuIdx
 		}
-		m.selectedIdx = 0
 		m.updateAvailableRelease = nil
 		return m, nil
 	}
@@ -59,28 +58,25 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	s := msg.String()
 	if m.updateProgress == i18n.T("update_complete_restart") && (s == "enter" || s == "y") {
-		exePath, _ := os.Executable()
-		if strings.HasSuffix(exePath, ".old") {
-			exePath = strings.TrimSuffix(exePath, ".old")
-		}
-		_ = exec.Command(exePath, "ui").Start()
+		m.restartAfterQuit = true
 		return m, tea.Quit
 	}
 	if m.updateError != nil {
 		if s == "esc" {
 			if m.updateFromConfig {
 				m.screen = ScreenConfig
+				m.selectedIdx = m.lastConfigIdx
 			} else {
 				m.screen = ScreenMainMenu
+				m.selectedIdx = m.lastMainMenuIdx
 			}
-			m.selectedIdx = 0
 			m.updateError = nil
 			m.updateProgress = ""
 			return m, nil
 		}
 		if s == "q" {
 			m.screen = ScreenMainMenu
-			m.selectedIdx = 0
+			m.selectedIdx = m.lastMainMenuIdx
 			m.updateError = nil
 			m.updateProgress = ""
 			return m, nil
@@ -111,12 +107,12 @@ func (m model) handleKeyNoUpdate(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	s := msg.String()
 	if s == "enter" || s == "esc" {
 		m.screen = ScreenConfig
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastConfigIdx
 		return m, nil
 	}
 	if s == "q" {
 		m.screen = ScreenMainMenu
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastMainMenuIdx
 		return m, nil
 	}
 	return m, nil

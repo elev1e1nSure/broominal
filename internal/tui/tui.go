@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -62,8 +63,20 @@ func Start(version string) error {
 		m.checkUpdateOnStartup = true
 	}
 	p := tea.NewProgram(m, tea.WithAltScreen())
-	_, err := p.Run()
-	return err
+	finalModel, err := p.Run()
+	if err != nil {
+		return err
+	}
+	if fm, ok := finalModel.(model); ok && fm.restartAfterQuit {
+		exePath, e := os.Executable()
+		if e == nil {
+			if strings.HasSuffix(exePath, ".old") {
+				exePath = strings.TrimSuffix(exePath, ".old")
+			}
+			_ = exec.Command(exePath, "ui").Run()
+		}
+	}
+	return nil
 }
 
 func (m model) Init() tea.Cmd {

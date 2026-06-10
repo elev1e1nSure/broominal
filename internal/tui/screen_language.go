@@ -13,12 +13,12 @@ import (
 func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenConfig
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastConfigIdx
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
 		m.screen = ScreenConfig
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastConfigIdx
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
@@ -54,7 +54,7 @@ func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		m.screen = ScreenConfig
-		m.selectedIdx = 0
+		m.selectedIdx = m.lastConfigIdx
 		return m, nil
 	}
 	return m, nil
