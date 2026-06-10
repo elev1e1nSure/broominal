@@ -123,16 +123,17 @@ var (
 	mutedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#9ca3af"))
 	disabledStyle = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("#6b7280"))
 	barTrackStyle = lipgloss.NewStyle().Background(lipgloss.Color("#2b2b2b"))
-	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#d6b15f"))
+	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#d1d5db"))
+	keyDescStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#6b7280"))
 	valueStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#e5e7eb"))
 )
 
 func keyHint(k, desc string) string {
-	return keyStyle.Render("["+k+"]") + " " + desc
+	return keyStyle.Render("["+k+"]") + " " + keyDescStyle.Render(desc)
 }
 
 func footer(hints ...string) string {
-	return mutedStyle.Render(strings.Join(hints, "  "))
+	return strings.Join(hints, "  ")
 }
 
 func barFillStyle(color lipgloss.Color) lipgloss.Style {
