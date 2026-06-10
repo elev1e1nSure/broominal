@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
+	"github.com/elev1e1nSure/broominal/pkg/pathman"
 	"github.com/elev1e1nSure/broominal/pkg/update"
 )
 
@@ -25,7 +26,7 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-		if m.selectedIdx < 2 {
+		if m.selectedIdx < 3 {
 			m.selectedIdx++
 		}
 		return m, nil
@@ -48,6 +49,16 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				release, err := update.CheckForUpdates(m.version)
 				return checkUpdateMsg{release, err}
 			})
+		case 3: // Add/Remove PATH
+			inPath, _ := pathman.IsInPath()
+			if inPath {
+				m.pathOperation = "remove"
+			} else {
+				m.pathOperation = "add"
+			}
+			m.pathConfirmIdx = 0
+			m.screen = ScreenPathConfirm
+			return m, nil
 		}
 	}
 	return m, nil
@@ -99,18 +110,28 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewConfig() string {
+	inPath, _ := pathman.IsInPath()
+	pathLabel := i18n.T("config_path")
+	if inPath {
+		pathLabel = i18n.T("config_path_remove")
+	}
 	items := []string{
 		i18n.T("config_presets"),
 		i18n.T("config_language"),
 		i18n.T("check_updates"),
+		pathLabel,
 	}
 	var body string
 	body += m.appTitle(i18n.T("config")) + "\n\n"
 	for i, item := range items {
+		marker := ""
+		if i == 3 && inPath {
+			marker = safeStyle.Render(" [x]")
+		}
 		if i == m.selectedIdx {
-			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + "\n"
+			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + marker + "\n"
 		} else {
-			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
+			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + marker + "\n"
 		}
 	}
 	body += "\n" + footer(

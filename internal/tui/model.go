@@ -37,6 +37,8 @@ const (
 	ScreenUpdateAvailable
 	ScreenUpdating
 	ScreenNoUpdate
+	ScreenPathConfirm
+	ScreenPathResult
 )
 
 type restoreEntry struct {
@@ -82,6 +84,10 @@ type model struct {
 	updateProgress         string
 	checkUpdateOnStartup   bool
 	updateFromConfig       bool
+	// Path screen
+	pathConfirmIdx int
+	pathOperation  string
+	pathResultMsg  string
 }
 
 type categoryItem struct {

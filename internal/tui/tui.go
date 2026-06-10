@@ -256,6 +256,10 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleKeyUpdating(msg)
 	case ScreenNoUpdate:
 		return m.handleKeyNoUpdate(msg)
+	case ScreenPathConfirm:
+		return m.handleKeyPathConfirm(msg)
+	case ScreenPathResult:
+		return m.handleKeyPathResult(msg)
 	}
 	return m, nil
 }
@@ -304,6 +308,10 @@ func (m model) View() string {
 		return m.viewUpdating()
 	case ScreenNoUpdate:
 		return m.viewNoUpdate()
+	case ScreenPathConfirm:
+		return m.viewPathConfirm()
+	case ScreenPathResult:
+		return m.viewPathResult()
 	}
 	return ""
 }
