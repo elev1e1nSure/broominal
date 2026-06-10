@@ -95,4 +95,3 @@ func walkDirItems(ctx context.Context, root, category string, risk types.RiskLev
 	}
 	return items, nil
 }
-

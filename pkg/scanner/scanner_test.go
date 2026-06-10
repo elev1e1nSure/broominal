@@ -267,12 +267,12 @@ func TestExtractTaskCommand(t *testing.T) {
 	}{
 		{
 			name: "UTF-8 XML",
-			xml: `<?xml version="1.0"?><Task><Actions><Exec><Command>C:\Broken\app.exe</Command></Exec></Actions></Task>`,
+			xml:  `<?xml version="1.0"?><Task><Actions><Exec><Command>C:\Broken\app.exe</Command></Exec></Actions></Task>`,
 			want: `C:\Broken\app.exe`,
 		},
 		{
 			name: "quoted command",
-			xml: `<Task><Actions><Exec><Command>"C:\My App\app.exe"</Command></Exec></Actions></Task>`,
+			xml:  `<Task><Actions><Exec><Command>"C:\My App\app.exe"</Command></Exec></Actions></Task>`,
 			want: `C:\My App\app.exe`,
 		},
 		{
