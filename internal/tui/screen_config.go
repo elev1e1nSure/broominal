@@ -10,7 +10,6 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/pathman"
-	"github.com/elev1e1nSure/broominal/pkg/update"
 )
 
 func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -26,7 +25,7 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-		if m.selectedIdx < 3 {
+		if m.selectedIdx < 2 {
 			m.selectedIdx++
 		}
 		return m, nil
@@ -42,15 +41,7 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.screen = ScreenLanguage
 			m.selectedIdx = 0
 			return m, nil
-		case 2: // Check for updates
-			m.screen = ScreenUpdating
-			m.updateProgress = i18n.T("checking_updates")
-			m.updateFromConfig = true
-			return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
-				release, err := update.CheckForUpdates(m.version)
-				return checkUpdateMsg{release, err}
-			})
-		case 3: // Add/Remove PATH
+		case 2: // Add/Remove PATH
 			inPath, _ := pathman.IsInPath()
 			if inPath {
 				m.pathOperation = "remove"
@@ -119,7 +110,6 @@ func (m model) viewConfig() string {
 	items := []string{
 		i18n.T("config_presets"),
 		i18n.T("config_language"),
-		i18n.T("check_updates"),
 		pathLabel,
 	}
 	var body string

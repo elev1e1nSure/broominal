@@ -481,7 +481,7 @@ var translations = map[string]map[string]string{
 		"installing_update":                   "Установка обновления...",
 		"download_failed":                     "Загрузка не удалась",
 		"install_failed":                      "Установка не удалась",
-		"update_complete_restart":             "Обновление завершено!",
+		"update_complete_restart":             "Обновление завершено! Перезапустите программу.",
 		"checking_updates":                    "Проверка обновлений...",
 		"no_update":                           "Обновлений нет",
 		"no_update_desc":                      "У вас установлена последняя версия.",
