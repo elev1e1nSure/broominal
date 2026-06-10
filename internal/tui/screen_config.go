@@ -125,14 +125,10 @@ func (m model) viewConfig() string {
 	var body string
 	body += m.appTitle(i18n.T("config")) + "\n\n"
 	for i, item := range items {
-		marker := ""
-		if i == 3 && inPath {
-			marker = safeStyle.Render(" [x]")
-		}
 		if i == m.selectedIdx {
-			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + marker + "\n"
+			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + "\n"
 		} else {
-			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + marker + "\n"
+			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
 		}
 	}
 	body += "\n" + footer(

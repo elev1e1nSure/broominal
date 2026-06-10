@@ -9,35 +9,15 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/pathman"
-	"github.com/elev1e1nSure/broominal/pkg/style"
 )
 
 func (m model) handleKeyPathConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenConfig
 		m.selectedIdx = m.lastConfigIdx
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {
-		if m.pathConfirmIdx > 0 {
-			m.pathConfirmIdx--
-		}
-		return m, nil
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-		if m.pathConfirmIdx < 1 {
-			m.pathConfirmIdx++
-		}
-		return m, nil
-	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
-		if m.pathConfirmIdx == 1 {
-			// No — back to config
-			m.screen = ScreenConfig
-			m.selectedIdx = m.lastConfigIdx
-			return m, nil
-		}
-		// Yes — execute
 		var err error
 		if m.pathOperation == "add" {
 			err = pathman.AddToPath()
@@ -86,19 +66,12 @@ func (m model) viewPathConfirm() string {
 	body += m.appTitle(i18n.T(titleKey)) + "\n\n"
 	body += "  " + mutedStyle.Render(fmt.Sprintf(i18n.T(descKey), exe)) + "\n\n"
 
-	options := []string{
-		style.Cyanf("[%s]", i18n.T("yes")),
-		style.Grayf("[%s]", i18n.T("no")),
+	actionLabel := i18n.T("add")
+	if m.pathOperation == "remove" {
+		actionLabel = i18n.T("remove")
 	}
-	if m.pathConfirmIdx == 1 {
-		options[0] = style.Grayf("[%s]", i18n.T("yes"))
-		options[1] = style.Cyanf("[%s]", i18n.T("no"))
-	}
-
-	body += "  " + options[0] + "\n"
-	body += "  " + options[1] + "\n\n"
 	body += footer(
-		keyHint("Enter", i18n.T("confirm")),
+		keyHint("Enter", actionLabel),
 		keyHint("Esc", i18n.T("back")),
 	)
 	return body
