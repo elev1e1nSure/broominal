@@ -25,6 +25,8 @@ commit_parsers = [
     { message = "^chore", group = "🔧 Miscellaneous Tasks" },
     { message = "^ci", group = "🔄 CI/CD" },
     { message = "^build", group = "🏗️ Build" },
+    { message = "^style", group = "🎨 Style" },
+    { message = "^lint", group = "🧹 Lint" },
     { body = ".*security", group = "🔒 Security" },
 ]
 protect_breaking_commits = false
