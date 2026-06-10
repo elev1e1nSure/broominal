@@ -83,13 +83,13 @@ func nextAutoCleanupDays(current int) int {
 func autoCleanupLabel(days int) string {
 	switch days {
 	case 7:
-		return i18n.T("quarantine_cleanup_7d")
+		return "[" + i18n.T("quarantine_cleanup_7d") + "]"
 	case 14:
-		return i18n.T("quarantine_cleanup_14d")
+		return "[" + i18n.T("quarantine_cleanup_14d") + "]"
 	case 30:
-		return i18n.T("quarantine_cleanup_30d")
+		return "[" + i18n.T("quarantine_cleanup_30d") + "]"
 	default:
-		return i18n.T("quarantine_cleanup_off")
+		return "[" + i18n.T("quarantine_cleanup_off") + "]"
 	}
 }
 
@@ -109,12 +109,12 @@ func (m model) viewQuarantineSettings() string {
 	if m.configCfg != nil {
 		autoCleanupDays = m.configCfg.QuarantineAutoCleanupDays
 	}
-	autoLabel := fmt.Sprintf("%-24s %s", i18n.T("quarantine_auto_cleanup"), mutedStyle.Render(autoCleanupLabel(autoCleanupDays)))
+	autoLabel := i18n.T("quarantine_auto_cleanup") + "  " + mutedStyle.Render(autoCleanupLabel(autoCleanupDays))
 	if quarantineEnabled && autoCleanupDays > 0 {
-		autoLabel = fmt.Sprintf("%-24s %s", i18n.T("quarantine_auto_cleanup"), safeStyle.Render(autoCleanupLabel(autoCleanupDays)))
+		autoLabel = i18n.T("quarantine_auto_cleanup") + "  " + safeStyle.Render(autoCleanupLabel(autoCleanupDays))
 	}
 	if !quarantineEnabled {
-		autoLabel = mutedStyle.Render(fmt.Sprintf("%-24s %s", i18n.T("quarantine_auto_cleanup"), autoCleanupLabel(autoCleanupDays)))
+		autoLabel = mutedStyle.Render(i18n.T("quarantine_auto_cleanup") + "  " + autoCleanupLabel(autoCleanupDays))
 	}
 
 	items := []string{quarantineLabel, autoLabel}
