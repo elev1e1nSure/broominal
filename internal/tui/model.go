@@ -96,6 +96,8 @@ type model struct {
 	scanTotal     int
 	// Menu position memory
 	lastMainMenuIdx int
+	// Set to true when update is installed and process should restart
+	restartAfterUpdate bool
 }
 
 type categoryItem struct {

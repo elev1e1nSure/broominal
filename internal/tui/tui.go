@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -18,8 +19,8 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/update"
 )
 
-// Start — запускает TUI
-func Start(version string) error {
+// Start — запускает TUI. Возвращает true если после выхода нужно перезапустить процесс.
+func Start(version string) (bool, error) {
 	cfg, _ := config.Load()
 	if cfg != nil && cfg.Language != "" {
 		i18n.SetLanguage(cfg.Language)
@@ -62,10 +63,14 @@ func Start(version string) error {
 		m.checkUpdateOnStartup = true
 	}
 	p := tea.NewProgram(m, tea.WithAltScreen())
-	if _, err := p.Run(); err != nil {
-		return err
+	finalModel, err := p.Run()
+	if err != nil {
+		return false, err
 	}
-	return nil
+	if fm, ok := finalModel.(model); ok {
+		return fm.restartAfterUpdate, nil
+	}
+	return false, nil
 }
 
 func (m model) Init() tea.Cmd {
@@ -106,6 +111,8 @@ type downloadUpdateMsg struct {
 	path string
 	err  error
 }
+
+type restartMsg struct{}
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -176,10 +183,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.updateError = msg.err
 			m.updateProgress = i18n.T("install_failed")
-		} else {
-			m.updateProgress = i18n.T("update_complete_restart")
+			return m, nil
 		}
-		return m, nil
+		m.updateProgress = i18n.T("update_restarting")
+		return m, tea.Tick(time.Second, func(time.Time) tea.Msg { return restartMsg{} })
+
+	case restartMsg:
+		m.restartAfterUpdate = true
+		return m, tea.Quit
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd

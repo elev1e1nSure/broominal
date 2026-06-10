@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/elev1e1nSure/broominal/pkg/categories"
 )
 
 // Config holds user-configurable cleanup rules.
@@ -24,67 +26,14 @@ type Config struct {
 
 // Default returns the built-in default configuration.
 func Default() *Config {
+	ec := make(map[string]bool, len(categories.All))
+	for _, def := range categories.All {
+		ec[def.Name] = def.MinPreset == categories.Quick
+	}
 	return &Config{
-		EnabledCategories: map[string]bool{
-			// Quick (default)
-			"Temp":                  true,
-			"Browser Cache":         true,
-			"Thumbnails Cache":      true,
-			"DirectX Shader Cache":  true,
-			"Empty Folders":         true,
-			"Delivery Optimization": true,
-			"Icon Cache":            true,
-			"Windows Error Reports": true,
-			"Opera Cache":           true,
-			"Brave Cache":           true,
-			"Vivaldi Cache":         true,
-			"Yandex Cache":          true,
-			"Edge Code Cache":       true,
-			"Chrome Code Cache":     true,
-			"Firefox Cache2":        true,
-			"Windows Prefetch":      true,
-			"AMD GPU Cache":         true,
-			"Edge WebView2 Cache":   true,
-			// Standard
-			"Messenger Cache":            false,
-			"Game Launcher Cache":        false,
-			"Service Cache":              false,
-			"Dev Cache":                  false,
-			"Logs":                       false,
-			"Windows Update Cache":       false,
-			"Crash & Memory Dumps":       false,
-			"Nvidia Installer Leftovers": false,
-			"Zoom Cache":                 false,
-			"Epic Games Cache":           false,
-			"Adobe Cache":                false,
-			"JetBrains Cache":            false,
-			"Office Cache":               false,
-			"Java Cache":                 false,
-			// Deep
-			"Downloads":         false,
-			"Recycle Bin":       false,
-			"Old Installers":    false,
-			"Large Old Files":   false,
-			"Windows Defender":  false,
-			"Startup Leftovers": false,
-			"Scheduled Tasks":   false,
-			"Duplicate Files":   false,
-			"Recent Documents":  false,
-			// Standard (new)
-			"Font Cache":                false,
-			"Windows Setup Files":       false,
-			"Diagnostic Data":           false,
-			"Downloaded Program Files":  false,
-			"Feedback Hub Logs":         false,
-			"BranchCache":               false,
-			// Deep (new)
-			"Old Chkdsk Files":    false,
-			"RetailDemo Content":  false,
-			"Thumbs.db":           false,
-			"Windows.old":         false,
-		},
-		ActivePreset: string(PresetQuick),
-		Exclusions:   []string{},
+		EnabledCategories: ec,
+		ActivePreset:      string(PresetQuick),
+		Exclusions:        []string{},
 		AutoRiskOverrides: map[string]string{
 			".git":         "review",
 			"node_modules": "review",
@@ -226,78 +175,19 @@ const (
 
 func (c *Config) ApplyPreset(p Preset) {
 	c.EnabledCategories = make(map[string]bool)
-
-	quickCategories := []string{
-		"Temp",
-		"Browser Cache",
-		"Thumbnails Cache",
-		"DirectX Shader Cache",
-		"Empty Folders",
-		"Delivery Optimization",
-		"Icon Cache",
-		"Windows Error Reports",
-		"Opera Cache",
-		"Brave Cache",
-		"Vivaldi Cache",
-		"Yandex Cache",
-		"Edge Code Cache",
-		"Chrome Code Cache",
-		"Firefox Cache2",
-		"Windows Prefetch",
-		"AMD GPU Cache",
-		"Edge WebView2 Cache",
-	}
-
-	standardCategories := append(quickCategories,
-		"Messenger Cache",
-		"Game Launcher Cache",
-		"Service Cache",
-		"Dev Cache",
-		"Logs",
-		"Windows Update Cache",
-		"Crash & Memory Dumps",
-		"Nvidia Installer Leftovers",
-		"Zoom Cache",
-		"Epic Games Cache",
-		"Adobe Cache",
-		"JetBrains Cache",
-		"Office Cache",
-		"Java Cache",
-		"Font Cache",
-		"Windows Setup Files",
-		"Diagnostic Data",
-		"Downloaded Program Files",
-		"Feedback Hub Logs",
-		"BranchCache",
-	)
-
-	deepCategories := append(standardCategories,
-		"Downloads",
-		"Recycle Bin",
-		"Old Installers",
-		"Large Old Files",
-		"Windows Defender",
-		"Startup Leftovers",
-		"Scheduled Tasks",
-		"Recent Documents",
-		"Old Chkdsk Files",
-		"RetailDemo Content",
-		"Thumbs.db",
-		"Windows.old",
-	)
-
-	var categories []string
+	var level categories.Preset
 	switch p {
 	case PresetQuick:
-		categories = quickCategories
+		level = categories.Quick
 	case PresetStandard:
-		categories = standardCategories
+		level = categories.Standard
 	case PresetDeep:
-		categories = deepCategories
+		level = categories.Deep
 	}
-
-	for _, cat := range categories {
-		c.EnabledCategories[cat] = true
+	for _, def := range categories.All {
+		if def.MinPreset <= level {
+			c.EnabledCategories[def.Name] = true
+		}
 	}
 	c.ActivePreset = string(p)
 }

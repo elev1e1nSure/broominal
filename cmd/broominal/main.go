@@ -7,6 +7,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -98,9 +99,13 @@ func main() {
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := tui.Start(Version); err != nil {
+			restart, err := tui.Start(Version)
+			if err != nil {
 				fmt.Fprintf(os.Stderr, "TUI error: %v\n", err)
 				os.Exit(1)
+			}
+			if restart {
+				relaunch()
 			}
 		},
 	}
@@ -170,12 +175,31 @@ func uiCmd() *cobra.Command {
 		Use:   "ui",
 		Short: "Launch interactive TUI",
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := tui.Start(Version); err != nil {
+			restart, err := tui.Start(Version)
+			if err != nil {
 				fmt.Fprintf(os.Stderr, "TUI error: %v\n", err)
 				os.Exit(1)
 			}
+			if restart {
+				relaunch()
+			}
 		},
 	}
+}
+
+// relaunch replaces the current process with a fresh instance of the same binary.
+// Used after a self-update so the new version starts in the same terminal session.
+func relaunch() {
+	exe, err := os.Executable()
+	if err != nil {
+		return
+	}
+	cmd := exec.Command(exe, os.Args[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	_ = cmd.Start()
+	os.Exit(0)
 }
 
 func cleanCmd() *cobra.Command {

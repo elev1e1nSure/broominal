@@ -40,12 +40,8 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	s := msg.String()
-	if m.updateProgress == i18n.T("update_complete_restart") && (s == "enter" || s == "y") {
-		m.updateFromConfig = false
-		return m, tea.Quit
-	}
 	if m.updateError != nil {
+		s := msg.String()
 		if s == "esc" || s == "q" {
 			if m.updateFromConfig {
 				m.screen = ScreenConfig
@@ -113,18 +109,13 @@ func (m model) viewNoUpdate() string {
 func (m model) viewUpdating() string {
 	var body string
 	body += m.appTitle(i18n.T("updating")) + "\n\n"
-	if m.updateProgress == i18n.T("update_complete_restart") {
+	if m.updateError != nil {
 		body += fmt.Sprintf("  %s\n", m.updateProgress)
-		body += "\n" + footer(keyHint("Enter", i18n.T("close")))
+		body += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"
+		body += "\n" + footer(keyHint("Esc", i18n.T("back")))
 	} else {
-		if m.updateError != nil {
-			body += fmt.Sprintf("  %s\n", m.updateProgress)
-			body += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"
-			body += "\n" + footer(keyHint("Esc", i18n.T("back")))
-		} else {
-			body += fmt.Sprintf("  %s %s\n", m.spinner.View(), m.updateProgress)
-			body += "\n" + mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
-		}
+		body += fmt.Sprintf("  %s %s\n", m.spinner.View(), m.updateProgress)
+		body += "\n" + mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
 	}
 	return body
 }

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/elev1e1nSure/broominal/pkg/categories"
 )
 
 var translations = map[string]map[string]string{
@@ -247,6 +249,7 @@ var translations = map[string]map[string]string{
 		"updating":                            "Updating...",
 		"downloading_update":                  "Downloading update...",
 		"installing_update":                   "Installing update...",
+		"update_restarting":                   "Update installed. Restarting...",
 		"download_failed":                     "Download failed",
 		"install_failed":                      "Installation failed",
 		"update_complete_restart":             "Update complete!",
@@ -521,6 +524,7 @@ var translations = map[string]map[string]string{
 		"updating":                            "Обновление...",
 		"downloading_update":                  "Загрузка обновления...",
 		"installing_update":                   "Установка обновления...",
+		"update_restarting":                   "Обновление установлено. Перезапуск...",
 		"download_failed":                     "Загрузка не удалась",
 		"install_failed":                      "Установка не удалась",
 		"update_complete_restart":             "Обновление завершено! Перезапустите программу.",
@@ -597,128 +601,24 @@ func SupportedLanguages() []string {
 }
 
 // categoryKeyMap maps internal category names to translation keys.
-var categoryKeyMap = map[string]string{
-	"Temp":                       "cat_temp",
-	"Downloads":                  "cat_downloads",
-	"Browser Cache":              "cat_browser_cache",
-	"Recycle Bin":                "cat_recycle_bin",
-	"Logs":                       "cat_logs",
-	"Old Installers":             "cat_old_installers",
-	"Large Old Files":            "cat_large_old_files",
-	"Thumbnails Cache":           "cat_thumbnails_cache",
-	"DirectX Shader Cache":       "cat_directx_shader_cache",
-	"Delivery Optimization":      "cat_delivery_optimization",
-	"Windows Error Reports":      "cat_windows_error_reports",
-	"Discord Cache":              "cat_discord_cache",
-	"Windows Update Cache":       "cat_windows_update_cache",
-	"Crash & Memory Dumps":       "cat_crash_memory_dumps",
-	"Nvidia Installer Leftovers": "cat_nvidia_installer_leftovers",
-	"Messenger Cache":            "cat_messenger_cache",
-	"Game Launcher Cache":        "cat_game_launcher_cache",
-	"Service Cache":              "cat_service_cache",
-	"Dev Cache":                  "cat_dev_cache",
-	"Edge Code Cache":            "cat_edge_code_cache",
-	"Chrome Code Cache":          "cat_chrome_code_cache",
-	"Firefox Cache2":             "cat_firefox_cache2",
-	"Empty Folders":              "cat_empty_folders",
-	"Opera Cache":                "cat_opera_cache",
-	"Brave Cache":                "cat_brave_cache",
-	"Vivaldi Cache":              "cat_vivaldi_cache",
-	"Yandex Cache":               "cat_yandex_cache",
-	"Windows Defender":           "cat_windows_defender",
-	"AMD GPU Cache":              "cat_amd_gpu_cache",
-	"Zoom Cache":                 "cat_zoom_cache",
-	"Startup Leftovers":          "cat_startup_leftover",
-	"Scheduled Tasks":            "cat_scheduled_tasks_leftover",
-	"Duplicate Files":            "cat_duplicate_files",
-	"Edge WebView2 Cache":        "cat_edge_webview_cache",
-	"Epic Games Cache":           "cat_epic_games_cache",
-	"Adobe Cache":                "cat_adobe_cache",
-	"JetBrains Cache":            "cat_jetbrains_cache",
-	"Office Cache":               "cat_office_cache",
-	"Java Cache":                 "cat_java_cache",
-	"Recent Documents":           "cat_recent_documents",
-	"Font Cache":                 "cat_font_cache",
-	"Windows Setup Files":        "cat_windows_setup_files",
-	"Old Chkdsk Files":           "cat_old_chkdsk_files",
-	"Diagnostic Data":            "cat_diagnostic_data",
-	"Downloaded Program Files":   "cat_downloaded_program_files",
-	"Feedback Hub Logs":          "cat_feedback_hub_logs",
-	"BranchCache":                "cat_branch_cache",
-	"RetailDemo Content":         "cat_retail_demo_content",
-	"Thumbs.db":                  "cat_thumbs_db",
-	"Windows.old":                "cat_windows_old",
-}
-
 // CategoryName returns the translated display name for a scanner category.
+// The i18n key is derived from the category's InternalKey in categories.All.
 func CategoryName(name string) string {
-	if key, ok := categoryKeyMap[name]; ok {
-		return T(key)
+	for _, def := range categories.All {
+		if def.Name == name {
+			return T("cat_" + def.InternalKey)
+		}
 	}
 	return name
 }
 
-// categoryDescKeyMap maps internal category names to description translation keys.
-var categoryDescKeyMap = map[string]string{
-	"Temp":                       "cat_desc_temp",
-	"Downloads":                  "cat_desc_downloads",
-	"Browser Cache":              "cat_desc_browser_cache",
-	"Recycle Bin":                "cat_desc_recycle_bin",
-	"Logs":                       "cat_desc_logs",
-	"Old Installers":             "cat_desc_old_installers",
-	"Large Old Files":            "cat_desc_large_old_files",
-	"Thumbnails Cache":           "cat_desc_thumbnails_cache",
-	"DirectX Shader Cache":       "cat_desc_directx_shader_cache",
-	"Delivery Optimization":      "cat_desc_delivery_optimization",
-	"WER":                        "cat_desc_windows_error_reports",
-	"Discord Cache":              "cat_desc_discord_cache",
-	"Edge Code Cache":            "cat_desc_edge_code_cache",
-	"Chrome Code Cache":          "cat_desc_chrome_code_cache",
-	"Firefox Cache2":             "cat_desc_firefox_cache2",
-	"Empty Folders":              "cat_desc_empty_folders",
-	"Windows Prefetch":           "cat_desc_windows_prefetch",
-	"Icon Cache":                 "cat_desc_icon_cache",
-	"Windows Update Cache":       "cat_desc_windows_update_cache",
-	"Crash & Memory Dumps":       "cat_desc_crash_memory_dumps",
-	"Nvidia Installer Leftovers": "cat_desc_nvidia_installer_leftovers",
-	"Telegram Desktop Cache":     "cat_desc_telegram_desktop_cache",
-	"Messenger Cache":            "cat_desc_messenger_cache",
-	"Game Launcher Cache":        "cat_desc_game_launcher_cache",
-	"Service Cache":              "cat_desc_service_cache",
-	"Dev Cache":                  "cat_desc_dev_cache",
-	"Opera Cache":                "cat_desc_opera_cache",
-	"Brave Cache":                "cat_desc_brave_cache",
-	"Vivaldi Cache":              "cat_desc_vivaldi_cache",
-	"Yandex Cache":               "cat_desc_yandex_cache",
-	"Windows Defender":           "cat_desc_windows_defender",
-	"AMD GPU Cache":              "cat_desc_amd_gpu_cache",
-	"Zoom Cache":                 "cat_desc_zoom_cache",
-	"Startup Leftovers":          "cat_desc_startup_leftover",
-	"Scheduled Tasks":            "cat_desc_scheduled_tasks_leftover",
-	"Duplicate Files":            "cat_desc_duplicate_files",
-	"Edge WebView2 Cache":        "cat_desc_edge_webview_cache",
-	"Epic Games Cache":           "cat_desc_epic_games_cache",
-	"Adobe Cache":                "cat_desc_adobe_cache",
-	"JetBrains Cache":            "cat_desc_jetbrains_cache",
-	"Office Cache":               "cat_desc_office_cache",
-	"Java Cache":                 "cat_desc_java_cache",
-	"Recent Documents":           "cat_desc_recent_documents",
-	"Font Cache":                 "cat_desc_font_cache",
-	"Windows Setup Files":        "cat_desc_windows_setup_files",
-	"Old Chkdsk Files":           "cat_desc_old_chkdsk_files",
-	"Diagnostic Data":            "cat_desc_diagnostic_data",
-	"Downloaded Program Files":   "cat_desc_downloaded_program_files",
-	"Feedback Hub Logs":          "cat_desc_feedback_hub_logs",
-	"BranchCache":                "cat_desc_branch_cache",
-	"RetailDemo Content":         "cat_desc_retail_demo_content",
-	"Thumbs.db":                  "cat_desc_thumbs_db",
-	"Windows.old":                "cat_desc_windows_old",
-}
-
 // CategoryDescription returns a brief description of what a category contains and its safety.
+// The i18n key is derived from the category's InternalKey in categories.All.
 func CategoryDescription(name string) string {
-	if key, ok := categoryDescKeyMap[name]; ok {
-		return T(key)
+	for _, def := range categories.All {
+		if def.Name == name {
+			return T("cat_desc_" + def.InternalKey)
+		}
 	}
 	return ""
 }

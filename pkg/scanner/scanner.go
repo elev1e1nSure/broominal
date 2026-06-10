@@ -1208,3 +1208,79 @@ func scanDevCache(ctx context.Context, cfg *config.Config) ([]types.Item, error)
 	}
 	return items, nil
 }
+
+// Named entry-point functions used by scanner_registry.go scanFuncs map.
+// Each corresponds to one category in pkg/categories.All.
+
+func scanTemp(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	tempPath := os.Getenv("TEMP")
+	if tempPath == "" {
+		return nil, nil
+	}
+	return scanDir(ctx, tempPath, "temp", types.RiskSafe, nil, true, cfg)
+}
+
+func scanDownloads(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	return scanDir(ctx, filepath.Join(os.Getenv("USERPROFILE"), "Downloads"), "downloads", types.RiskReview, nil, true, cfg)
+}
+
+func scanBrowserCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	for _, rel := range browserCachePaths {
+		path := filepath.Join(os.Getenv("USERPROFILE"), rel)
+		if strings.Contains(rel, "Firefox") {
+			sub, err := scanFirefoxCache(ctx, path, cfg)
+			if err != nil {
+				slog.Warn("scanner: firefox cache scan failed", "path", path, "error", err)
+			}
+			items = append(items, sub...)
+		} else {
+			sub, err := scanDir(ctx, path, "browser_cache", types.RiskSafe, nil, true, cfg)
+			if err != nil {
+				slog.Warn("scanner: browser cache scan failed", "path", path, "error", err)
+			}
+			items = append(items, sub...)
+		}
+	}
+	return items, nil
+}
+
+func scanRecycleBin(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	var items []types.Item
+	for _, rp := range recycleBinPaths() {
+		sub, err := scanDir(ctx, rp, "recycle_bin", types.RiskSafe, nil, true, cfg)
+		if err != nil {
+			slog.Warn("scanner: recycle bin scan failed", "path", rp, "error", err)
+		}
+		items = append(items, sub...)
+	}
+	return items, nil
+}
+
+func scanDirectXShaderCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	return scanDir(ctx, filepath.Join(os.Getenv("LOCALAPPDATA"), "D3DSCache"), "directx_shader_cache", types.RiskSafe, nil, true, cfg)
+}
+
+func scanWindowsUpdateCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	return scanDir(ctx, filepath.Join(os.Getenv("SystemRoot"), "SoftwareDistribution", "Download"), "windows_update_cache", types.RiskReview, nil, false, cfg)
+}
+
+func scanEdgeCodeCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	return scanDir(ctx, filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "Edge", "User Data", "Default", "Code Cache"), "edge_code_cache", types.RiskSafe, nil, true, cfg)
+}
+
+func scanChromeCodeCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	return scanDir(ctx, filepath.Join(os.Getenv("LOCALAPPDATA"), "Google", "Chrome", "User Data", "Default", "Code Cache"), "chrome_code_cache", types.RiskSafe, nil, true, cfg)
+}
+
+func scanWindowsPrefetch(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	return scanDir(ctx, filepath.Join(os.Getenv("SystemRoot"), "Prefetch"), "windows_prefetch", types.RiskSafe, nil, false, cfg)
+}
+
+func scanIconCache(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	items, err := scanDir(ctx, filepath.Join(os.Getenv("LOCALAPPDATA"), "IconCache.db"), "icon_cache", types.RiskSafe, nil, false, cfg)
+	if err != nil {
+		slog.Warn("scanner: icon cache scan failed", "error", err)
+	}
+	return items, nil
+}
