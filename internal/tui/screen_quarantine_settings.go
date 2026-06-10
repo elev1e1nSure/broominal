@@ -34,6 +34,76 @@ func (m model) handleKeyQuarantineSettings(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 		}
 		return m, nil
 	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("left", "h"))) {
+		if m.configCfg == nil {
+			return m, nil
+		}
+		switch m.selectedIdx {
+		case 0: // Toggle quarantine on/off
+			m.configCfg.QuarantineEnabled = !m.configCfg.QuarantineEnabled
+			_ = config.Save(m.configCfg)
+			if !m.configCfg.QuarantineEnabled {
+				m.selectedIdx = 0
+			}
+			m.quarantineSettingsMsg = ""
+		case 1: // Cycle auto-cleanup schedule backwards
+			if !m.configCfg.QuarantineEnabled {
+				return m, nil
+			}
+			prev := prevAutoCleanupDays(m.configCfg.QuarantineAutoCleanupDays)
+			m.configCfg.QuarantineAutoCleanupDays = prev
+			_ = config.Save(m.configCfg)
+			if prev == 0 {
+				if err := taskscheduler.Delete(); err != nil {
+					m.quarantineSettingsMsg = i18n.T("quarantine_task_fail")
+				} else {
+					m.quarantineSettingsMsg = i18n.T("quarantine_task_removed")
+				}
+			} else {
+				if err := taskscheduler.Set(prev); err != nil {
+					m.quarantineSettingsMsg = i18n.T("quarantine_task_fail")
+				} else {
+					m.quarantineSettingsMsg = i18n.T("quarantine_task_set")
+				}
+			}
+		}
+		return m, nil
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("right", "l"))) {
+		if m.configCfg == nil {
+			return m, nil
+		}
+		switch m.selectedIdx {
+		case 0: // Toggle quarantine on/off
+			m.configCfg.QuarantineEnabled = !m.configCfg.QuarantineEnabled
+			_ = config.Save(m.configCfg)
+			if !m.configCfg.QuarantineEnabled {
+				m.selectedIdx = 0
+			}
+			m.quarantineSettingsMsg = ""
+		case 1: // Cycle auto-cleanup schedule forwards
+			if !m.configCfg.QuarantineEnabled {
+				return m, nil
+			}
+			next := nextAutoCleanupDays(m.configCfg.QuarantineAutoCleanupDays)
+			m.configCfg.QuarantineAutoCleanupDays = next
+			_ = config.Save(m.configCfg)
+			if next == 0 {
+				if err := taskscheduler.Delete(); err != nil {
+					m.quarantineSettingsMsg = i18n.T("quarantine_task_fail")
+				} else {
+					m.quarantineSettingsMsg = i18n.T("quarantine_task_removed")
+				}
+			} else {
+				if err := taskscheduler.Set(next); err != nil {
+					m.quarantineSettingsMsg = i18n.T("quarantine_task_fail")
+				} else {
+					m.quarantineSettingsMsg = i18n.T("quarantine_task_set")
+				}
+			}
+		}
+		return m, nil
+	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		if m.configCfg == nil {
 			return m, nil
@@ -69,6 +139,15 @@ func (m model) handleKeyQuarantineSettings(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 		}
 	}
 	return m, nil
+}
+
+func prevAutoCleanupDays(current int) int {
+	for i, v := range autoCleanupCycles {
+		if v == current {
+			return autoCleanupCycles[(i+len(autoCleanupCycles)-1)%len(autoCleanupCycles)]
+		}
+	}
+	return autoCleanupCycles[len(autoCleanupCycles)-1]
 }
 
 func nextAutoCleanupDays(current int) int {
@@ -114,7 +193,7 @@ func (m model) viewQuarantineSettings() string {
 		autoLabel = i18n.T("quarantine_auto_cleanup") + " " + safeStyle.Render(autoCleanupLabel(autoCleanupDays))
 	}
 	if !quarantineEnabled {
-		autoLabel = mutedStyle.Render(i18n.T("quarantine_auto_cleanup") + " " + autoCleanupLabel(autoCleanupDays))
+		autoLabel = i18n.T("quarantine_auto_cleanup") + " " + autoCleanupLabel(autoCleanupDays)
 	}
 
 	items := []string{quarantineLabel, autoLabel}
@@ -138,6 +217,8 @@ func (m model) viewQuarantineSettings() string {
 		}
 		body += "\n" + msgStyle.Render("  "+m.quarantineSettingsMsg) + "\n"
 	}
-	body += "\n" + footer()
+	body += "\n" + footer(
+		keyHint("←→", i18n.T("toggle")),
+	)
 	return body
 }
