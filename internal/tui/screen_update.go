@@ -42,7 +42,6 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	s := msg.String()
 	if m.updateProgress == i18n.T("update_complete_restart") && (s == "enter" || s == "y") {
-		m.restartAfterQuit = true
 		m.updateFromConfig = false
 		return m, tea.Quit
 	}
@@ -116,7 +115,7 @@ func (m model) viewUpdating() string {
 	body += m.appTitle(i18n.T("updating")) + "\n\n"
 	if m.updateProgress == i18n.T("update_complete_restart") {
 		body += fmt.Sprintf("  %s\n", m.updateProgress)
-		body += "\n" + footer(keyHint("Enter", i18n.T("restart")))
+		body += "\n" + footer(keyHint("Enter", i18n.T("close")))
 	} else {
 		if m.updateError != nil {
 			body += fmt.Sprintf("  %s\n", m.updateProgress)

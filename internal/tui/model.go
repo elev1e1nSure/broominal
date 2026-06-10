@@ -89,8 +89,6 @@ type model struct {
 	pathConfirmIdx int
 	pathOperation  string
 	pathResultMsg  string
-	// Restart
-	restartAfterQuit bool
 	// Menu position memory
 	lastMainMenuIdx int
 }
