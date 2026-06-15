@@ -115,6 +115,41 @@ type downloadUpdateMsg struct {
 
 type restartMsg struct{}
 
+// keyHandler is a screen-specific key event handler.
+type keyHandler func(m model, msg tea.KeyMsg) (tea.Model, tea.Cmd)
+
+var keyHandlers = map[Screen]keyHandler{}
+
+func registerKeyHandler(s Screen, h keyHandler) { keyHandlers[s] = h }
+
+func init() {
+	registerKeyHandler(ScreenMainMenu, model.handleKeyMainMenu)
+	registerKeyHandler(ScreenDashboard, model.handleKeyDashboard)
+	registerKeyHandler(ScreenCategories, model.handleKeyCategories)
+	registerKeyHandler(ScreenWarnRecycleBin, model.handleKeyWarnRecycleBin)
+	registerKeyHandler(ScreenWarnDuplicates, model.handleKeyWarnDuplicates)
+	registerKeyHandler(ScreenCategoryInfo, model.handleKeyCategoryInfo)
+	registerKeyHandler(ScreenConfirm, model.handleKeyConfirm)
+	registerKeyHandler(ScreenCleaning, model.handleKeyCleaning)
+	registerKeyHandler(ScreenResult, model.handleKeyResult)
+	registerKeyHandler(ScreenRestoreConflict, model.handleKeyRestoreConflict)
+	registerKeyHandler(ScreenRestore, model.handleKeyRestore)
+	registerKeyHandler(ScreenConfirmDeleteQuarantine, model.handleKeyConfirmDeleteQuarantine)
+	registerKeyHandler(ScreenConfirmDeleteAllQuarantine, model.handleKeyConfirmDeleteAllQuarantine)
+	registerKeyHandler(ScreenDoctor, model.handleKeyDoctor)
+	registerKeyHandler(ScreenConfig, model.handleKeyConfig)
+	registerKeyHandler(ScreenConfigPresets, model.handleKeyConfigPresets)
+	registerKeyHandler(ScreenQuarantineSettings, model.handleKeyQuarantineSettings)
+	registerKeyHandler(ScreenLanguage, model.handleKeyLanguage)
+	registerKeyHandler(ScreenAdminPrompt, model.handleKeyAdminPrompt)
+	registerKeyHandler(ScreenError, model.handleKeyError)
+	registerKeyHandler(ScreenUpdateAvailable, model.handleKeyUpdateAvailable)
+	registerKeyHandler(ScreenUpdating, model.handleKeyUpdating)
+	registerKeyHandler(ScreenNoUpdate, model.handleKeyNoUpdate)
+	registerKeyHandler(ScreenPathConfirm, model.handleKeyPathConfirm)
+	registerKeyHandler(ScreenPathResult, model.handleKeyPathResult)
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -245,62 +280,11 @@ func normalizeKey(msg tea.KeyMsg) tea.KeyMsg {
 
 func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	msg = normalizeKey(msg)
-	// global quit
 	if key.Matches(msg, key.NewBinding(key.WithKeys("ctrl+c"))) {
 		return m, tea.Quit
 	}
-
-	switch m.screen {
-	case ScreenMainMenu:
-		return m.handleKeyMainMenu(msg)
-	case ScreenDashboard:
-		return m.handleKeyDashboard(msg)
-	case ScreenCategories:
-		return m.handleKeyCategories(msg)
-	case ScreenWarnRecycleBin:
-		return m.handleKeyWarnRecycleBin(msg)
-	case ScreenWarnDuplicates:
-		return m.handleKeyWarnDuplicates(msg)
-	case ScreenCategoryInfo:
-		return m.handleKeyCategoryInfo(msg)
-	case ScreenConfirm:
-		return m.handleKeyConfirm(msg)
-	case ScreenCleaning:
-		return m.handleKeyCleaning(msg)
-	case ScreenResult:
-		return m.handleKeyResult(msg)
-	case ScreenRestoreConflict:
-		return m.handleKeyRestoreConflict(msg)
-	case ScreenRestore:
-		return m.handleKeyRestore(msg)
-	case ScreenConfirmDeleteQuarantine:
-		return m.handleKeyConfirmDeleteQuarantine(msg)
-	case ScreenConfirmDeleteAllQuarantine:
-		return m.handleKeyConfirmDeleteAllQuarantine(msg)
-	case ScreenDoctor:
-		return m.handleKeyDoctor(msg)
-	case ScreenConfig:
-		return m.handleKeyConfig(msg)
-	case ScreenConfigPresets:
-		return m.handleKeyConfigPresets(msg)
-	case ScreenQuarantineSettings:
-		return m.handleKeyQuarantineSettings(msg)
-	case ScreenLanguage:
-		return m.handleKeyLanguage(msg)
-	case ScreenAdminPrompt:
-		return m.handleKeyAdminPrompt(msg)
-	case ScreenError:
-		return m.handleKeyError(msg)
-	case ScreenUpdateAvailable:
-		return m.handleKeyUpdateAvailable(msg)
-	case ScreenUpdating:
-		return m.handleKeyUpdating(msg)
-	case ScreenNoUpdate:
-		return m.handleKeyNoUpdate(msg)
-	case ScreenPathConfirm:
-		return m.handleKeyPathConfirm(msg)
-	case ScreenPathResult:
-		return m.handleKeyPathResult(msg)
+	if h, ok := keyHandlers[m.screen]; ok {
+		return h(m, msg)
 	}
 	return m, nil
 }
