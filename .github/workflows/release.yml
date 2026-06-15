@@ -47,12 +47,6 @@ jobs:
       - name: Build
         run: go build -ldflags "-s -w -X main.Version=${{ github.ref_name }}" -o broominal.exe ./cmd/broominal
 
-      - name: Generate checksums
-        run: |
-          $hash = Get-FileHash broominal.exe -Algorithm SHA256
-          "$( $hash.Hash)  broominal.exe" | Out-File -Encoding utf8 checksums.txt
-        shell: pwsh
-
       - name: Create and push tag
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -68,6 +62,4 @@ jobs:
         with:
           body_path: RELEASE_BODY.md
           tag_name: ${{ github.event.inputs.version != '' && format('v{0}', github.event.inputs.version) || github.ref_name }}
-          files: |
-            broominal.exe
-            checksums.txt
+          files: broominal.exe
