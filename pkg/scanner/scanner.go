@@ -280,6 +280,9 @@ func extractTaskCommand(data []byte) string {
 	if end < 0 {
 		return ""
 	}
+	if start+end > len(s) {
+		return ""
+	}
 	return strings.Trim(strings.TrimSpace(s[start:start+end]), `"'`)
 }
 

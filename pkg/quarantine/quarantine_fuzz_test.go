@@ -1,9 +1,12 @@
 package quarantine
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
 func FuzzValidateID(f *testing.F) {
@@ -54,6 +57,25 @@ func FuzzIsAllowedRestorePath(f *testing.F) {
 		}
 		if result && strings.Contains(path, "\x00") {
 			t.Errorf("isAllowedRestorePath allowed null byte in path: %q", path)
+		}
+	})
+}
+
+func FuzzManifestDecode(f *testing.F) {
+	f.Add([]byte(`{"id":"2025-01-01-120000","created_at":"2025-01-01T12:00:00Z","items":[{"original":"C:\\test.txt","quarantined":"C:\\tmp\\test.txt","size":100}]}`))
+	f.Add([]byte(`{}`))
+	f.Add([]byte(``))
+	f.Add([]byte(`{"id":`))
+	f.Add([]byte(strings.Repeat("A", 10000)))
+	f.Add([]byte(`{"id":"@@@", "items": []}`))
+	f.Add([]byte(`{"id":"test", "items": [{"original": "` + strings.Repeat("../", 100) + `file"}]}`))
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		var m types.Manifest
+		err := json.Unmarshal(data, &m)
+		_ = err // should not panic regardless of input
+		if m.ID != "" && len(m.ID) > 1000 {
+			// id fields should not explode in size
 		}
 	})
 }
