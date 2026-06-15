@@ -143,6 +143,7 @@ Rules:
 - Do NOT remove or merge commits — every commit gets its own bullet.
 - Add a 1-2 sentence summary at the very top (no header) describing the release theme.
 - Return ONLY the final markdown. No preamble, no code fences.
+- Never mention AI, LLM, machine generation, or the beautification process itself. The changelog must read as if written by a human.
 "@
 
 $userPrompt = @"
