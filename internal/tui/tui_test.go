@@ -554,11 +554,17 @@ func TestHandleKeyLanguageSelect(t *testing.T) {
 	if mm2.screen != ScreenLanguage {
 		t.Errorf("after space apply: screen = %d, want Language", mm2.screen)
 	}
-	// Confirm with Enter — should return to Config
+	// Enter now applies the same as Space — stays on language screen
 	newM3, _ := mm2.handleKey(tea.KeyMsg{Type: tea.KeyEnter})
 	mm3 := newM3.(model)
-	if mm3.screen != ScreenConfig {
-		t.Errorf("after enter confirm: screen = %d, want Config", mm3.screen)
+	if mm3.screen != ScreenLanguage {
+		t.Errorf("after enter apply: screen = %d, want Language", mm3.screen)
+	}
+	// Esc returns to Config
+	newM4, _ := mm3.handleKey(tea.KeyMsg{Type: tea.KeyEsc})
+	mm4 := newM4.(model)
+	if mm4.screen != ScreenConfig {
+		t.Errorf("after esc: screen = %d, want Config", mm4.screen)
 	}
 }
 
