@@ -103,6 +103,12 @@ type cleanDoneMsg struct {
 	err    error
 }
 
+type quarantineDeleteDoneMsg struct {
+	count int
+	freed int64
+	err   error
+}
+
 type checkUpdateMsg struct {
 	release *update.Release
 	err     error
@@ -143,6 +149,7 @@ func init() {
 	registerKeyHandler(ScreenRestore, model.handleKeyRestore)
 	registerKeyHandler(ScreenConfirmDeleteQuarantine, model.handleKeyConfirmDeleteQuarantine)
 	registerKeyHandler(ScreenConfirmDeleteAllQuarantine, model.handleKeyConfirmDeleteAllQuarantine)
+	registerKeyHandler(ScreenDeletingQuarantine, model.handleKeyDeletingQuarantine)
 	registerKeyHandler(ScreenDoctor, model.handleKeyDoctor)
 	registerKeyHandler(ScreenConfig, model.handleKeyConfig)
 	registerKeyHandler(ScreenConfigPresets, model.handleKeyConfigPresets)
@@ -170,6 +177,7 @@ func init() {
 	registerViewHandler(ScreenRestore, model.viewRestore)
 	registerViewHandler(ScreenConfirmDeleteQuarantine, model.viewConfirmDeleteQuarantine)
 	registerViewHandler(ScreenConfirmDeleteAllQuarantine, model.viewConfirmDeleteAllQuarantine)
+	registerViewHandler(ScreenDeletingQuarantine, model.viewDeletingQuarantine)
 	registerViewHandler(ScreenDoctor, model.viewDoctor)
 	registerViewHandler(ScreenConfig, model.viewConfig)
 	registerViewHandler(ScreenConfigPresets, model.viewConfigPresets)
@@ -210,6 +218,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case errMsg:
 		m.err = msg.err
 		m.screen = ScreenError
+		return m, nil
+
+	case quarantineDeleteDoneMsg:
+		if msg.err != nil {
+			m.err = msg.err
+			m.screen = ScreenError
+			return m, nil
+		}
+		m.restoreEntries = reloadEntries()
+		m.restoreIdx = 0
+		m.screen = ScreenRestore
 		return m, nil
 
 	case cleanDoneMsg:

@@ -81,24 +81,15 @@ func (m model) handleKeyConfirmDeleteQuarantine(msg tea.KeyMsg) (tea.Model, tea.
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		id := m.restoreEntries[m.restoreIdx].id
-		_, err := quarantine.Delete(id)
-		if err != nil {
-			if util.IsFileLocked(err) {
+		m.deleteAllQuarantine = false
+		m.screen = ScreenDeletingQuarantine
+		return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
+			freed, err := quarantine.Delete(id)
+			if err != nil && util.IsFileLocked(err) {
 				err = fmt.Errorf("%s", i18n.T("quarantine_locked"))
 			}
-			m.err = err
-			m.screen = ScreenError
-			return m, nil
-		}
-		m.restoreEntries = reloadEntries()
-		if m.restoreIdx >= len(m.restoreEntries) && len(m.restoreEntries) > 0 {
-			m.restoreIdx = len(m.restoreEntries) - 1
-		}
-		if len(m.restoreEntries) == 0 {
-			m.restoreIdx = 0
-		}
-		m.screen = ScreenRestore
-		return m, nil
+			return quarantineDeleteDoneMsg{count: 1, freed: freed, err: err}
+		})
 	}
 	return m, nil
 }
@@ -112,21 +103,31 @@ func (m model) handleKeyConfirmDeleteAllQuarantine(msg tea.KeyMsg) (tea.Model, t
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
-		_, _, err := quarantine.CleanupAll()
-		if err != nil {
-			if util.IsFileLocked(err) {
+		m.deleteAllQuarantine = true
+		m.screen = ScreenDeletingQuarantine
+		return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
+			count, freed, err := quarantine.CleanupAll()
+			if err != nil && util.IsFileLocked(err) {
 				err = fmt.Errorf("%s", i18n.T("quarantine_locked"))
 			}
-			m.err = err
-			m.screen = ScreenError
-			return m, nil
-		}
-		m.restoreEntries = nil
-		m.restoreIdx = 0
-		m.screen = ScreenRestore
-		return m, nil
+			return quarantineDeleteDoneMsg{count: count, freed: freed, err: err}
+		})
 	}
 	return m, nil
+}
+
+func (m model) handleKeyDeletingQuarantine(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	return m, nil
+}
+
+func (m model) viewDeletingQuarantine() string {
+	label := i18n.T("cleaning_quarantines")
+	if !m.deleteAllQuarantine && m.restoreIdx < len(m.restoreEntries) {
+		label = fmt.Sprintf("%s %s", i18n.T("cleaning_quarantines"), m.restoreEntries[m.restoreIdx].id)
+	}
+	return m.appTitle(i18n.T("cleaning_quarantines")) + "\n\n" +
+		fmt.Sprintf("  %s %s\n", m.spinner.View(), label) +
+		mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
 }
 
 func (m model) viewRestore() string {
