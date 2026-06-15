@@ -13,11 +13,11 @@ import (
 
 // Config holds user-configurable cleanup rules.
 type Config struct {
-	EnabledCategories map[string]bool   `json:"enabled_categories"`
-	ActivePreset      string            `json:"active_preset"`
-	OldInstallerMonths int              `json:"old_installer_months"`
-	LargeFileMinSizeMB int              `json:"large_file_min_size_mb"`
-	LargeFileMonths    int              `json:"large_file_months"`
+	EnabledCategories  map[string]bool   `json:"enabled_categories"`
+	ActivePreset       string            `json:"active_preset"`
+	OldInstallerMonths int               `json:"old_installer_months"`
+	LargeFileMinSizeMB int               `json:"large_file_min_size_mb"`
+	LargeFileMonths    int               `json:"large_file_months"`
 	Exclusions         []string          `json:"exclusions"`
 	AutoRiskOverrides  map[string]string `json:"auto_risk_overrides"`
 	// QuarantineEnabled controls whether cleanups move files to quarantine (true, default)

@@ -71,9 +71,9 @@ type model struct {
 	restoreForceOverwrite bool
 	version               string
 	// Restore screen
-	restoreEntries    []restoreEntry
-	restoreIdx        int
-	restoreResult     string
+	restoreEntries      []restoreEntry
+	restoreIdx          int
+	restoreResult       string
 	deleteAllQuarantine bool
 	// Doctor screen
 	doctorChecks    []doctor.Check

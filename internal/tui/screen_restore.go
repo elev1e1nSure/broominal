@@ -210,4 +210,3 @@ func reloadEntries() []restoreEntry {
 	}
 	return entries
 }
-

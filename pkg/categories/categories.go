@@ -14,8 +14,8 @@ const (
 // Def holds all static metadata for a scanner category.
 // The scan function is wired separately in pkg/scanner.
 type Def struct {
-	Name        string          // display name; also used as the config key
-	InternalKey string          // used in types.Item.Category; i18n key is "cat_"+InternalKey
+	Name        string // display name; also used as the config key
+	InternalKey string // used in types.Item.Category; i18n key is "cat_"+InternalKey
 	Risk        types.RiskLevel
 	MinPreset   Preset // minimum preset that enables this category
 }
