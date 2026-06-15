@@ -1,6 +1,6 @@
 # Cleanup Categories
 
-60 categories across three presets. Risk levels: **Safe** (auto-selected), **Review** (manual select), **Danger** (never auto-selected).
+62 categories across three presets. Risk levels: **Safe** (auto-selected), **Review** (manual select), **Danger** (never auto-selected).
 
 ---
 
@@ -64,7 +64,7 @@ App caches and logs. Enabled in Standard and Deep presets.
 
 ---
 
-## Deep — 18 additional categories
+## Deep — 20 additional categories
 
 Areas that may contain user data or affect system behavior. Review carefully.
 
@@ -88,6 +88,8 @@ Areas that may contain user data or affect system behavior. Review carefully.
 | **Crash & Memory Dumps** (⚠ Review) | CrashDumps, Minidump, MEMORY.DMP (older than 7 days) |
 | **Microsoft Store Cache** (⚠ Review) | UWP/Store app caches — all apps including games |
 | **Printer Spooler** (⚠ Review) | Stuck print jobs older than 1 hour |
+| **Old Installers** (⚠ Review) | Installer artifacts in `%TEMP%`, `%APPDATA%` — `.exe`, `.msi` older than `old_installer_months` |
+| **Large Old Files** (⚠ Review) | Files larger than `large_file_size_mb` unused since `large_file_months` months |
 
 ---
 

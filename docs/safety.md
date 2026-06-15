@@ -64,6 +64,6 @@ Some categories apply age-based filters to avoid touching active data:
 |--------|-----------|----------|
 | **Quick** | 19 | Temp + browser + GPU caches. All Safe. |
 | **Standard** | 42 total | Adds app caches, logs, dev tool caches. Some Review. |
-| **Deep** | 60 total | Adds user data areas, system cleanup. More Review items. |
+| **Deep** | 62 total | Adds user data areas, system cleanup. More Review items. |
 
 All Review categories require manual selection regardless of preset. The preset only controls which categories appear — it does not auto-select Review items.

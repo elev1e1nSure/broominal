@@ -24,7 +24,14 @@ pkg/
   config/         JSON config, presets (Quick/Standard/Deep)
   i18n/           EN/RU, auto-detect
   types/          Shared structs
+  update/         GitHub release check and self-update
+  pathman/        System PATH manipulation
+  taskscheduler/  Windows Task Scheduler integration
 internal/tui/     Bubbletea UI
+scripts/          ai-changelog.ps1 — OpenRouter beautifier
+cliff.toml        git-cliff config for changelog generation
+githooks/         commit-msg (conventional commits), pre-commit
+justfile          Build command runner
 ```
 
 ## Adding a Category (4 files)
@@ -51,6 +58,8 @@ just build-release v1  # build with version
 just run scan          # build + run
 just test              # all tests
 just check             # fmt → vet → lint → test
+just changelog-raw     # preview raw commits since last tag
+just changelog         # AI-polished changelog via OpenRouter
 ```
 
 ## Code Conventions
@@ -68,6 +77,6 @@ just check             # fmt → vet → lint → test
 * commit after every meaningful change
 * format: conventional commits with scope
 * `type(scope): description` — e.g. `feat(auth): add JWT`, `fix(api): fix timeout`, `chore(deps): update deps`
-* types: feat, fix, chore, docs, style, refactor, perf, test, ci, build
+* types: feat, fix, chore, docs, style, refactor, perf, test, ci, build, revert
 * message in English, no trailing dot
 * ask if scope is unclear

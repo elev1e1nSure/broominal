@@ -28,6 +28,28 @@ just run ui
 | `just fmt` | Format code with `gofmt` |
 | `just check` | Full check: fmt → vet → lint → test-pkg |
 | `just clean` | Remove build artifacts |
+| `just changelog-raw` | Preview raw commits since last tag (no AI) |
+| `just changelog` | Generate beautified changelog via OpenRouter |
+| `just changelog-save FILE` | Save AI-polished changelog to file |
+
+### AI Changelog
+
+Release notes are auto-generated from conventional commits via [git-cliff](../cliff.toml). The `scripts/ai-changelog.ps1` script optionally pipes the output through an LLM (OpenRouter) to produce polished, human-readable release notes.
+
+```powershell
+$env:OPENROUTER_API_KEY = "sk-or-..."
+just changelog
+```
+
+Set `$env:OPENROUTER_MODEL` to override the model (default: `deepseek/deepseek-v4-flash`).
+
+## Git Hooks
+
+```powershell
+git config core.hooksPath githooks
+```
+- `pre-commit` — warns on undocumented category or i18n changes
+- `commit-msg` — enforces conventional commits (types: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `build`, `ci`, `perf`, `style`, `revert`)
 
 ## Architecture
 
@@ -81,10 +103,7 @@ Tests create temp directories — no real files are touched. Scanner tests use `
 gofmt → go vet → golangci-lint → go test ./... → Windows build
 ```
 
-## Git Hooks
-
-```powershell
-git config core.hooksPath githooks
+Release workflow (on `v*` tag push):
 ```
-- `pre-commit` — warns on undocumented category or i18n changes  
-- `commit-msg` — enforces conventional commits
+git-cliff → [AI beautifier] → build → publish GitHub Release
+```

@@ -18,10 +18,7 @@ Execute cleanup — move selected items to quarantine (or delete if quarantine i
 broominal clean                # safe + review (default)
 broominal clean --safe          # safe only
 broominal clean --danger        # safe + review + danger
-broominal clean --quarantine-off  # delete permanently (no backup)
 ```
-
-With `--quarantine-off`, files are deleted permanently. Not recommended.
 
 ## restore
 
@@ -69,7 +66,7 @@ broominal quarantine-cleanup --max-age-days 7 --force  # older than N days
 
 ## report
 
-Generate a JSON report from a scan. Includes per-category breakdown and cleanup results.
+Generate a JSON report from a scan. Includes per-category breakdown.
 
 ```powershell
 broominal report
@@ -83,3 +80,9 @@ Add or remove broominal from the system PATH.
 broominal path add
 broominal path remove
 ```
+
+## Global Flags
+
+| Flag | Description |
+|------|-------------|
+| `--json-logs` | Output logs in JSON format (for structured logging pipelines) |

@@ -18,7 +18,7 @@
 
 **broominal** cleans Windows by moving files into **quarantine** — not deleting them. Every cleanup is inspectable and restorable.
 
-60 scanner categories across three risk levels (Safe / Review / Danger), interactive TUI, JSON manifests, multilingual (EN/RU).
+62 scanner categories across three risk levels (Safe / Review / Danger), interactive TUI, JSON manifests, multilingual (EN/RU), AI-polished release notes.
 
 No fake boost magic. No hidden tweaks. No "trust me bro" cleanup.
 
@@ -57,7 +57,7 @@ Files go to `%LOCALAPPDATA%\broominal\quarantine\<id>\` with a `manifest.json`. 
 | **Review** | Manual select. Downloads, dumps, update cache |
 | **Danger** | Never auto-selected. System paths |
 
-Three presets: **Quick** (19 safe categories) → **Standard** (42 total) → **Deep** (60 total). Review items require manual selection regardless of preset.
+Three presets: **Quick** (19 safe categories) → **Standard** (42 total) → **Deep** (62 total). Review items require manual selection regardless of preset.
 
 ## Commands
 
@@ -73,6 +73,8 @@ cd broominal
 just build
 just run ui
 ```
+
+Release notes are generated from conventional commits via [git-cliff](cliff.toml) and optionally beautified with an LLM through the [`scripts/ai-changelog.ps1`](scripts/ai-changelog.ps1) script (requires `OPENROUTER_API_KEY`).
 
 See [docs/developing.md](docs/developing.md).
 
