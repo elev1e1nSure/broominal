@@ -205,6 +205,7 @@ func (m model) viewCategories() string {
 		body += line + "\n"
 	}
 	body += "\n" + footer(
+		keyHint("Q", i18n.T("quit")),
 		keyHint("Space", i18n.T("toggle")),
 		keyHint("D", i18n.T("details")),
 		keyHint("Enter", i18n.T("confirm")),
@@ -219,6 +220,7 @@ func (m model) viewWarnRecycleBin() string {
 		dangerStyle.Render(fmt.Sprintf("  "+i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
 		mutedStyle.Render("  "+i18n.T("hint_recycle_warn")) + "\n\n" +
 		footer(
+			keyHint("Q", i18n.T("quit")),
 			keyHint("Enter", i18n.T("proceed")),
 			keyHint("Esc", i18n.T("back")),
 		)
@@ -228,6 +230,7 @@ func (m model) viewWarnDuplicates() string {
 	return m.appTitle(i18n.T("warning")) + "\n\n" +
 		reviewStyle.Render("  "+i18n.T("duplicate_files_warn")) + "\n\n" +
 		footer(
+			keyHint("Q", i18n.T("quit")),
 			keyHint("Enter", i18n.T("proceed")),
 			keyHint("Esc", i18n.T("back")),
 		)
@@ -255,7 +258,7 @@ func (m model) viewCategoryInfo() string {
 		body += "  " + mutedStyle.Render(desc) + "\n\n"
 	}
 
-	body += footer(keyHint("Esc", i18n.T("back")))
+	body += footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
 	return body
 }
 
@@ -264,6 +267,7 @@ func (m model) viewConfirm() string {
 	return head + "\n\n" + m.confirmMsg +
 		"  " + mutedStyle.Render(strings.Repeat("─", 42)) + "\n\n" +
 		footer(
+			keyHint("Q", i18n.T("quit")),
 			keyHint("Enter", i18n.T("confirm")),
 			keyHint("Esc", i18n.T("back")),
 		)

@@ -53,6 +53,7 @@ func (m model) viewAdminPrompt() string {
 	body += "  " + options[0] + "\n"
 	body += "  " + options[1] + "\n\n"
 	body += footer(
+		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("confirm")),
 		keyHint("Esc", i18n.T("back")),
 	)

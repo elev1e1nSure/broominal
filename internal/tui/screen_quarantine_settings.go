@@ -227,6 +227,7 @@ func (m model) viewQuarantineSettings() string {
 		body += "\n" + msgStyle.Render("  "+m.quarantineSettingsMsg) + "\n"
 	}
 	body += "\n" + footer(
+		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("toggle")),
 		keyHint("Esc", i18n.T("back")),
 	)

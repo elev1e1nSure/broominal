@@ -110,14 +110,15 @@ func (m model) handleKeyRestoreConflict(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) viewCleaning() string {
 	return m.appTitle(i18n.T("cleaning")) + "\n\n" +
 		fmt.Sprintf("  %s %s\n", m.spinner.View(), i18n.T("moving_files")) +
-		mutedStyle.Render("  "+i18n.T("please_wait"))
+		mutedStyle.Render("  "+i18n.T("please_wait")) + "\n\n" +
+		footer(keyHint("Esc", i18n.T("cancel")))
 }
 
 func (m model) viewResult() string {
 	if m.cleanResult == nil {
 		return m.appTitle(i18n.T("restored")) + "\n\n" +
 			safeStyle.Render("  [OK] "+i18n.T("hint_restored")) + "\n\n" +
-			footer(keyHint("Esc", i18n.T("back")))
+			footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
 	}
 	body := m.appTitle(i18n.T("cleanup_complete")) + "\n\n" +
 		fmt.Sprintf("  Freed:      %s\n", safeStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
@@ -127,6 +128,7 @@ func (m model) viewResult() string {
 	}
 	body += fmt.Sprintf("  Restore ID: %s\n", mutedStyle.Render(m.cleanResult.RestoreID))
 	body += "\n" + footer(
+		keyHint("Q", i18n.T("quit")),
 		keyHint("R", i18n.T("restore_last")),
 		keyHint("Esc", i18n.T("back")),
 	)
@@ -141,6 +143,7 @@ func (m model) viewRestoreConflict() string {
 		body += mutedStyle.Render("    "+p) + "\n"
 	}
 	body += "\n" + footer(
+		keyHint("Q", i18n.T("quit")),
 		keyHint("O", i18n.T("overwrite_all")),
 		keyHint("S", i18n.T("skip_all")),
 		keyHint("Esc", i18n.T("back")),

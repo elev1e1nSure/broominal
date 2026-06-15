@@ -73,6 +73,7 @@ func (m model) viewPathConfirm() string {
 	body += "  " + mutedStyle.Render(fmt.Sprintf(i18n.T(descKey), exe)) + "\n\n"
 
 	body += footer(
+		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("confirm")),
 		keyHint("Esc", i18n.T("back")),
 	)
@@ -84,6 +85,7 @@ func (m model) viewPathResult() string {
 	body += m.appTitle(m.pathResultMsg) + "\n\n"
 	body += "  " + mutedStyle.Render(i18n.T("path_result_restart_terminal")) + "\n\n"
 	body += footer(
+		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("back")),
 		keyHint("Esc", i18n.T("back")),
 	)

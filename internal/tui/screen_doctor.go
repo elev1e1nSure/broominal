@@ -68,6 +68,7 @@ func (m model) viewDoctor() string {
 	}
 
 	var hints []string
+	hints = append(hints, keyHint("Q", i18n.T("quit")))
 	if hasFix {
 		hints = append(hints, keyHint("F", i18n.T("fix_issue")))
 	}

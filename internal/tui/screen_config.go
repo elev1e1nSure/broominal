@@ -13,7 +13,10 @@ import (
 )
 
 func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
+		return m, tea.Quit
+	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = m.lastMainMenuIdx
 		return m, nil
@@ -131,6 +134,7 @@ func (m model) viewConfig() string {
 		}
 	}
 	body += "\n" + footer(
+		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("select")),
 		keyHint("Esc", i18n.T("back")),
 	)
@@ -175,6 +179,7 @@ func (m model) viewConfigPresets() string {
 	}
 	body += mutedStyle.Render("  "+i18n.T("preset_note")) + "\n\n"
 	body += footer(
+		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter/Space", i18n.T("apply")),
 		keyHint("Esc", i18n.T("back")),
 	)

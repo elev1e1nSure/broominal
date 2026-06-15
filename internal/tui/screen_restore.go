@@ -155,6 +155,7 @@ func (m model) viewRestore() string {
 		body += "\n" + safeStyle.Render("  [OK] "+m.restoreResult) + "\n"
 	}
 	body += "\n" + footer(
+		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("restore")),
 		keyHint("X", i18n.T("delete")),
 		keyHint("A", i18n.T("delete_all")),
@@ -173,6 +174,7 @@ func (m model) viewConfirmDeleteQuarantine() string {
 		reviewStyle.Render("  "+i18n.T("confirm_delete_one")) + "\n" +
 		mutedStyle.Render("  "+entry) + "\n\n" +
 		footer(
+			keyHint("Q", i18n.T("quit")),
 			keyHint("Enter", i18n.T("confirm")),
 			keyHint("Esc", i18n.T("back")),
 		)
@@ -183,6 +185,7 @@ func (m model) viewConfirmDeleteAllQuarantine() string {
 	return m.appTitle(i18n.T("warning")) + "\n\n" +
 		dangerStyle.Render("  "+msg) + "\n\n" +
 		footer(
+			keyHint("Q", i18n.T("quit")),
 			keyHint("Enter", i18n.T("confirm")),
 			keyHint("Esc", i18n.T("back")),
 		)
