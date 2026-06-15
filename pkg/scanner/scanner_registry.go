@@ -56,7 +56,7 @@ var scanFuncs = map[string]func(context.Context, *config.Config) ([]types.Item, 
 	"Messenger Cache":             scanMessengerCache,
 	"Game Launcher Cache":         scanGameLauncherCache,
 	"Dev Cache":                   scanDevCache,
-	"Logs":                        func(ctx context.Context, cfg *config.Config) ([]types.Item, error) { return scanLogs(ctx, cfg), nil },
+	"Logs":                        scanLogs,
 	"Windows Update Cache":        scanWindowsUpdateCache,
 	"Nvidia Installer Leftovers":  scanNvidiaInstallerLeftovers,
 	"Zoom Cache":                  scanZoomCache,
@@ -94,6 +94,8 @@ var scanFuncs = map[string]func(context.Context, *config.Config) ([]types.Item, 
 	"Crash & Memory Dumps":       scanCrashMemoryDumps,
 	"Microsoft Store Cache":      scanMsStoreCache,
 	"Printer Spooler":            scanPrinterSpooler,
+	"Old Installers":             scanOldInstallersCat,
+	"Large Old Files":            scanLargeOldFilesCat,
 }
 
 // allScanners is built from categories.All + scanFuncs.

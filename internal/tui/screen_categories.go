@@ -124,6 +124,8 @@ func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		m.screen = ScreenCleaning
+		ctx, cancel := context.WithCancel(context.Background())
+		m.cleanCtxCancel = cancel
 		return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
 			var selected []types.Item
 			for _, c := range m.categories {
@@ -135,7 +137,7 @@ func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				}
 			}
 			cfg, _ := config.Load()
-			res, err := cleaner.Run(context.Background(), selected, m.result, cfg)
+			res, err := cleaner.Run(ctx, selected, m.result, cfg)
 			if err != nil {
 				return cleanDoneMsg{nil, err}
 			}

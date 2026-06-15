@@ -202,7 +202,6 @@ func reloadEntries() []restoreEntry {
 			createdAt: mf.CreatedAt,
 			totalSize: mf.TotalSize,
 			files:     mf.Files,
-			label:     mf.Label,
 		})
 	}
 	return entries

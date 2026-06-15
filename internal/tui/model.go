@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -53,7 +54,6 @@ type restoreEntry struct {
 	createdAt time.Time
 	totalSize int64
 	files     int
-	label     string
 }
 
 type model struct {
@@ -82,6 +82,7 @@ type model struct {
 	configCfg             *config.Config
 	lastConfigIdx         int
 	quarantineSettingsMsg string
+	cleanupOldOnly        bool
 	// Cleanup screen
 	cleanupResult string
 	// Admin prompt
@@ -104,6 +105,9 @@ type model struct {
 	lastMainMenuIdx int
 	// Set to true when update is installed and process should restart
 	restartAfterUpdate bool
+	// Cancellation for long-running operations
+	cleanCtxCancel  context.CancelFunc
+	updateCancelled bool
 }
 
 type categoryItem struct {

@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -144,6 +146,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case cleanDoneMsg:
 		if msg.err != nil {
+			if errors.Is(msg.err, context.Canceled) {
+				m.screen = ScreenMainMenu
+				m.selectedIdx = m.lastMainMenuIdx
+				return m, nil
+			}
 			m.err = msg.err
 			m.screen = ScreenError
 			return m, nil
@@ -167,6 +174,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case downloadUpdateMsg:
+		if m.updateCancelled {
+			return m, nil
+		}
 		if msg.err != nil {
 			m.updateError = msg.err
 			m.updateProgress = i18n.T("download_failed")
@@ -179,6 +189,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 
 	case installUpdateMsg:
+		if m.updateCancelled {
+			return m, nil
+		}
 		if msg.err != nil {
 			m.updateError = msg.err
 			m.updateProgress = i18n.T("install_failed")
@@ -252,6 +265,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleKeyCategoryInfo(msg)
 	case ScreenConfirm:
 		return m.handleKeyConfirm(msg)
+	case ScreenCleaning:
+		return m.handleKeyCleaning(msg)
 	case ScreenResult:
 		return m.handleKeyResult(msg)
 	case ScreenRestoreConflict:

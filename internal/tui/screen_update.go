@@ -43,24 +43,22 @@ func (m model) handleKeyUpdateAvailable(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if m.updateError != nil {
-		s := msg.String()
-		if s == "esc" {
-			if m.updateFromConfig {
-				m.screen = ScreenConfig
-				m.selectedIdx = m.lastConfigIdx
-			} else {
-				m.screen = ScreenMainMenu
-				m.selectedIdx = m.lastMainMenuIdx
-			}
+	s := msg.String()
+	if s == "esc" || s == "q" {
+		m.updateCancelled = true
+		if m.updateFromConfig {
+			m.screen = ScreenConfig
+			m.selectedIdx = m.lastConfigIdx
+		} else {
+			m.screen = ScreenMainMenu
+			m.selectedIdx = m.lastMainMenuIdx
+		}
+		m.updateProgress = ""
+		m.updateFromConfig = false
+		if m.updateError != nil {
 			m.updateError = nil
-			m.updateProgress = ""
-			m.updateFromConfig = false
-			return m, nil
 		}
-		if s == "q" {
-			return m, tea.Quit
-		}
+		return m, nil
 	}
 	return m, nil
 }

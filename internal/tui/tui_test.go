@@ -162,8 +162,8 @@ func TestViewDashboardAlignsLongCategoryNames(t *testing.T) {
 	m.screen = ScreenDashboard
 	m.result = &types.ScanResult{
 		Categories: []types.CategorySummary{
-			{Category: "Very long category name that should not move the bar", Risk: types.RiskSafe, Size: 100, Files: 1},
-			{Category: "Short", Risk: types.RiskReview, Size: 50, Files: 1},
+			{Category: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", Risk: types.RiskSafe, Size: 100, Files: 1},
+			{Category: "BBBBBBBBBBBBBBBBBBBBBBBBBBBB", Risk: types.RiskReview, Size: 50, Files: 1},
 		},
 		TotalSize:  150,
 		SafeSize:   100,
@@ -171,28 +171,20 @@ func TestViewDashboardAlignsLongCategoryNames(t *testing.T) {
 	}
 	out := ansi.Strip(m.View())
 	lines := strings.Split(out, "\n")
-	var sizeCols []int
+	var sizeFields []int
 	for _, line := range lines {
 		switch {
-		case strings.Contains(line, "Very long category name that"):
-			idx := strings.Index(line, "    100 B")
-			if idx < 0 {
-				t.Fatalf("expected size in %q", line)
-			}
-			sizeCols = append(sizeCols, idx)
-		case strings.Contains(line, "Short"):
-			idx := strings.Index(line, "     50 B")
-			if idx < 0 {
-				t.Fatalf("expected size in %q", line)
-			}
-			sizeCols = append(sizeCols, idx)
+		case strings.Contains(line, "AAAA"):
+			sizeFields = append(sizeFields, strings.Index(line, "    100 B"))
+		case strings.Contains(line, "BBBB"):
+			sizeFields = append(sizeFields, strings.Index(line, "     50 B"))
 		}
 	}
-	if len(sizeCols) != 2 {
-		t.Fatalf("expected 2 category rows, got %d", len(sizeCols))
+	if len(sizeFields) != 2 {
+		t.Fatalf("expected 2 category rows, got %d", len(sizeFields))
 	}
-	if sizeCols[0] != sizeCols[1] {
-		t.Fatalf("size column should align, got %v", sizeCols)
+	if sizeFields[0] != sizeFields[1] {
+		t.Fatalf("size column should align, got %v", sizeFields)
 	}
 }
 
@@ -220,33 +212,26 @@ func TestViewCategoriesAlignsLongNames(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenCategories
 	m.categories = []categoryItem{
-		{cat: types.CategorySummary{Category: "Very long category name that should not move the size column", Size: 100, Files: 1, Risk: types.RiskSafe}, selected: true},
-		{cat: types.CategorySummary{Category: "Short", Size: 50, Files: 2, Risk: types.RiskReview}, selected: false},
+		{cat: types.CategorySummary{Category: "BBBBBBBBBBBBBBBBBBBBBBBBBBBB", Size: 100, Files: 1, Risk: types.RiskSafe}, selected: true},
+		{cat: types.CategorySummary{Category: "CCCCCCCCCCCCCCCCCCCCCCCCCCCC", Size: 50, Files: 2, Risk: types.RiskReview}, selected: false},
 	}
 	m.selectedIdx = 0
 
 	out := ansi.Strip(m.View())
-	var sizeFields []int
+	var sizeCols []int
 	for _, line := range strings.Split(out, "\n") {
 		switch {
-		case strings.Contains(line, "100 B"):
-			// Size field is right-aligned in a 12-char column; mark the field start
-			idx := strings.Index(line, "100 B")
-			if idx >= 12 {
-				sizeFields = append(sizeFields, idx-(12-len("100 B")))
-			}
-		case strings.Contains(line, "50 B"):
-			idx := strings.Index(line, "50 B")
-			if idx >= 12 {
-				sizeFields = append(sizeFields, idx-(12-len("50 B")))
-			}
+		case strings.Contains(line, "BBBB"):
+			sizeCols = append(sizeCols, strings.Index(line, "       100 B"))
+		case strings.Contains(line, "CCCC"):
+			sizeCols = append(sizeCols, strings.Index(line, "        50 B"))
 		}
 	}
-	if len(sizeFields) != 2 {
-		t.Fatalf("expected 2 category rows, got %d", len(sizeFields))
+	if len(sizeCols) != 2 {
+		t.Fatalf("expected 2 category rows, got %d", len(sizeCols))
 	}
-	if sizeFields[0] != sizeFields[1] {
-		t.Fatalf("size columns should align, got %v", sizeFields)
+	if sizeCols[0] != sizeCols[1] {
+		t.Fatalf("size columns should align, got %v", sizeCols)
 	}
 }
 

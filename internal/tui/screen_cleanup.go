@@ -20,10 +20,22 @@ func (m model) handleKeyQuarantineCleanup(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.selectedIdx = m.lastMainMenuIdx
 		return m, nil
 	}
+	if key.Matches(msg, key.NewBinding(key.WithKeys("left", "h", "right", "l"))) {
+		m.cleanupOldOnly = !m.cleanupOldOnly
+		return m, nil
+	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		m.screen = ScreenQuarantineCleaning
+		oldOnly := m.cleanupOldOnly
 		return m, tea.Batch(m.spinner.Tick, func() tea.Msg {
-			deleted, freed, err := quarantine.CleanupAll()
+			var deleted int
+			var freed int64
+			var err error
+			if oldOnly {
+				deleted, freed, err = quarantine.Cleanup(30)
+			} else {
+				deleted, freed, err = quarantine.CleanupAll()
+			}
 			if err != nil {
 				if util.IsFileLocked(err) {
 					err = fmt.Errorf("%s", i18n.T("quarantine_locked"))
@@ -41,10 +53,16 @@ func (m model) handleKeyQuarantineCleanup(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewQuarantineCleanup() string {
+	modeLabel := i18n.T("all_quarantines")
+	if m.cleanupOldOnly {
+		modeLabel = i18n.T("old_only")
+	}
 	head := m.appTitle(i18n.T("quarantine_cleanup"))
 	return head + "\n\n" +
 		mutedStyle.Render("  "+i18n.T("cleanup_desc")) + "\n\n" +
+		fmt.Sprintf("  %s: %s\n", i18n.T("mode"), modeLabel) + "\n" +
 		footer(
+			keyHint("←/→", i18n.T("toggle")),
 			keyHint("Enter", i18n.T("confirm")),
 			keyHint("Esc", i18n.T("back")),
 		)

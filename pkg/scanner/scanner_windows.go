@@ -23,7 +23,7 @@ func scanTemp(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	return scanDir(ctx, tempPath, "temp", types.RiskSafe, nil, true, cfg)
 }
 
-func scanLogs(ctx context.Context, cfg *config.Config) []types.Item {
+func scanLogs(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	tempPath := os.Getenv("TEMP")
 	if tempPath != "" {
@@ -33,7 +33,7 @@ func scanLogs(ctx context.Context, cfg *config.Config) []types.Item {
 		}
 		items = append(items, sub...)
 	}
-	return items
+	return items, nil
 }
 
 func scanThumbnails(ctx context.Context, cfg *config.Config) ([]types.Item, error) {

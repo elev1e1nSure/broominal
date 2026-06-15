@@ -10,6 +10,19 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
+func (m model) handleKeyCleaning(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("esc", "q"))) {
+		if m.cleanCtxCancel != nil {
+			m.cleanCtxCancel()
+			m.cleanCtxCancel = nil
+		}
+		m.screen = ScreenMainMenu
+		m.selectedIdx = m.lastMainMenuIdx
+		return m, nil
+	}
+	return m, nil
+}
+
 func (m model) handleKeyResult(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
 		return m, tea.Quit

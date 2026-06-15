@@ -74,7 +74,6 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					createdAt: mf.CreatedAt,
 					totalSize: mf.TotalSize,
 					files:     mf.Files,
-					label:     mf.Label,
 				})
 			}
 			m.restoreEntries = entries
