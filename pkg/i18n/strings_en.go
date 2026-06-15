@@ -313,8 +313,6 @@ var enStrings = map[string]string{
 	"quarantine_cleanup_7d":          "Every 7 days",
 	"quarantine_cleanup_14d":         "Every 14 days",
 	"quarantine_cleanup_30d":         "Every 30 days",
-	"quarantine_task_set":            "Scheduled task created.",
-	"quarantine_task_removed":        "Scheduled task removed.",
 	"quarantine_task_fail":           "Could not configure the scheduled task.",
 	"contains_review_files":          "Contains files that require review — check before deleting",
 	"config_path":                    "Add to PATH",

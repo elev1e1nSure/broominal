@@ -305,8 +305,6 @@ var ruStrings = map[string]string{
 	"quarantine_cleanup_7d":          "Каждые 7 дней",
 	"quarantine_cleanup_14d":         "Каждые 14 дней",
 	"quarantine_cleanup_30d":         "Каждые 30 дней",
-	"quarantine_task_set":            "Задача планировщика создана.",
-	"quarantine_task_removed":        "Задача планировщика удалена.",
 	"quarantine_task_fail":           "Не удалось настроить задачу планировщика.",
 	"contains_review_files":          "Выбраны файлы, требующие проверки перед удалением",
 	"config_path":                    "Добавить в PATH",

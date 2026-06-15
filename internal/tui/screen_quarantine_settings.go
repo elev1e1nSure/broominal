@@ -56,14 +56,10 @@ func (m model) handleKeyQuarantineSettings(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			if prev == 0 {
 				if err := taskscheduler.Delete(); err != nil {
 					m.quarantineSettingsMsg = i18n.T("quarantine_task_fail")
-				} else {
-					m.quarantineSettingsMsg = i18n.T("quarantine_task_removed")
 				}
 			} else {
 				if err := taskscheduler.Set(prev); err != nil {
 					m.quarantineSettingsMsg = i18n.T("quarantine_task_fail")
-				} else {
-					m.quarantineSettingsMsg = i18n.T("quarantine_task_set")
 				}
 			}
 		}
@@ -91,14 +87,10 @@ func (m model) handleKeyQuarantineSettings(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			if next == 0 {
 				if err := taskscheduler.Delete(); err != nil {
 					m.quarantineSettingsMsg = i18n.T("quarantine_task_fail")
-				} else {
-					m.quarantineSettingsMsg = i18n.T("quarantine_task_removed")
 				}
 			} else {
 				if err := taskscheduler.Set(next); err != nil {
 					m.quarantineSettingsMsg = i18n.T("quarantine_task_fail")
-				} else {
-					m.quarantineSettingsMsg = i18n.T("quarantine_task_set")
 				}
 			}
 		}
@@ -126,14 +118,10 @@ func (m model) handleKeyQuarantineSettings(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			if next == 0 {
 				if err := taskscheduler.Delete(); err != nil {
 					m.quarantineSettingsMsg = i18n.T("quarantine_task_fail")
-				} else {
-					m.quarantineSettingsMsg = i18n.T("quarantine_task_removed")
 				}
 			} else {
 				if err := taskscheduler.Set(next); err != nil {
 					m.quarantineSettingsMsg = i18n.T("quarantine_task_fail")
-				} else {
-					m.quarantineSettingsMsg = i18n.T("quarantine_task_set")
 				}
 			}
 		}
