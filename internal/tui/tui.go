@@ -122,6 +122,13 @@ var keyHandlers = map[Screen]keyHandler{}
 
 func registerKeyHandler(s Screen, h keyHandler) { keyHandlers[s] = h }
 
+// viewHandler is a screen-specific view renderer.
+type viewHandler func(m model) string
+
+var viewHandlers = map[Screen]viewHandler{}
+
+func registerViewHandler(s Screen, h viewHandler) { viewHandlers[s] = h }
+
 func init() {
 	registerKeyHandler(ScreenMainMenu, model.handleKeyMainMenu)
 	registerKeyHandler(ScreenDashboard, model.handleKeyDashboard)
@@ -148,6 +155,32 @@ func init() {
 	registerKeyHandler(ScreenNoUpdate, model.handleKeyNoUpdate)
 	registerKeyHandler(ScreenPathConfirm, model.handleKeyPathConfirm)
 	registerKeyHandler(ScreenPathResult, model.handleKeyPathResult)
+
+	registerViewHandler(ScreenMainMenu, model.viewMainMenu)
+	registerViewHandler(ScreenDashboard, model.viewDashboard)
+	registerViewHandler(ScreenCategories, model.viewCategories)
+	registerViewHandler(ScreenWarnRecycleBin, model.viewWarnRecycleBin)
+	registerViewHandler(ScreenWarnDuplicates, model.viewWarnDuplicates)
+	registerViewHandler(ScreenCategoryInfo, model.viewCategoryInfo)
+	registerViewHandler(ScreenConfirm, model.viewConfirm)
+	registerViewHandler(ScreenCleaning, model.viewCleaning)
+	registerViewHandler(ScreenResult, model.viewResult)
+	registerViewHandler(ScreenRestoreConflict, model.viewRestoreConflict)
+	registerViewHandler(ScreenError, model.viewError)
+	registerViewHandler(ScreenRestore, model.viewRestore)
+	registerViewHandler(ScreenConfirmDeleteQuarantine, model.viewConfirmDeleteQuarantine)
+	registerViewHandler(ScreenConfirmDeleteAllQuarantine, model.viewConfirmDeleteAllQuarantine)
+	registerViewHandler(ScreenDoctor, model.viewDoctor)
+	registerViewHandler(ScreenConfig, model.viewConfig)
+	registerViewHandler(ScreenConfigPresets, model.viewConfigPresets)
+	registerViewHandler(ScreenQuarantineSettings, model.viewQuarantineSettings)
+	registerViewHandler(ScreenLanguage, model.viewLanguage)
+	registerViewHandler(ScreenAdminPrompt, model.viewAdminPrompt)
+	registerViewHandler(ScreenUpdateAvailable, model.viewUpdateAvailable)
+	registerViewHandler(ScreenUpdating, model.viewUpdating)
+	registerViewHandler(ScreenNoUpdate, model.viewNoUpdate)
+	registerViewHandler(ScreenPathConfirm, model.viewPathConfirm)
+	registerViewHandler(ScreenPathResult, model.viewPathResult)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -290,57 +323,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	switch m.screen {
-	case ScreenMainMenu:
-		return m.viewMainMenu()
-	case ScreenDashboard:
-		return m.viewDashboard()
-	case ScreenCategories:
-		return m.viewCategories()
-	case ScreenWarnRecycleBin:
-		return m.viewWarnRecycleBin()
-	case ScreenWarnDuplicates:
-		return m.viewWarnDuplicates()
-	case ScreenCategoryInfo:
-		return m.viewCategoryInfo()
-	case ScreenConfirm:
-		return m.viewConfirm()
-	case ScreenCleaning:
-		return m.viewCleaning()
-	case ScreenResult:
-		return m.viewResult()
-	case ScreenRestoreConflict:
-		return m.viewRestoreConflict()
-	case ScreenError:
-		return m.viewError()
-	case ScreenRestore:
-		return m.viewRestore()
-	case ScreenConfirmDeleteQuarantine:
-		return m.viewConfirmDeleteQuarantine()
-	case ScreenConfirmDeleteAllQuarantine:
-		return m.viewConfirmDeleteAllQuarantine()
-	case ScreenDoctor:
-		return m.viewDoctor()
-	case ScreenConfig:
-		return m.viewConfig()
-	case ScreenConfigPresets:
-		return m.viewConfigPresets()
-	case ScreenQuarantineSettings:
-		return m.viewQuarantineSettings()
-	case ScreenLanguage:
-		return m.viewLanguage()
-	case ScreenAdminPrompt:
-		return m.viewAdminPrompt()
-	case ScreenUpdateAvailable:
-		return m.viewUpdateAvailable()
-	case ScreenUpdating:
-		return m.viewUpdating()
-	case ScreenNoUpdate:
-		return m.viewNoUpdate()
-	case ScreenPathConfirm:
-		return m.viewPathConfirm()
-	case ScreenPathResult:
-		return m.viewPathResult()
+	if h, ok := viewHandlers[m.screen]; ok {
+		return h(m)
 	}
 	return ""
 }
