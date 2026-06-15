@@ -85,7 +85,7 @@ func (m model) handleKeyConfigPresets(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("enter", "space"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("enter", " "))) {
 		m.applySelectedPreset()
 		return m, nil
 	}
