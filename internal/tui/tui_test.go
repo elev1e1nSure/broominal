@@ -458,15 +458,6 @@ func TestViewConfig(t *testing.T) {
 	}
 }
 
-func TestViewQuarantineCleanup(t *testing.T) {
-	m := initialModel()
-	m.screen = ScreenQuarantineCleanup
-	out := m.View()
-	if !strings.Contains(out, "Quarantine Cleanup") && !strings.Contains(out, "Очистка карантина") {
-		t.Error("view should contain 'Quarantine Cleanup'")
-	}
-}
-
 func TestQuarantineSettingsDisabledLocksAutoCleanup(t *testing.T) {
 	i18n.SetLanguage("ru")
 	defer i18n.SetLanguage("en")

@@ -38,8 +38,6 @@ const (
 	ScreenConfig
 	ScreenConfigPresets
 	ScreenQuarantineSettings
-	ScreenQuarantineCleanup
-	ScreenQuarantineCleaning
 	ScreenLanguage
 	ScreenAdminPrompt
 	ScreenUpdateAvailable
@@ -82,9 +80,6 @@ type model struct {
 	configCfg             *config.Config
 	lastConfigIdx         int
 	quarantineSettingsMsg string
-	cleanupOldOnly        bool
-	// Cleanup screen
-	cleanupResult string
 	// Admin prompt
 	adminPromptIdx int
 	// Update screen

@@ -285,8 +285,6 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleKeyConfigPresets(msg)
 	case ScreenQuarantineSettings:
 		return m.handleKeyQuarantineSettings(msg)
-	case ScreenQuarantineCleanup:
-		return m.handleKeyQuarantineCleanup(msg)
 	case ScreenLanguage:
 		return m.handleKeyLanguage(msg)
 	case ScreenAdminPrompt:
@@ -345,10 +343,6 @@ func (m model) View() string {
 		return m.viewConfigPresets()
 	case ScreenQuarantineSettings:
 		return m.viewQuarantineSettings()
-	case ScreenQuarantineCleanup:
-		return m.viewQuarantineCleanup()
-	case ScreenQuarantineCleaning:
-		return m.viewQuarantineCleaning()
 	case ScreenLanguage:
 		return m.viewLanguage()
 	case ScreenAdminPrompt:
