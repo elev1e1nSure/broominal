@@ -32,45 +32,30 @@ func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys(" "))) {
-		langs := i18n.SupportedLanguages()
-		if m.selectedIdx < len(langs) {
-			lang := langs[m.selectedIdx]
-			i18n.SetLanguage(lang)
-			cfg, err := config.Load()
-			if err != nil {
-				slog.Warn("tui: failed to load config for language change", "error", err)
-			}
-			if cfg != nil {
-				cfg.Language = lang
-				if err := config.Save(cfg); err != nil {
-					slog.Warn("tui: failed to save language config", "error", err)
-				}
-			}
-		}
-		return m, nil
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
-		langs := i18n.SupportedLanguages()
-		if m.selectedIdx < len(langs) {
-			lang := langs[m.selectedIdx]
-			i18n.SetLanguage(lang)
-			cfg, err := config.Load()
-			if err != nil {
-				slog.Warn("tui: failed to load config for language change", "error", err)
-			}
-			if cfg != nil {
-				cfg.Language = lang
-				if err := config.Save(cfg); err != nil {
-					slog.Warn("tui: failed to save language config", "error", err)
-				}
-			}
-		}
-		m.screen = ScreenConfig
-		m.selectedIdx = m.lastConfigIdx
+	if key.Matches(msg, key.NewBinding(key.WithKeys(" ", "enter"))) {
+		m.applySelectedLanguage()
 		return m, nil
 	}
 	return m, nil
+}
+
+func (m *model) applySelectedLanguage() {
+	langs := i18n.SupportedLanguages()
+	if m.selectedIdx >= len(langs) {
+		return
+	}
+	lang := langs[m.selectedIdx]
+	i18n.SetLanguage(lang)
+	cfg, err := config.Load()
+	if err != nil {
+		slog.Warn("tui: failed to load config for language change", "error", err)
+	}
+	if cfg != nil {
+		cfg.Language = lang
+		if err := config.Save(cfg); err != nil {
+			slog.Warn("tui: failed to save language config", "error", err)
+		}
+	}
 }
 
 func (m model) viewLanguage() string {
