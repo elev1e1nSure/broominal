@@ -9,7 +9,7 @@ var ruStrings = map[string]string{
 	"menu_cleanup":                        "Очистка карантина",
 	"menu_settings":                       "Настройки",
 	"hint_select":                         "Enter: выбрать  Q: выйти",
-	"dashboard":                           "Broominal — Обзор",
+	"dashboard":                           "Обзор",
 	"total_found":                         "Всего найдено",
 	"safe":                                "Безопасно",
 	"review":                              "Внимание",

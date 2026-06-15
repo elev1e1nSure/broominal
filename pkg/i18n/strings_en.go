@@ -10,7 +10,7 @@ var enStrings = map[string]string{
 	"menu_cleanup":                        "Quarantine Cleanup",
 	"menu_settings":                       "Settings",
 	"hint_select":                         "Enter: select  Q: quit",
-	"dashboard":                           "Broominal — Dashboard",
+	"dashboard":                           "Dashboard",
 	"total_found":                         "Total found",
 	"safe":                                "Safe",
 	"review":                              "Attention",

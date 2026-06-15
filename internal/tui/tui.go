@@ -84,7 +84,7 @@ func (m model) appTitle(subtitle string) string {
 	if len(subtitle) > maxSubtitleWidth {
 		subtitle = subtitle[:maxSubtitleWidth-3] + "..."
 	}
-	title := fmt.Sprintf("broominal [%s] | %s", m.version, subtitle)
+	title := fmt.Sprintf("[%s] | %s", m.version, subtitle)
 	return titleStyle.Render(title)
 }
 
