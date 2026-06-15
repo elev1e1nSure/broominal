@@ -177,9 +177,6 @@ func (m model) viewQuarantineSettings() string {
 		autoCleanupDays = m.configCfg.QuarantineAutoCleanupDays
 	}
 	autoLabel := i18n.T("quarantine_auto_cleanup") + " " + mutedStyle.Render(autoCleanupLabel(autoCleanupDays))
-	if quarantineEnabled && autoCleanupDays > 0 {
-		autoLabel = i18n.T("quarantine_auto_cleanup") + " " + safeStyle.Render(autoCleanupLabel(autoCleanupDays))
-	}
 	if !quarantineEnabled {
 		autoLabel = i18n.T("quarantine_auto_cleanup") + " [" + i18n.T("quarantine_enable_first") + "]"
 	}
