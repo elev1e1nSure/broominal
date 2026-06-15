@@ -326,4 +326,7 @@ var enStrings = map[string]string{
 	"path_result_success_add":        "Added to PATH.",
 	"path_result_success_remove":     "Removed from PATH.",
 	"path_result_restart_terminal":   "Restart your terminal to apply changes.",
+	// Empty state
+	"nothing_found":      "Nothing to clean — your system looks good!",
+	"nothing_found_desc": "Try the Deep preset to scan more areas, or change presets in Settings.",
 }

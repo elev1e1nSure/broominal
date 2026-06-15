@@ -318,4 +318,6 @@ var ruStrings = map[string]string{
 	"path_result_success_add":        "Добавлено в PATH.",
 	"path_result_success_remove":     "Удалено из PATH.",
 	"path_result_restart_terminal":   "Перезапустите терминал для применения изменений.",
+	"nothing_found":      "Нечего чистить — система выглядит чистой!",
+	"nothing_found_desc": "Попробуйте глубокий режим для сканирования большего числа зон или измените пресет в Настройках.",
 }

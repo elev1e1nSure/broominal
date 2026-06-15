@@ -81,6 +81,16 @@ func (m model) viewDashboard() string {
 	// ── Header ──────────────────────────────────────────────────────────────
 	body := m.appTitle(i18n.T("dashboard")) + "\n\n"
 
+	if totalFiles == 0 {
+		body += "  " + safeStyle.Render(i18n.T("nothing_found")) + "\n"
+		body += "  " + mutedStyle.Render(i18n.T("nothing_found_desc")) + "\n\n"
+		body += footer(
+			keyHint("Q", i18n.T("quit")),
+			keyHint("Esc", i18n.T("back")),
+		)
+		return body
+	}
+
 	// Stats row: total size · files · categories
 	secondary := fmt.Sprintf("%d %s  ·  %d %s",
 		totalFiles, i18n.T("files"),
