@@ -39,6 +39,18 @@ lint:
 # full check: fmt → vet → lint → tests
 check: fmt vet lint test-pkg
 
+# preview raw changelog (commits since last tag, no AI)
+changelog-raw:
+    @pwsh -File scripts/ai-changelog.ps1 -Raw
+
+# generate beautified changelog via OpenRouter (set $env:OPENROUTER_MODEL to override model)
+changelog:
+    @pwsh -File scripts/ai-changelog.ps1
+
+# generate changelog and save to file
+changelog-save file:
+    @pwsh -File scripts/ai-changelog.ps1 -OutputFile {{file}}
+
 # remove build artifacts
 clean:
     -del broominal.exe 2>nul

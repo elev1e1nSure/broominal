@@ -15,6 +15,8 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,6 +34,15 @@ jobs:
           args: --latest
         env:
           OUTPUT: RELEASE_BODY.md
+
+      - name: Beautify release notes via AI
+        if: env.OPENROUTER_API_KEY != ''
+        run: |
+          $model = "${{ vars.OPENROUTER_MODEL || 'deepseek/deepseek-v4-flash' }}"
+          $args = @()
+          if ($model) { $args += "-Model", $model }
+          Get-Content RELEASE_BODY.md -Raw | pwsh -File scripts/ai-changelog.ps1 @args -OutputFile RELEASE_BODY.md
+        shell: pwsh
 
       - name: Build
         run: go build -ldflags "-s -w -X main.Version=${{ github.ref_name }}" -o broominal.exe ./cmd/broominal
