@@ -23,6 +23,9 @@ func validateID(id string) error {
 }
 
 func isAllowedRestorePath(path string) bool {
+	if strings.ContainsRune(path, 0) {
+		return false
+	}
 	clean := filepath.Clean(path)
 	if strings.Contains(clean, "..") {
 		return false
