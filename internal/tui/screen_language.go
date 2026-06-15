@@ -51,6 +51,21 @@ func (m model) handleKeyLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+		langs := i18n.SupportedLanguages()
+		if m.selectedIdx < len(langs) {
+			lang := langs[m.selectedIdx]
+			i18n.SetLanguage(lang)
+			cfg, err := config.Load()
+			if err != nil {
+				slog.Warn("tui: failed to load config for language change", "error", err)
+			}
+			if cfg != nil {
+				cfg.Language = lang
+				if err := config.Save(cfg); err != nil {
+					slog.Warn("tui: failed to save language config", "error", err)
+				}
+			}
+		}
 		m.screen = ScreenConfig
 		m.selectedIdx = m.lastConfigIdx
 		return m, nil
@@ -80,8 +95,7 @@ func (m model) viewLanguage() string {
 	}
 	body += "\n" + footer(
 		keyHint("Q", i18n.T("quit")),
-		keyHint("Space", i18n.T("apply")),
-		keyHint("Enter", i18n.T("confirm")),
+		keyHint("Space/Enter", i18n.T("apply")),
 		keyHint("Esc", i18n.T("back")),
 	)
 	return body
