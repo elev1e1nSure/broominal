@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "v1.6.1"
+var Version = "v1.6.2"
 
 func init() {
 	cobra.AddTemplateFunc("bold", func(s string) string { return style.Bold + s + style.Reset })
