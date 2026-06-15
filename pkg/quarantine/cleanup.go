@@ -78,7 +78,15 @@ func cleanupQuarantines(shouldDelete func(time.Time) bool) (int, int64, error) {
 				return nil
 			})
 			if err := removeAllRetry(dirPath); err != nil {
-				errs = append(errs, err)
+				// If the manifest is already gone the entry won't appear in the list anymore —
+				// treat as a functional success and only warn about leftover locked files.
+				if _, statErr := os.Stat(manifestPath); os.IsNotExist(statErr) {
+					slog.Warn("quarantine cleanup: manifest removed but dir has locked files", "path", dirPath, "error", err)
+					deleted++
+					freed += size
+				} else {
+					errs = append(errs, err)
+				}
 			} else {
 				deleted++
 				freed += size
@@ -120,6 +128,12 @@ func Delete(id string) (int64, error) {
 		})
 	}
 	if err := removeAllRetry(dirPath); err != nil {
+		// If manifest is gone the entry won't reappear — locked leftover files are best-effort.
+		manifestPath := filepath.Join(dirPath, "manifest.json")
+		if _, statErr := os.Stat(manifestPath); os.IsNotExist(statErr) {
+			slog.Warn("quarantine: manifest removed but dir has locked files", "path", dirPath, "error", err)
+			return size, nil
+		}
 		return 0, err
 	}
 	return size, nil
