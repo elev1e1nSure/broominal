@@ -1,1 +1,1 @@
-See [rules.md](rules.md) for the full project context and agent rules.
+See [CLAUDE.md](CLAUDE.md) for rules, conventions, architecture, and links to docs.

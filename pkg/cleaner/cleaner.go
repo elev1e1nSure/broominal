@@ -5,6 +5,8 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
@@ -15,6 +17,15 @@ import (
 // Run moves selected items to quarantine (or deletes them directly when quarantine is
 // disabled) and persists a report. cfg may be nil, in which case quarantine is used.
 func Run(ctx context.Context, items []types.Item, scanResult *types.ScanResult, cfg *config.Config) (*types.CleanResult, error) {
+	sort.Slice(items, func(i, j int) bool {
+		di := strings.Count(items[i].Path, string(os.PathSeparator))
+		dj := strings.Count(items[j].Path, string(os.PathSeparator))
+		if di != dj {
+			return di > dj // deeper first
+		}
+		return items[i].Path > items[j].Path
+	})
+
 	var result *types.CleanResult
 
 	if cfg != nil && !cfg.QuarantineEnabled {
@@ -53,6 +64,7 @@ func deleteDirect(ctx context.Context, items []types.Item) (freed int64, files i
 			break
 		}
 		if err := os.RemoveAll(item.Path); err != nil {
+			slog.Warn("cleaner: skipped locked or inaccessible path", "path", item.Path, "error", err)
 			skipped++
 			continue
 		}

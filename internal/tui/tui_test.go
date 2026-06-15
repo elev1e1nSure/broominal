@@ -169,30 +169,30 @@ func TestViewDashboardAlignsLongCategoryNames(t *testing.T) {
 		SafeSize:   100,
 		ReviewSize: 50,
 	}
-	out := m.View()
+	out := ansi.Strip(m.View())
 	lines := strings.Split(out, "\n")
-	var sizeStarts []int
+	var sizeCols []int
 	for _, line := range lines {
 		switch {
 		case strings.Contains(line, "Very long category name that"):
-			idx := strings.Index(line, "100 B")
+			idx := strings.Index(line, "    100 B")
 			if idx < 0 {
 				t.Fatalf("expected size in %q", line)
 			}
-			sizeStarts = append(sizeStarts, idx)
+			sizeCols = append(sizeCols, idx)
 		case strings.Contains(line, "Short"):
-			idx := strings.Index(line, "50 B")
+			idx := strings.Index(line, "     50 B")
 			if idx < 0 {
 				t.Fatalf("expected size in %q", line)
 			}
-			sizeStarts = append(sizeStarts, idx)
+			sizeCols = append(sizeCols, idx)
 		}
 	}
-	if len(sizeStarts) != 2 {
-		t.Fatalf("expected 2 category rows, got %d", len(sizeStarts))
+	if len(sizeCols) != 2 {
+		t.Fatalf("expected 2 category rows, got %d", len(sizeCols))
 	}
-	if sizeStarts[0] != sizeStarts[1] {
-		t.Fatalf("size column should align, got %v", sizeStarts)
+	if sizeCols[0] != sizeCols[1] {
+		t.Fatalf("size column should align, got %v", sizeCols)
 	}
 }
 
@@ -226,20 +226,27 @@ func TestViewCategoriesAlignsLongNames(t *testing.T) {
 	m.selectedIdx = 0
 
 	out := ansi.Strip(m.View())
-	var sizeCols []int
+	var sizeFields []int
 	for _, line := range strings.Split(out, "\n") {
 		switch {
 		case strings.Contains(line, "100 B"):
-			sizeCols = append(sizeCols, strings.Index(line, "100 B"))
+			// Size field is right-aligned in a 12-char column; mark the field start
+			idx := strings.Index(line, "100 B")
+			if idx >= 12 {
+				sizeFields = append(sizeFields, idx-(12-len("100 B")))
+			}
 		case strings.Contains(line, "50 B"):
-			sizeCols = append(sizeCols, strings.Index(line, "50 B"))
+			idx := strings.Index(line, "50 B")
+			if idx >= 12 {
+				sizeFields = append(sizeFields, idx-(12-len("50 B")))
+			}
 		}
 	}
-	if len(sizeCols) != 2 {
-		t.Fatalf("expected 2 category rows, got %d", len(sizeCols))
+	if len(sizeFields) != 2 {
+		t.Fatalf("expected 2 category rows, got %d", len(sizeFields))
 	}
-	if sizeCols[0] != sizeCols[1] {
-		t.Fatalf("size columns should align, got %v", sizeCols)
+	if sizeFields[0] != sizeFields[1] {
+		t.Fatalf("size columns should align, got %v", sizeFields)
 	}
 }
 
