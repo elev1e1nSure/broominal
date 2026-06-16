@@ -255,7 +255,11 @@ func (m model) viewCategoryInfo() string {
 
 	// Description box
 	if desc != "" {
-		body += "  " + mutedStyle.Render(desc) + "\n\n"
+		maxW := m.width - 6
+		if maxW < 40 {
+			maxW = 40
+		}
+		body += "  " + mutedStyle.Width(maxW).Render(desc) + "\n\n"
 	}
 
 	body += footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
