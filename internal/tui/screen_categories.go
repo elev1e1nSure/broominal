@@ -158,8 +158,8 @@ func (m model) viewCategories() string {
 		lipgloss.NewStyle().Width(filesW).Align(lipgloss.Right).Render(i18n.T("files")) + " " +
 		lipgloss.NewStyle().Width(riskW).Render(i18n.T("risk")) + " " +
 		lipgloss.NewStyle().Width(selW).Render(i18n.T("select"))
-	content += mutedStyle.Render("  "+head) + "\n"
-	content += mutedStyle.Render("  "+strings.Repeat("─", catW+sizeW+filesW+riskW+selW+4)) + "\n"
+	content += mutedStyle.Render(head) + "\n"
+	content += mutedStyle.Render(strings.Repeat("─", catW+sizeW+filesW+riskW+selW+4)) + "\n"
 
 	visible := m.height - 9
 	if visible < 5 {
@@ -216,8 +216,8 @@ func (m model) viewCategories() string {
 
 func (m model) viewWarnRecycleBin() string {
 	cat := m.categories[m.detailCat].cat
-	content := dangerStyle.Render(fmt.Sprintf("  "+i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
-		mutedStyle.Render("  "+i18n.T("hint_recycle_warn")) + "\n"
+	content := dangerStyle.Render(fmt.Sprintf(i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
+		mutedStyle.Render(i18n.T("hint_recycle_warn")) + "\n"
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("proceed")),
@@ -227,7 +227,7 @@ func (m model) viewWarnRecycleBin() string {
 }
 
 func (m model) viewWarnDuplicates() string {
-	content := reviewStyle.Render("  "+i18n.T("duplicate_files_warn")) + "\n"
+	content := reviewStyle.Render(i18n.T("duplicate_files_warn")) + "\n"
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("proceed")),
@@ -246,8 +246,8 @@ func (m model) viewCategoryInfo() string {
 	var content string
 
 	// Category name and basic stats
-	content += "  " + selectedStyle.Render(i18n.CategoryName(cat.Category)) + "\n"
-	content += "  " + mutedStyle.Render(fmt.Sprintf("  %s: %s  |  %s: %d  |  %s: %s",
+	content += selectedStyle.Render(i18n.CategoryName(cat.Category)) + "\n"
+	content += mutedStyle.Render(fmt.Sprintf("  %s: %s  |  %s: %d  |  %s: %s",
 		i18n.T("size"), util.FormatSize(cat.Size),
 		i18n.T("files"), cat.Files,
 		i18n.T("risk"), i18n.T("risk_"+strings.ToLower(string(cat.Risk))))) + "\n\n"
@@ -258,7 +258,7 @@ func (m model) viewCategoryInfo() string {
 		if maxW < 40 {
 			maxW = 40
 		}
-		content += "  " + mutedStyle.Width(maxW).Render(desc) + "\n"
+		content += mutedStyle.Width(maxW).Render(desc) + "\n"
 	}
 
 	foot := footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))

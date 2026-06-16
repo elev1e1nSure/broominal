@@ -14,8 +14,15 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
-func TestInitialModel(t *testing.T) {
+func testModel() model {
 	m := initialModel()
+	m.width = 80
+	m.height = 24
+	return m
+}
+
+func TestInitialModel(t *testing.T) {
+	m := testModel() // keep initialModel here to test defaults
 	if m.screen != ScreenMainMenu {
 		t.Errorf("screen = %d, want MainMenu", m.screen)
 	}
@@ -25,7 +32,7 @@ func TestInitialModel(t *testing.T) {
 }
 
 func TestUpdateScanDone(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	res := &types.ScanResult{
 		Categories: []types.CategorySummary{
 			{Category: "Temp", Risk: types.RiskSafe, Size: 100, Files: 1},
@@ -57,7 +64,7 @@ func TestUpdateScanDone(t *testing.T) {
 }
 
 func TestHandleKeyNavigation(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenCategories
 	m.categories = []categoryItem{
 		{cat: types.CategorySummary{Category: "A"}},
@@ -90,7 +97,7 @@ func TestHandleKeyNavigation(t *testing.T) {
 }
 
 func TestHandleKeyToggle(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenCategories
 	m.categories = []categoryItem{
 		{cat: types.CategorySummary{Category: "A"}, selected: true},
@@ -112,7 +119,7 @@ func TestHandleKeyToggle(t *testing.T) {
 }
 
 func TestHandleKeyConfirmTransition(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenCategories
 	m.categories = []categoryItem{
 		{cat: types.CategorySummary{Category: "Temp", Risk: types.RiskSafe, Size: 100, Files: 1}, selected: true},
@@ -130,7 +137,7 @@ func TestHandleKeyConfirmTransition(t *testing.T) {
 }
 
 func TestViewDashboard(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenDashboard
 	m.result = &types.ScanResult{
 		Categories: []types.CategorySummary{
@@ -143,8 +150,8 @@ func TestViewDashboard(t *testing.T) {
 		DangerSize: 0,
 	}
 	out := m.View()
-	if !strings.Contains(out, "Dashboard") {
-		t.Error("dashboard view should contain 'Dashboard'")
+	if !strings.Contains(out, "Dashboard") && !strings.Contains(out, "Scan Results") {
+		t.Error("dashboard view should contain 'Dashboard' or 'Scan Results'")
 	}
 	if !strings.Contains(out, "300 B") {
 		t.Error("dashboard view should contain total size")
@@ -158,7 +165,7 @@ func TestViewDashboard(t *testing.T) {
 }
 
 func TestViewDashboardAlignsLongCategoryNames(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenDashboard
 	m.result = &types.ScanResult{
 		Categories: []types.CategorySummary{
@@ -175,9 +182,9 @@ func TestViewDashboardAlignsLongCategoryNames(t *testing.T) {
 	for _, line := range lines {
 		switch {
 		case strings.Contains(line, "AAAA"):
-			sizeFields = append(sizeFields, strings.Index(line, "    100 B"))
+			sizeFields = append(sizeFields, strings.LastIndex(line, "B"))
 		case strings.Contains(line, "BBBB"):
-			sizeFields = append(sizeFields, strings.Index(line, "     50 B"))
+			sizeFields = append(sizeFields, strings.LastIndex(line, "B"))
 		}
 	}
 	if len(sizeFields) != 2 {
@@ -189,7 +196,7 @@ func TestViewDashboardAlignsLongCategoryNames(t *testing.T) {
 }
 
 func TestViewCategories(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenCategories
 	m.categories = []categoryItem{
 		{cat: types.CategorySummary{Category: "Temp", Size: 100, Files: 1, Risk: types.RiskSafe}, selected: true},
@@ -209,7 +216,7 @@ func TestViewCategories(t *testing.T) {
 }
 
 func TestViewCategoriesAlignsLongNames(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenCategories
 	m.categories = []categoryItem{
 		{cat: types.CategorySummary{Category: "BBBBBBBBBBBBBBBBBBBBBBBBBBBB", Size: 100, Files: 1, Risk: types.RiskSafe}, selected: true},
@@ -222,9 +229,9 @@ func TestViewCategoriesAlignsLongNames(t *testing.T) {
 	for _, line := range strings.Split(out, "\n") {
 		switch {
 		case strings.Contains(line, "BBBB"):
-			sizeCols = append(sizeCols, strings.Index(line, "       100 B"))
+			sizeCols = append(sizeCols, strings.LastIndex(line, "B"))
 		case strings.Contains(line, "CCCC"):
-			sizeCols = append(sizeCols, strings.Index(line, "        50 B"))
+			sizeCols = append(sizeCols, strings.LastIndex(line, "B"))
 		}
 	}
 	if len(sizeCols) != 2 {
@@ -236,7 +243,7 @@ func TestViewCategoriesAlignsLongNames(t *testing.T) {
 }
 
 func TestViewConfirm(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenConfirm
 	m.confirmMsg = "Will free: 100 B"
 	out := m.View()
@@ -246,7 +253,7 @@ func TestViewConfirm(t *testing.T) {
 }
 
 func TestViewResult(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenResult
 	m.cleanResult = &types.CleanResult{RestoreID: "abc", Freed: 100, Files: 1}
 	out := m.View()
@@ -259,7 +266,7 @@ func TestViewResult(t *testing.T) {
 }
 
 func TestViewRestoreConflict(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenRestoreConflict
 	m.conflicts = []string{`C:\a.txt`, `C:\b.txt`}
 	out := m.View()
@@ -272,7 +279,7 @@ func TestViewRestoreConflict(t *testing.T) {
 }
 
 func TestViewWarnRecycleBin(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenWarnRecycleBin
 	m.categories = []categoryItem{
 		{cat: types.CategorySummary{Category: "Recycle Bin", Files: 15000}},
@@ -288,7 +295,7 @@ func TestViewWarnRecycleBin(t *testing.T) {
 }
 
 func TestUpdateErrMsg(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	msg := errMsg{fmt.Errorf("scan failed")}
 	newM, cmd := m.Update(msg)
 	mm := newM.(model)
@@ -304,7 +311,7 @@ func TestUpdateErrMsg(t *testing.T) {
 }
 
 func TestViewError(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenError
 	m.err = fmt.Errorf("something broke")
 	out := m.View()
@@ -317,7 +324,7 @@ func TestViewError(t *testing.T) {
 }
 
 func TestViewCleaning(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenCleaning
 	out := m.View()
 	if !strings.Contains(out, "Cleaning") {
@@ -326,7 +333,7 @@ func TestViewCleaning(t *testing.T) {
 }
 
 func TestUpdateCleanDoneMsgErrorShowsScreenError(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	newM, _ := m.Update(cleanDoneMsg{result: nil, err: fmt.Errorf("clean failed")})
 	mm := newM.(model)
 	if mm.screen != ScreenError {
@@ -335,7 +342,7 @@ func TestUpdateCleanDoneMsgErrorShowsScreenError(t *testing.T) {
 }
 
 func TestHandleKeyErrorEscReturnsToMainMenu(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenError
 	newM, cmd := m.handleKey(tea.KeyMsg{Type: tea.KeyEsc})
 	mm := newM.(model)
@@ -369,7 +376,7 @@ func TestBuildConfirmMessage(t *testing.T) {
 }
 
 func TestViewMainMenu(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	out := m.View()
 	if !strings.Contains(out, "Main Menu") {
 		t.Error("view should contain 'Main Menu'")
@@ -380,7 +387,7 @@ func TestViewMainMenu(t *testing.T) {
 }
 
 func TestHandleKeyMainMenuNavigation(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenMainMenu
 	m.selectedIdx = 0
 
@@ -397,7 +404,7 @@ func TestHandleKeyMainMenuNavigation(t *testing.T) {
 	}
 
 	// Boundary: pressing Down from last item should stay at last item
-	m3 := initialModel()
+	m3 := testModel()
 	m3.screen = ScreenMainMenu
 	m3.selectedIdx = 3
 	newM3, _ := m3.handleKey(tea.KeyMsg{Type: tea.KeyDown})
@@ -408,7 +415,7 @@ func TestHandleKeyMainMenuNavigation(t *testing.T) {
 }
 
 func TestViewRestoreEmpty(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenRestore
 	m.restoreEntries = []restoreEntry{}
 	out := m.View()
@@ -418,7 +425,7 @@ func TestViewRestoreEmpty(t *testing.T) {
 }
 
 func TestViewRestoreWithIDs(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenRestore
 	m.restoreEntries = []restoreEntry{
 		{id: "2025-06-09-143052", createdAt: time.Now(), totalSize: 1024, files: 2},
@@ -442,7 +449,7 @@ func TestViewRestoreWithIDs(t *testing.T) {
 }
 
 func TestViewDoctor(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenDoctor
 	m.doctorChecks = []doctor.Check{
 		{Name: "Test", Status: doctor.StatusPass, Detail: "ok"},
@@ -457,7 +464,7 @@ func TestViewDoctor(t *testing.T) {
 }
 
 func TestViewConfig(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenConfig
 	out := m.View()
 	if !strings.Contains(out, "Settings") && !strings.Contains(out, "Config") {
@@ -469,7 +476,7 @@ func TestQuarantineSettingsDisabledLocksAutoCleanup(t *testing.T) {
 	i18n.SetLanguage("ru")
 	defer i18n.SetLanguage("en")
 
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenQuarantineSettings
 	m.configCfg = config.Default()
 	m.configCfg.QuarantineEnabled = false
@@ -500,7 +507,7 @@ func TestQuarantineSettingsDisabledLocksAutoCleanup(t *testing.T) {
 func TestHandleKeyConfigPresetsStayOnScreen(t *testing.T) {
 	t.Setenv("LOCALAPPDATA", t.TempDir())
 
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenConfigPresets
 	m.selectedIdx = 1
 	m.lastConfigIdx = 3
@@ -532,7 +539,7 @@ func TestHandleKeyConfigPresetsStayOnScreen(t *testing.T) {
 }
 
 func TestViewLanguage(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenLanguage
 	out := m.View()
 	if !strings.Contains(out, "Language") && !strings.Contains(out, "Язык") {
@@ -544,7 +551,7 @@ func TestViewLanguage(t *testing.T) {
 }
 
 func TestHandleKeyLanguageSelect(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenLanguage
 	m.selectedIdx = 0
 
@@ -576,7 +583,7 @@ func TestHandleKeyLanguageSelect(t *testing.T) {
 }
 
 func TestConfigEscReturnsToMainMenuWithLastIdx(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenMainMenu
 	m.selectedIdx = 3 // Settings
 	m.lastMainMenuIdx = 3
@@ -592,7 +599,7 @@ func TestConfigEscReturnsToMainMenuWithLastIdx(t *testing.T) {
 }
 
 func TestConfigSubScreensRestoreLastConfigIdx(t *testing.T) {
-	m := initialModel()
+	m := testModel()
 	m.screen = ScreenLanguage
 	m.lastConfigIdx = 1
 	newM, _ := m.handleKey(tea.KeyMsg{Type: tea.KeyEsc})

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	lipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/update"
 )
@@ -69,7 +68,7 @@ func (m model) viewUpdateAvailable() string {
 	if m.updateAvailableRelease != nil {
 		content += fmt.Sprintf("  %s: %s\n", i18n.T("current_version"), mutedStyle.Render(m.version))
 		content += fmt.Sprintf("  %s: %s\n\n", i18n.T("latest_version"), safeStyle.Render(m.updateAvailableRelease.TagName))
-		content += mutedStyle.Render("  "+i18n.T("update_prompt")) + "\n"
+		content += mutedStyle.Render(i18n.T("update_prompt")) + "\n"
 	}
 
 	var foot string
@@ -103,7 +102,7 @@ func (m model) handleKeyNoUpdate(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewNoUpdate() string {
-	content := "  " + safeStyle.Render(i18n.T("no_update_desc")) + "\n"
+	content := safeStyle.Render(i18n.T("no_update_desc")) + "\n"
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("back")),
@@ -127,9 +126,13 @@ func (m model) viewUpdating() string {
 		}
 		fraction := float64(pos) / float64(width-1)
 		bar := m.progress.ViewAs(fraction)
-		statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Left).Render(mutedStyle.Render(m.updateProgress))
-		content += fmt.Sprintf("\n%s\n\n%s\n", bar, statusLine)
+		content += fmt.Sprintf("\n%s\n", bar)
 		foot = footer(keyHint("Esc", i18n.T("cancel")))
 	}
-	return m.appFrame(i18n.T("updating"), content, foot)
+
+	title := i18n.T("updating")
+	if m.updateError == nil && m.updateProgress != "" {
+		title = m.updateProgress
+	}
+	return m.appFrame(title, content, foot)
 }

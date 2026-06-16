@@ -44,7 +44,7 @@ func (m model) viewPathSettings() string {
 		statusStyle = safeStyle
 	}
 
-	content := "  " + i18n.T("path_user_status") + " " + statusStyle.Render(status) + "\n"
+	content := i18n.T("path_user_status") + " " + statusStyle.Render(status) + "\n"
 
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),

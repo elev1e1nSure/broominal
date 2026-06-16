@@ -67,12 +67,12 @@ func (m model) viewDashboard() string {
 			}
 			bar := m.progress.ViewAs(fraction)
 			statusText := fmt.Sprintf("%d%% | %s %d/%d", int(fraction*100), i18n.T("scanning"), m.scanCompleted, m.scanTotal)
-			statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Right).Render(mutedStyle.Render(statusText))
+			statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Left).Render(mutedStyle.Render(statusText))
 
 			content = fmt.Sprintf("\n%s\n\n%s\n", bar, statusLine)
 		} else {
 			statusText := fmt.Sprintf("0%% | %s 0/0", i18n.T("scanning"))
-			statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Right).Render(mutedStyle.Render(statusText))
+			statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Left).Render(mutedStyle.Render(statusText))
 			content = fmt.Sprintf("\n%s\n\n%s\n", m.progress.ViewAs(0), statusLine)
 		}
 		foot := footer(keyHint("Esc", i18n.T("back")))
@@ -93,8 +93,8 @@ func (m model) viewDashboard() string {
 	var content string
 
 	if totalFiles == 0 {
-		content += "  " + safeStyle.Render(i18n.T("nothing_found")) + "\n"
-		content += "  " + mutedStyle.Render(i18n.T("nothing_found_desc")) + "\n\n"
+		content += safeStyle.Render(i18n.T("nothing_found")) + "\n"
+		content += mutedStyle.Render(i18n.T("nothing_found_desc")) + "\n\n"
 		foot := footer(
 			keyHint("Q", i18n.T("quit")),
 			keyHint("Esc", i18n.T("back")),
@@ -126,7 +126,7 @@ func (m model) viewDashboard() string {
 		riskDot(i18n.T("risk_danger"), m.result.DangerSize, dangerStyle),
 	)
 
-	content += "  " + mutedStyle.Render(strings.Repeat("─", 52)) + "\n\n"
+	content += mutedStyle.Render(strings.Repeat("─", 52)) + "\n\n"
 
 	// Category bars
 	const nameWidth = 30

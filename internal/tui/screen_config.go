@@ -163,7 +163,7 @@ func (m model) viewConfigPresets() string {
 			content += mutedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.catsKey))) + "\n\n"
 		}
 	}
-	content += mutedStyle.Render("  "+i18n.T("preset_note")) + "\n"
+	content += mutedStyle.Render(i18n.T("preset_note")) + "\n"
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter/Space", i18n.T("apply")),

@@ -208,7 +208,7 @@ func (m model) viewQuarantineSettings() string {
 		if m.quarantineSettingsMsg == i18n.T("quarantine_task_fail") {
 			msgStyle = dangerStyle
 		}
-		content += "\n" + msgStyle.Render("  "+m.quarantineSettingsMsg) + "\n"
+		content += "\n" + msgStyle.Render(m.quarantineSettingsMsg) + "\n"
 	}
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),

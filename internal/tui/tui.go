@@ -79,10 +79,13 @@ func Start(version string) (bool, error) {
 
 func (m model) Init() tea.Cmd {
 	if m.checkUpdateOnStartup {
-		return func() tea.Msg {
-			release, err := update.CheckForUpdates(m.version)
-			return checkUpdateMsg{release, err}
-		}
+		return tea.Batch(
+			m.spinner.Tick,
+			func() tea.Msg {
+				release, err := update.CheckForUpdates(m.version)
+				return checkUpdateMsg{release, err}
+			},
+		)
 	}
 	return nil
 }
@@ -193,7 +196,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.progress.Width = msg.Width - 4
+		m.progress.Width = msg.Width - 6
 		return m, nil
 
 	case scanProgressMsg:
@@ -286,6 +289,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.updateProgress = i18n.T("update_restarting")
 		return m, tea.Tick(time.Second, func(time.Time) tea.Msg { return restartMsg{} })
+
+	case clearRestoreResultMsg:
+		m.restoreResult = ""
+		return m, nil
 
 	case restartMsg:
 		m.restartAfterUpdate = true
