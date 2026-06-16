@@ -218,11 +218,10 @@ func checkManifests() Check {
 	}
 	if invalid > 0 {
 		return Check{
-			Name:       i18n.T("check_manifests"),
-			Status:     StatusWarn,
-			Detail:     fmt.Sprintf(i18n.T("invalid_manifests"), invalid),
-			Suggestion: i18n.T("suggest_press_f_to_fix"),
-			FixKey:     "purge_damaged",
+			Name:   i18n.T("check_manifests"),
+			Status: StatusWarn,
+			Detail: fmt.Sprintf(i18n.T("invalid_manifests"), invalid),
+			FixKey: "purge_damaged",
 		}
 	}
 	if valid == 0 && len(entries) == 0 {

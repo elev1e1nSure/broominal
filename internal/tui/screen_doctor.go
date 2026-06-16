@@ -83,8 +83,12 @@ func (m model) viewDoctor() string {
 			marker = dangerStyle.Render("[FAIL]")
 		}
 		body += fmt.Sprintf("  %-30s %s  %s\n", c.Name, marker, mutedStyle.Render(c.Detail))
-		if c.Status != doctor.StatusPass && c.Suggestion != "" {
-			body += mutedStyle.Render(fmt.Sprintf("    → %s", c.Suggestion)) + "\n"
+		if c.Status != doctor.StatusPass {
+			if c.FixKey != "" {
+				body += mutedStyle.Render(fmt.Sprintf("    → %s", i18n.T("suggest_press_f_to_fix"))) + "\n"
+			} else if c.Suggestion != "" {
+				body += mutedStyle.Render(fmt.Sprintf("    → %s", c.Suggestion)) + "\n"
+			}
 		}
 		if c.FixKey != "" {
 			hasFix = true

@@ -37,8 +37,12 @@ Add --yes to skip the confirmation prompt.`,
 					hasFail = true
 				}
 				fmt.Printf("%-24s %s  %s\n", style.Boldf(c.Name), marker, style.Grayf(c.Detail))
-				if c.Status != doctor.StatusPass && c.Suggestion != "" {
-					fmt.Printf("  → %s\n", style.Grayf(c.Suggestion))
+				if c.Status != doctor.StatusPass {
+					if c.FixKey != "" && !fix {
+						fmt.Printf("  → %s\n", style.Grayf("run 'broominal doctor --fix --yes' to repair automatically"))
+					} else if c.FixKey == "" && c.Suggestion != "" {
+						fmt.Printf("  → %s\n", style.Grayf(c.Suggestion))
+					}
 				}
 			}
 
