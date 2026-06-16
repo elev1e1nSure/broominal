@@ -69,13 +69,14 @@ func (m model) viewDashboard() string {
 			statusText := fmt.Sprintf("%d%% | %s %d/%d", int(fraction*100), i18n.T("scanning"), m.scanCompleted, m.scanTotal)
 			statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Right).Render(mutedStyle.Render(statusText))
 
-			content = fmt.Sprintf("\n%s\n%s\n", bar, statusLine)
+			content = fmt.Sprintf("\n%s\n\n%s\n", bar, statusLine)
 		} else {
 			statusText := fmt.Sprintf("0%% | %s 0/0", i18n.T("scanning"))
 			statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Right).Render(mutedStyle.Render(statusText))
-			content = fmt.Sprintf("\n%s\n%s\n", m.progress.ViewAs(0), statusLine)
+			content = fmt.Sprintf("\n%s\n\n%s\n", m.progress.ViewAs(0), statusLine)
 		}
-		return m.appFrame(i18n.T("scanning"), content, "")
+		foot := footer(keyHint("Esc", i18n.T("back")))
+		return m.appFrame(i18n.T("scanning"), content, foot)
 	}
 
 	var totalFiles int
@@ -98,7 +99,7 @@ func (m model) viewDashboard() string {
 			keyHint("Q", i18n.T("quit")),
 			keyHint("Esc", i18n.T("back")),
 		)
-		return m.appFrame(i18n.T("dashboard"), content, foot)
+		return m.appFrame("", content, foot)
 	}
 
 	// Stats row: total size · files · categories
@@ -137,8 +138,20 @@ func (m model) viewDashboard() string {
 		}
 	}
 
+	maxCats := m.height - 13
+	if maxCats < 3 {
+		maxCats = 3
+	}
+
+	var renderedCats int
+	var skippedCats int
+
 	for _, c := range cats {
 		if c.Size == 0 {
+			continue
+		}
+		if renderedCats >= maxCats {
+			skippedCats++
 			continue
 		}
 		rs := riskStyle(c.Risk)
@@ -151,6 +164,11 @@ func (m model) viewDashboard() string {
 		sizeStr := fmt.Sprintf("%9s", util.FormatSize(c.Size))
 		nameCell := lipgloss.NewStyle().Width(nameWidth).Render(name)
 		content += fmt.Sprintf("  %s %s  %s\n", nameCell, bar, rs.Render(sizeStr))
+		renderedCats++
+	}
+
+	if skippedCats > 0 {
+		content += fmt.Sprintf("  %s\n", mutedStyle.Render(fmt.Sprintf(i18n.T("and_more_categories"), skippedCats)))
 	}
 
 	foot := footer(
@@ -160,5 +178,5 @@ func (m model) viewDashboard() string {
 		keyHint("Esc", i18n.T("back")),
 	)
 
-	return m.appFrame(i18n.T("dashboard"), content, foot)
+	return m.appFrame("", content, foot)
 }

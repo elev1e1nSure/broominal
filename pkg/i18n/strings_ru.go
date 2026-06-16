@@ -284,6 +284,7 @@ var ruStrings = map[string]string{
 	"close":                               "Закрыть",
 	"select_categories":                   "Выбрать категории",
 	"more_categories":                     "Категорий",
+	"and_more_categories":                 "... и ещё %d категорий",
 	"group_system":                        "Система",
 	"group_browsers":                      "Браузеры",
 	"group_messengers":                    "Мессенджеры",

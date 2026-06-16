@@ -125,6 +125,7 @@ var (
 	colorWarning = lipgloss.Color("#eed49f") // Yellow
 	colorDanger  = lipgloss.Color("#ed8796") // Red
 	colorMuted   = lipgloss.Color("#9ca3af") // Gray 400
+	colorTrack   = lipgloss.Color("#374151") // Gray 700
 
 	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(colorAccent)
 	selectedStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ffffff"))
@@ -151,7 +152,7 @@ var (
 	footerStyle = lipgloss.NewStyle().
 			MarginTop(1)
 
-	barTrackStyle = lipgloss.NewStyle().Background(colorBorder)
+	barTrackStyle = lipgloss.NewStyle().Background(colorTrack)
 )
 
 func keyHint(k, desc string) string {
@@ -172,10 +173,15 @@ func (m model) appFrame(title, content, foot string) string {
 		return content
 	}
 
-	head := headerStyle.Width(m.width - 4).Render(titleStyle.Render(title))
-	footRender := footerStyle.Width(m.width - 4).Render(foot)
+	var head string
+	var headHeight int
 
-	headHeight := lipgloss.Height(head)
+	if title != "" {
+		head = headerStyle.Width(m.width - 4).Render(titleStyle.Render(title))
+		headHeight = lipgloss.Height(head)
+	}
+
+	footRender := footerStyle.Width(m.width - 4).Render(foot)
 	footHeight := lipgloss.Height(footRender)
 
 	targetContentHeight := m.height - 2 - headHeight - footHeight // -2 for frame top/bottom border
@@ -189,7 +195,13 @@ func (m model) appFrame(title, content, foot string) string {
 		PaddingTop(1).
 		Render(content)
 
-	ui := lipgloss.JoinVertical(lipgloss.Left, head, paddedContent, footRender)
+	var uiBlocks []string
+	if head != "" {
+		uiBlocks = append(uiBlocks, head)
+	}
+	uiBlocks = append(uiBlocks, paddedContent, footRender)
+
+	ui := lipgloss.JoinVertical(lipgloss.Left, uiBlocks...)
 
 	return appFrameStyle.
 		Width(m.width - 2). // -2 for borders

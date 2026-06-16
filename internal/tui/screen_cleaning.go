@@ -119,7 +119,7 @@ func (m model) viewCleaning() string {
 	statusText := fmt.Sprintf("%d%% | %s %d/%d", int(fraction*100), i18n.T("cleaning_in_progress"), m.scanCompleted, m.scanTotal)
 	statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Right).Render(mutedStyle.Render(statusText))
 
-	content += fmt.Sprintf("\n%s\n%s\n", bar, statusLine)
+	content += fmt.Sprintf("\n%s\n\n%s\n", bar, statusLine)
 
 	foot := footer(keyHint("Esc", i18n.T("cancel")))
 	return m.appFrame(i18n.T("cleaning"), content, foot)

@@ -15,7 +15,7 @@ import (
 )
 
 func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
 		return m, tea.Quit
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))) {

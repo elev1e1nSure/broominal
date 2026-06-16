@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	lipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/update"
 )
@@ -119,8 +120,9 @@ func (m model) viewUpdating() string {
 		content += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"
 		foot = footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
 	} else {
-		content += fmt.Sprintf("\n  %s %s\n", m.spinner.View(), m.updateProgress)
-		content += mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
+		bar := m.progress.ViewAs(0)
+		statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Left).Render(mutedStyle.Render(m.updateProgress))
+		content += fmt.Sprintf("\n%s\n\n%s\n", bar, statusLine)
 		foot = footer(keyHint("Esc", i18n.T("cancel")))
 	}
 	return m.appFrame(i18n.T("updating"), content, foot)
