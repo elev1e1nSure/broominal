@@ -27,20 +27,31 @@ func Save(result *types.ScanResult, cleaned *types.CleanResult) (string, error) 
 	if err := os.MkdirAll(BaseDir(), 0700); err != nil {
 		return "", fmt.Errorf("create reports dir: %w", err)
 	}
+	filename := fmt.Sprintf("report_%s.json", time.Now().Format("20060102_150405.000"))
+	path := filepath.Join(BaseDir(), filename)
+	if err := SaveTo(path, result, cleaned); err != nil {
+		return "", err
+	}
+	return path, nil
+}
 
+// SaveTo writes a JSON report to an explicit file path. The directory must
+// already exist. Writes atomically via a temp file + rename.
+func SaveTo(path string, result *types.ScanResult, cleaned *types.CleanResult) error {
 	data := types.ReportData{
 		Timestamp: time.Now(),
 		Result:    *result,
 		Cleaned:   cleaned,
 	}
-
-	filename := fmt.Sprintf("report_%s.json", time.Now().Format("20060102_150405.000"))
-	path := filepath.Join(BaseDir(), filename)
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return fmt.Errorf("create report dir: %w", err)
+	}
 
 	// Write atomically via temp file + rename to avoid corrupted JSON on crash.
-	f, err := os.CreateTemp(BaseDir(), "report-*.json.tmp")
+	f, err := os.CreateTemp(dir, "report-*.json.tmp")
 	if err != nil {
-		return "", fmt.Errorf("create report: %w", err)
+		return fmt.Errorf("create report: %w", err)
 	}
 	tmp := f.Name()
 	var writeErr error
@@ -53,15 +64,15 @@ func Save(result *types.ScanResult, cleaned *types.CleanResult) (string, error) 
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "  ")
 	if writeErr = enc.Encode(data); writeErr != nil {
-		return "", fmt.Errorf("encode report: %w", writeErr)
+		return fmt.Errorf("encode report: %w", writeErr)
 	}
 	if writeErr = f.Close(); writeErr != nil {
-		return "", fmt.Errorf("close report: %w", writeErr)
+		return fmt.Errorf("close report: %w", writeErr)
 	}
 	if writeErr = os.Rename(tmp, path); writeErr != nil {
-		return "", fmt.Errorf("rename report: %w", writeErr)
+		return fmt.Errorf("rename report: %w", writeErr)
 	}
-	return path, nil
+	return nil
 }
 
 // PrintSummary writes a human-readable summary to stdout. Used by the `report`
