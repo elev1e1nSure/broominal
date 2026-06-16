@@ -3,6 +3,7 @@ package quarantine
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,6 +82,20 @@ func removeAllRetry(path string) error {
 		time.Sleep(50 * time.Millisecond)
 	}
 	return os.RemoveAll(path)
+}
+
+// forceRemoveAll strips read-only attributes before removal so that Windows
+// does not return "Access is denied" on files the user owns but cannot delete
+// due to FILE_ATTRIBUTE_READONLY being set.
+func forceRemoveAll(path string) error {
+	_ = filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		_ = os.Chmod(p, 0666)
+		return nil
+	})
+	return removeAllRetry(path)
 }
 
 func uniquePath(dir, name string) string {

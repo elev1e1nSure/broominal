@@ -133,7 +133,7 @@ func PurgeDamaged() (int, error) {
 				continue
 			}
 		}
-		if err := removeAllRetry(dirPath); err != nil && firstErr == nil {
+		if err := forceRemoveAll(dirPath); err != nil && firstErr == nil {
 			firstErr = err
 		} else {
 			removed++
