@@ -9,7 +9,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
-	"github.com/elev1e1nSure/broominal/pkg/pathman"
 )
 
 func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -44,15 +43,8 @@ func (m model) handleKeyConfig(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.screen = ScreenLanguage
 			m.selectedIdx = 0
 			return m, nil
-		case 2: // Add/Remove PATH
-			inPath, _ := pathman.IsInPath()
-			if inPath {
-				m.pathOperation = "remove"
-			} else {
-				m.pathOperation = "add"
-			}
-			m.pathConfirmIdx = 0
-			m.screen = ScreenPathConfirm
+		case 2: // PATH Settings
+			m.screen = ScreenPathSettings
 			return m, nil
 		case 3: // Quarantine settings submenu
 			m.selectedIdx = 0
@@ -110,11 +102,7 @@ func (m *model) applySelectedPreset() {
 }
 
 func (m model) viewConfig() string {
-	inPath, _ := pathman.IsInPath()
 	pathLabel := i18n.T("config_path")
-	if inPath {
-		pathLabel = i18n.T("config_path_remove")
-	}
 
 	quarantineLabel := i18n.T("config_quarantine")
 
@@ -124,21 +112,20 @@ func (m model) viewConfig() string {
 		pathLabel,
 		quarantineLabel,
 	}
-	var body string
-	body += m.appTitle(i18n.T("config")) + "\n\n"
+	var content string
 	for i, item := range items {
 		if i == m.selectedIdx {
-			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + "\n"
+			content += selectedStyle.Render(fmt.Sprintf("► %s", item)) + "\n"
 		} else {
-			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
+			content += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
 		}
 	}
-	body += "\n" + footer(
+	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("select")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return body
+	return m.appFrame(i18n.T("config"), content, foot)
 }
 
 func (m model) viewConfigPresets() string {
@@ -160,28 +147,27 @@ func (m model) viewConfigPresets() string {
 		activePreset = m.configCfg.ActivePreset
 	}
 
-	var body string
-	body += m.appTitle(i18n.T("config_presets")) + "\n\n"
+	var content string
 	for i, p := range presets {
-		marker := "   "
+		marker := "[ ]"
 		if activePreset == string(p.preset) {
 			marker = safeStyle.Render("[x]")
 		}
 		if i == m.selectedIdx {
-			body += selectedStyle.Render("> ") + p.style.Render(i18n.T(p.nameKey)) + " " + marker + "\n"
-			body += selectedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.descKey))) + "\n"
-			body += mutedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.catsKey))) + "\n\n"
+			content += selectedStyle.Render("► ") + p.style.Render(i18n.T(p.nameKey)) + " " + marker + "\n"
+			content += selectedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.descKey))) + "\n"
+			content += mutedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.catsKey))) + "\n\n"
 		} else {
-			body += mutedStyle.Render("  ") + p.style.Render(i18n.T(p.nameKey)) + " " + marker + "\n"
-			body += mutedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.descKey))) + "\n"
-			body += mutedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.catsKey))) + "\n\n"
+			content += mutedStyle.Render("  ") + p.style.Render(i18n.T(p.nameKey)) + " " + marker + "\n"
+			content += mutedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.descKey))) + "\n"
+			content += mutedStyle.Render(fmt.Sprintf("  %s", i18n.T(p.catsKey))) + "\n\n"
 		}
 	}
-	body += mutedStyle.Render("  "+i18n.T("preset_note")) + "\n\n"
-	body += footer(
+	content += mutedStyle.Render("  "+i18n.T("preset_note")) + "\n"
+	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter/Space", i18n.T("apply")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return body
+	return m.appFrame(i18n.T("config_presets"), content, foot)
 }
