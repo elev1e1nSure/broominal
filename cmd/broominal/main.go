@@ -112,6 +112,7 @@ func main() {
 	rootCmd.AddCommand(quarantineCmd())
 	rootCmd.AddCommand(quarantineCleanupCmd()) // hidden compat alias for existing scheduled tasks
 	rootCmd.AddCommand(pathCmd())
+	rootCmd.AddCommand(updateCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
