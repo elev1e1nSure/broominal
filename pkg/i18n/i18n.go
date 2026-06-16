@@ -1,13 +1,11 @@
 package i18n
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"strings"
 	"sync"
-	"time"
 
 	"github.com/elev1e1nSure/broominal/pkg/categories"
+	"golang.org/x/sys/windows/registry"
 )
 
 // translations is built from per-language string maps defined in strings_*.go.
@@ -73,30 +71,19 @@ func CategoryDescription(name string) string {
 	return ""
 }
 
-// ipAPIResponse is the minimal struct we need from ipapi.co.
-type ipAPIResponse struct {
-	CountryCode string `json:"country_code"`
-}
-
-// DetectFromIP calls a public geo-IP service and returns a language code.
-func DetectFromIP() (string, error) {
-	client := &http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Get("https://ipapi.co/json/")
+func DetectFromWindowsLocale() string {
+	k, err := registry.OpenKey(registry.CURRENT_USER, `Control Panel\International`, registry.QUERY_VALUE)
 	if err != nil {
-		return "", fmt.Errorf("geo-ip request: %w", err)
+		return "en"
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("geo-ip status: %d", resp.StatusCode)
+	defer k.Close()
+	locale, _, err := k.GetStringValue("LocaleName")
+	if err != nil {
+		return "en"
 	}
-	var data ipAPIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return "", fmt.Errorf("geo-ip decode: %w", err)
+	locale = strings.ToLower(locale)
+	if strings.HasPrefix(locale, "ru") || strings.HasPrefix(locale, "uk") || strings.HasPrefix(locale, "be") {
+		return "ru"
 	}
-	switch data.CountryCode {
-	case "RU", "BY", "KZ", "UA":
-		return "ru", nil
-	default:
-		return "en", nil
-	}
+	return "en"
 }

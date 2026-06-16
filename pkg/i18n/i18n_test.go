@@ -53,11 +53,8 @@ func TestSupportedLanguages(t *testing.T) {
 	}
 }
 
-func TestDetectFromIP(t *testing.T) {
-	lang, err := DetectFromIP()
-	if err != nil {
-		t.Skipf("offline or geo-ip service unavailable: %v", err)
-	}
+func TestDetectFromWindowsLocale(t *testing.T) {
+	lang := DetectFromWindowsLocale()
 	found := false
 	for _, l := range SupportedLanguages() {
 		if l == lang {
