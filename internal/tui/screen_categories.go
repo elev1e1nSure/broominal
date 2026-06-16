@@ -151,7 +151,8 @@ func (m model) viewCategories() string {
 	var body string
 	body += m.appTitle(i18n.T("categories")) + "\n\n"
 
-	// Build aligned header using same widths as rows
+	// Header column widths must match the row widths below; otherwise the
+	// table mis-aligns under long category names and the size column drifts.
 	catW, sizeW, filesW, riskW, selW := 28, 12, 8, 10, 8
 	head := lipgloss.NewStyle().Width(catW).Render(i18n.T("category")) + " " +
 		lipgloss.NewStyle().Width(sizeW).Align(lipgloss.Right).Render(i18n.T("size")) + " " +

@@ -101,8 +101,9 @@ func ScanWithConfig(ctx context.Context, cfg *config.Config, progress func(done 
 	return result, nil
 }
 
-// scanDir is the generic helper for walking a directory and collecting file Items.
-// It handles permission errors, exclusions, extension filters, and file limits.
+// scanDir is the shared walk loop for every simple file-list category.
+// Centralising the permission/exclusion/extension/limit logic here keeps the
+// per-category scanners focused on "where to look" rather than "how to walk".
 func scanDir(ctx context.Context, root, category string, risk types.RiskLevel, matchExt []string, recursive bool, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	var count int
@@ -223,7 +224,9 @@ func hashFileMD5(path string) (string, error) {
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
-// scanFirefoxCache walks Firefox profile dirs looking for cache2 subdirs.
+// scanFirefoxCache walks the Firefox Profiles root and descends into each
+// profile's cache2 subdirectory — Firefox stores per-profile cache one level
+// deeper than Chrome/Edge, so the generic browser cache walk misses it.
 func scanFirefoxCache(ctx context.Context, root string, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -286,7 +289,9 @@ func extractTaskCommand(data []byte) string {
 	return strings.Trim(strings.TrimSpace(s[start:start+end]), `"'`)
 }
 
-// scanDirWithAge walks a directory and collects items older than the given cutoff.
+// scanDirWithAge is the time-filtered variant of scanDir for categories
+// (crash dumps, printer spool leftovers) where only files older than the
+// cutoff are safe to clean — recent ones may still be in active use.
 func scanDirWithAge(ctx context.Context, root, category string, risk types.RiskLevel, cutoff time.Time, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	var count int

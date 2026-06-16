@@ -56,8 +56,9 @@ func CheckForUpdates(currentVersion string) (*Release, error) {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
+	// Limit response size to 1 MB to prevent OOM from malicious/compromised servers.
 	var release Release
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1*1024*1024)).Decode(&release); err != nil {
 		return nil, fmt.Errorf("failed to decode release info: %w", err)
 	}
 
@@ -134,6 +135,12 @@ func DownloadUpdate(release *Release) (string, error) {
 
 	tmpPath := filepath.Join(tmpDir, asset.Name)
 
+	// Reject download if server claims the file is unreasonably large.
+	const maxBinarySize = 100 * 1024 * 1024 // 100 MB
+	if asset.Size > maxBinarySize {
+		return "", fmt.Errorf("update binary too large: %d bytes (max %d)", asset.Size, maxBinarySize)
+	}
+
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Get(asset.BrowserDownloadURL)
 	if err != nil {
@@ -151,14 +158,16 @@ func DownloadUpdate(release *Release) (string, error) {
 	}
 	defer f.Close()
 
-	if _, err := io.Copy(f, resp.Body); err != nil {
+	// Limit download to maxBinarySize even if Content-Length header is absent/wrong.
+	if _, err := io.Copy(f, io.LimitReader(resp.Body, maxBinarySize+1)); err != nil {
 		return "", fmt.Errorf("failed to write update file: %w", err)
 	}
 	if err := f.Close(); err != nil {
 		return "", fmt.Errorf("failed to close temp file: %w", err)
 	}
 
-	// Verify checksum if available
+	// Checksum verification is mandatory. Releases without a checksum asset
+	// are rejected to prevent unsigned binary execution.
 	var checksumAsset *Asset
 	for i := range release.Assets {
 		a := &release.Assets[i]
@@ -167,15 +176,15 @@ func DownloadUpdate(release *Release) (string, error) {
 			break
 		}
 	}
-	if checksumAsset != nil {
-		if err := verifyChecksum(checksumAsset, tmpPath); err != nil {
-			_ = os.Remove(tmpPath)
-			return "", fmt.Errorf("checksum verification failed: %w", err)
-		}
-		slog.Info("update: checksum verified")
-	} else {
-		slog.Warn("update: no checksum asset found, skipping verification")
+	if checksumAsset == nil {
+		_ = os.Remove(tmpPath)
+		return "", fmt.Errorf("update: no checksum asset found for %s — refusing to install unverified binary", asset.Name)
 	}
+	if err := verifyChecksum(checksumAsset, tmpPath); err != nil {
+		_ = os.Remove(tmpPath)
+		return "", fmt.Errorf("checksum verification failed: %w", err)
+	}
+	slog.Info("update: checksum verified")
 
 	return tmpPath, nil
 }
@@ -229,7 +238,8 @@ func verifyChecksum(asset *Asset, filePath string) error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status for checksum: %d", resp.StatusCode)
 	}
-	data, err := io.ReadAll(resp.Body)
+	// Checksum files are tiny — limit to 4 KB to prevent OOM.
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 4*1024))
 	if err != nil {
 		return fmt.Errorf("failed to read checksum: %w", err)
 	}

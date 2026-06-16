@@ -120,7 +120,9 @@ func Load() (*Config, error) {
 	return &cfg, nil
 }
 
-// Save writes the config to disk.
+// Save persists the config atomically: the JSON is written to <path>.tmp and
+// then renamed into place, so a crash mid-write cannot leave a half-written
+// config.json that Load would refuse to parse.
 func Save(cfg *Config) error {
 	if err := os.MkdirAll(Dir(), 0700); err != nil {
 		return fmt.Errorf("create config dir: %w", err)
@@ -139,7 +141,8 @@ func Save(cfg *Config) error {
 	return nil
 }
 
-// IsCategoryEnabled reports whether a category is enabled.
+// IsCategoryEnabled treats a nil map as "all enabled" so a default-constructed
+// Config works in tests and first-run code paths without explicit init.
 func (c *Config) IsCategoryEnabled(name string) bool {
 	if c.EnabledCategories == nil {
 		return true
@@ -147,7 +150,9 @@ func (c *Config) IsCategoryEnabled(name string) bool {
 	return c.EnabledCategories[name]
 }
 
-// IsExcluded reports whether a path matches any exclusion rule.
+// IsExcluded matches any single path component against the user's exclusion
+// list. The component-wise check is what makes rules like "node_modules" or
+// "dist" work without users having to spell out full directory paths.
 func (c *Config) IsExcluded(path string) bool {
 	lp := strings.ToLower(path)
 	segments := strings.Split(lp, string(filepath.Separator))

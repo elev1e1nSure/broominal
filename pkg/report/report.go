@@ -12,12 +12,17 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
-// BaseDir — возвращает директорию отчётов
+// BaseDir returns the directory where JSON reports are written. Each save
+// creates a fresh timestamped file so the user can diff or archive reports
+// across runs.
 func BaseDir() string {
 	return filepath.Join(config.AppDir(), "reports")
 }
 
-// Save — сохраняет отчёт в JSON и выводит summary в stdout
+// Save writes a JSON report of the scan (and optional clean) to disk and
+// returns the resulting file path. The human-readable summary that the `report`
+// CLI prints after this is a separate call to PrintSummary — kept out of Save
+// so library callers (e.g. the TUI) can persist the file silently.
 func Save(result *types.ScanResult, cleaned *types.CleanResult) (string, error) {
 	if err := os.MkdirAll(BaseDir(), 0700); err != nil {
 		return "", fmt.Errorf("create reports dir: %w", err)
@@ -32,22 +37,35 @@ func Save(result *types.ScanResult, cleaned *types.CleanResult) (string, error) 
 	filename := fmt.Sprintf("report_%s.json", time.Now().Format("20060102_150405.000"))
 	path := filepath.Join(BaseDir(), filename)
 
-	f, err := os.Create(path)
+	// Write atomically via temp file + rename to avoid corrupted JSON on crash.
+	f, err := os.CreateTemp(BaseDir(), "report-*.json.tmp")
 	if err != nil {
 		return "", fmt.Errorf("create report: %w", err)
 	}
-	defer f.Close()
-
+	tmp := f.Name()
+	var writeErr error
+	defer func() {
+		if writeErr != nil {
+			_ = f.Close()
+			_ = os.Remove(tmp)
+		}
+	}()
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(data); err != nil {
-		return "", fmt.Errorf("encode report: %w", err)
+	if writeErr = enc.Encode(data); writeErr != nil {
+		return "", fmt.Errorf("encode report: %w", writeErr)
 	}
-
+	if writeErr = f.Close(); writeErr != nil {
+		return "", fmt.Errorf("close report: %w", writeErr)
+	}
+	if writeErr = os.Rename(tmp, path); writeErr != nil {
+		return "", fmt.Errorf("rename report: %w", writeErr)
+	}
 	return path, nil
 }
 
-// PrintSummary — выводит краткую сводку в stdout
+// PrintSummary writes a human-readable summary to stdout. Used by the `report`
+// CLI after Save so users get immediate feedback without opening the JSON file.
 func PrintSummary(result *types.ScanResult, cleaned *types.CleanResult) {
 	fmt.Println()
 	fmt.Println("═ Broominal Report ════════════════════════")

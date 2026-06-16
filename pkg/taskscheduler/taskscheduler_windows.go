@@ -11,8 +11,9 @@ import (
 
 const TaskName = "broominal quarantine-cleanup"
 
-// Set creates or updates the daily scheduled task.
-// Runs `broominal quarantine-cleanup --force --max-age-days <n>` every day at 03:00.
+// Set registers a daily 03:00 task that runs
+// `broominal quarantine-cleanup --force --max-age-days N`, so users who never
+// invoke cleanup manually still have the quarantine size bounded automatically.
 func Set(maxAgeDays int) error {
 	exe, err := os.Executable()
 	if err != nil {
@@ -47,7 +48,8 @@ func Delete() error {
 	return nil
 }
 
-// Exists reports whether the scheduled task exists.
+// Exists is used to avoid a noisy schtasks error when toggling a feature
+// whose task was never created — cheaper and clearer than parsing schtasks' stderr.
 func Exists() bool {
 	cmd := exec.Command("schtasks", "/query", "/tn", TaskName)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}

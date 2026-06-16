@@ -83,6 +83,9 @@ func (m model) handleKeyConfirmDeleteQuarantine(msg tea.KeyMsg) (tea.Model, tea.
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
+		if len(m.restoreEntries) == 0 || m.restoreIdx >= len(m.restoreEntries) {
+			return m, nil
+		}
 		id := m.restoreEntries[m.restoreIdx].id
 		m.deleteAllQuarantine = false
 		m.screen = ScreenDeletingQuarantine

@@ -20,13 +20,17 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/update"
 )
 
-// Start — запускает TUI. Возвращает true если после выхода нужно перезапустить процесс.
+// Start launches the TUI. The boolean return tells the caller whether to
+// re-exec itself — true after a self-update, so the new binary replaces the
+// running one before the process exits.
 func Start(version string) (bool, error) {
 	cfg, _ := config.Load()
 	if cfg != nil && cfg.Language != "" {
 		i18n.SetLanguage(cfg.Language)
 	}
-	// Clean up leftover .old backup files from previous self-updates
+	// Past self-updates can leave .old binaries behind if the post-update
+	// restart was interrupted; sweep them here so the next update can
+	// rename the current binary to .old without colliding.
 	if exePath, err := os.Executable(); err == nil {
 		exeDir := filepath.Dir(exePath)
 		entries, _ := os.ReadDir(exeDir)
@@ -41,14 +45,12 @@ func Start(version string) (bool, error) {
 	if !doctor.IsAdmin() {
 		m.screen = ScreenAdminPrompt
 	} else if cfg == nil || cfg.Language == "" {
-		// first run: try to auto-detect, then show language picker
-		if lang, err := i18n.DetectFromIP(); err == nil {
-			i18n.SetLanguage(lang)
-			if cfg != nil {
-				cfg.Language = lang
-				if err := config.Save(cfg); err != nil {
-					slog.Warn("tui: failed to save language config", "error", err)
-				}
+		lang := i18n.DetectFromWindowsLocale()
+		i18n.SetLanguage(lang)
+		if cfg != nil {
+			cfg.Language = lang
+			if err := config.Save(cfg); err != nil {
+				slog.Warn("tui: failed to save language config", "error", err)
 			}
 		}
 		m.screen = ScreenLanguage
@@ -248,7 +250,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case checkUpdateMsg:
 		if msg.err != nil || msg.release == nil {
-			// No internet, API error, or no update available
+			// nil release with no error is GitHub's "you are up to date" reply;
+			// treat any failure the same way so the user sees a single "no
+			// update" path rather than a scary error dialog for offline runs.
 			if m.updateFromConfig {
 				m.screen = ScreenNoUpdate
 			} else {
@@ -303,13 +307,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// normalizeKey maps Russian ЙЦУКЕН layout keystrokes to their Latin QWERTY equivalents.
+// normalizeKey maps Russian JCUKEN layout keystrokes to their Latin QWERTY equivalents.
 // This lets users navigate the TUI without switching keyboard layouts.
 func normalizeKey(msg tea.KeyMsg) tea.KeyMsg {
 	if msg.Type != tea.KeyRunes || len(msg.Runes) == 0 {
 		return msg
 	}
-	// ЙЦУКЕН — QWERTY
+	// Russian JCUKEN → QWERTY physical-key positions, so a user whose layout is set
+	// to Russian can still navigate the TUI (Up/Down, y/n prompts, etc.)
+	// without switching layouts first.
 	m := map[rune]rune{
 		'й': 'q', 'ц': 'w', 'у': 'e', 'к': 'r', 'е': 't', 'н': 'y', 'г': 'u', 'ш': 'i', 'щ': 'o', 'з': 'p', 'х': '[', 'ъ': ']',
 		'ф': 'a', 'ы': 's', 'в': 'd', 'а': 'f', 'п': 'g', 'р': 'h', 'о': 'j', 'л': 'k', 'д': 'l', 'ж': ';', 'э': '\'',

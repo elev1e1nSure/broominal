@@ -15,7 +15,9 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/update"
 )
 
-// Screen — текущий экран
+// Screen identifies the currently visible TUI screen. The bubble-tea Update
+// loop dispatches key events and renders views through screen-specific
+// handlers registered in tui.go's init().
 type Screen int
 
 const (

@@ -14,14 +14,18 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
-// Run moves selected items to quarantine (or deletes them directly when quarantine is
-// disabled) and persists a report. cfg may be nil, in which case quarantine is used.
+// Run is the top-level clean entry point: it picks quarantine or direct
+// delete based on cfg, and writes a JSON report when scanResult is provided.
+// cfg may be nil to imply "use quarantine" — the CLI and the TUI both rely
+// on this default for first-run, config-not-yet-loaded cases.
 func Run(ctx context.Context, items []types.Item, scanResult *types.ScanResult, cfg *config.Config) (*types.CleanResult, error) {
 	sort.Slice(items, func(i, j int) bool {
 		di := strings.Count(items[i].Path, string(os.PathSeparator))
 		dj := strings.Count(items[j].Path, string(os.PathSeparator))
 		if di != dj {
-			return di > dj // deeper first
+			// Process deeper paths first so a parent directory isn't
+			// renamed/removed before the files it still contains.
+			return di > dj
 		}
 		return items[i].Path > items[j].Path
 	})
@@ -57,7 +61,9 @@ func Run(ctx context.Context, items []types.Item, scanResult *types.ScanResult, 
 	return result, nil
 }
 
-// deleteDirect permanently removes items without quarantine.
+// deleteDirect is the irreversible cleanup path taken when the user has
+// opted out of quarantine in config. It exists separately from Move so the
+// caller never has to think about which mode is in effect; Run picks the path.
 func deleteDirect(ctx context.Context, items []types.Item) (freed int64, files int, skipped int) {
 	for _, item := range items {
 		if ctx.Err() != nil {
