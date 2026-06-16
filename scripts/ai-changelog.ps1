@@ -56,7 +56,8 @@ function Get-RawChangelog {
     if ($InputText) { return $InputText }
 
     if (-not $FromTag) {
-        $FromTag = git describe --tags --abbrev=0 2>$null
+        $script:FromTag = git describe --tags --abbrev=0 2>$null
+        $FromTag = $script:FromTag
         if (-not $FromTag) {
             Write-Warning "No tags found, using last 50 commits"
             $log = git log --pretty=format:"%s" -n 50
@@ -141,7 +142,7 @@ Rules:
 - Keep the existing structure: ### section headers with emojis, then bullet list. You may rename section headers if they misrepresent the content.
 - Rename '🔧 Miscellaneous Tasks' to '🔧 Maintenance'.
 - Rewrite each commit into a clear user-facing description. Expand abbreviations, fix grammar, make it natural English.
-- Summary line at the top (no header): keep it SHORT and PROPORTIONAL to the release size. For a single-bugfix patch, a one-line summary is enough. Never use grandiose language.
+- Summary line at the top: one sentence for patches, two sentences max for minor releases. Never use grandiose language ("major overhaul", "complete redesign", etc.).
 - NEVER include any of these — they provide zero value to users:
   * Version bumps ("bump version to…", "chore: bump")
   * CI/CD config changes, workflow changes, release infrastructure
@@ -159,11 +160,17 @@ Rules:
 - Never mention AI, LLM, machine generation, or the beautification process itself. The changelog must read as if written by a human.
 "@
 
-$userPrompt = @"
-Here are the commits for this release. Produce polished user-facing release notes:
+$previousRelease = ""
+if ($FromTag) {
+    Write-Host "Fetching previous release notes for $FromTag..." -ForegroundColor DarkGray
+    $previousRelease = gh release view $FromTag --json body -q .body 2>$null
+}
 
-$rawLog
-"@
+$userPrompt = ""
+if ($previousRelease) {
+    $userPrompt += "Here is the previous release for tone and style reference:`n$previousRelease`n`n"
+}
+$userPrompt += "Here are the commits for this release. Produce polished user-facing release notes:`n`n$rawLog"
 
 $result = Invoke-OpenRouter -Prompt $userPrompt -SystemPrompt $systemPrompt
 
