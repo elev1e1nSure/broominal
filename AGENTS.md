@@ -70,6 +70,17 @@ just changelog-save f  # save changelog to file
 just clean             # remove broominal.exe
 ```
 
+## TUI ↔ CLI Parity
+
+Every user-facing logical change in the TUI **must** be reflected in the CLI, and vice versa. This includes:
+- New or renamed categories → update both TUI display and CLI `scan`/`clean` output
+- New risk level or preset → update both `internal/tui/` and `cmd/broominal/`
+- New quarantine actions (delete, clean) → both the restore screen and `quarantine` subcommands
+- New path management features → both `internal/tui/screen_config.go` and `cmd/broominal/path.go`
+
+Shared helpers live in `cmd/broominal/util.go` (CLI-only) and `internal/tui/model.go` (TUI-only).
+Shared logic that applies to both belongs in the appropriate `pkg/` package, not duplicated.
+
 ## Code Conventions
 
 - `scanDir()` helper for simple directory walks
@@ -88,3 +99,13 @@ just clean             # remove broominal.exe
 * types: feat, fix, chore, docs, style, refactor, perf, test, ci, build, revert
 * message in English, no trailing dot
 * ask if scope is unclear
+
+## Commenting
+
+- **English only** — every comment, doc comment, and inline note in the codebase must be in English. Russian-language keys in `pkg/i18n/strings_ru.go` are translation values, not comments, and stay as-is.
+- **Explain why, not what** — a comment should describe reasoning, trade-offs, or non-obvious consequences. Skip comments that just restate the next line of code.
+- **Godoc on exported identifiers** — Go convention: doc comments on exported types and funcs start with the identifier name and are declarative. Internal comments are free-form but should still be "why" when present.
+- **Security-sensitive code must carry a "why"** — every branch that touches path traversal, symlink following, allow-lists, or UAC must explain the threat or invariant it relies on. The reader should not have to reverse-engineer the rule.
+- **No stale comments** — when changing code, update or delete the surrounding comments. A wrong comment is worse than no comment.
+- **Section dividers are fine** — `// ── Header ──` or `// Categories — names` style markers help navigate long files. Treat them as structure, not as explanations.
+- **No AI-style filler** — no "this function does X" for trivial one-liners, no restating the function signature in prose.

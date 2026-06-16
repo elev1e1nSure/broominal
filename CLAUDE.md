@@ -70,6 +70,17 @@ just changelog-save f  # save changelog to file
 just clean             # remove broominal.exe
 ```
 
+## TUI ↔ CLI Parity
+
+Every user-facing logical change in the TUI **must** be reflected in the CLI, and vice versa. This includes:
+- New or renamed categories → update both TUI display and CLI `scan`/`clean` output
+- New risk level or preset → update both `internal/tui/` and `cmd/broominal/`
+- New quarantine actions (delete, clean) → both the restore screen and `quarantine` subcommands
+- New path management features → both `internal/tui/screen_config.go` and `cmd/broominal/path.go`
+
+Shared helpers live in `cmd/broominal/util.go` (CLI-only) and `internal/tui/model.go` (TUI-only).
+Shared logic that applies to both belongs in the appropriate `pkg/` package, not duplicated.
+
 ## Code Conventions
 
 - `scanDir()` helper for simple directory walks
