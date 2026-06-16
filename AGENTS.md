@@ -34,12 +34,12 @@ githooks/         commit-msg (conventional commits), pre-commit
 justfile          Build command runner
 ```
 
-## Adding a Category (4 files)
+## Adding a Category (4 steps / files)
 
 1. `pkg/categories/categories.go` — add `Def{Name, InternalKey, Risk, MinPreset}`
-2. `pkg/scanner/scanner.go` — add `scanXxx(ctx, cfg) ([]Item, error)`
-3. `pkg/scanner/scanner_registry.go` — wire `"Name": scanXxx` in `scanFuncs`
-4. `pkg/i18n/i18n.go` — add `cat_*` + `cat_desc_*` for EN and RU
+2. `pkg/scanner/scanner_xxx.go` — implement `scanXxx(ctx, cfg) ([]Item, error)` in the appropriate scanner file (e.g. scanner_windows.go, scanner_browsers.go, etc.)
+3. `pkg/scanner/scanner_registry.go` — wire `"Category Name": scanXxx` in `scanFuncs`
+4. `pkg/i18n/strings_en.go` & `pkg/i18n/strings_ru.go` — add translations for `cat_*` and `cat_desc_*` for EN and RU
 
 Missing registration → startup panic (safe by design).
 

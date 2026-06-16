@@ -76,12 +76,12 @@ internal/
 
 ## Adding a Scanner Category
 
-4 files to edit:
+4 steps / files:
 
 1. **`pkg/categories/categories.go`** — add a `Def{Name, InternalKey, Risk, MinPreset}`  
-2. **`pkg/scanner/scanner.go`** — implement `scanXxx(ctx, cfg) ([]Item, error)`  
+2. **`pkg/scanner/scanner_xxx.go`** — implement `scanXxx(ctx, cfg) ([]Item, error)` in the appropriate scanner file (e.g. `scanner_windows.go` for OS paths, `scanner_browsers.go` for browsers, etc.)  
 3. **`pkg/scanner/scanner_registry.go`** — wire `"Category Name": scanXxx` in `scanFuncs`  
-4. **`pkg/i18n/i18n.go`** — add `cat_*` and `cat_desc_*` for EN and RU
+4. **`pkg/i18n/strings_en.go` & `pkg/i18n/strings_ru.go`** — add translations for `cat_*` and `cat_desc_*` for EN and RU
 
 A missing registration causes a startup panic — safe by design.
 

@@ -23,7 +23,7 @@ Enabled in all presets. Temporary data that rebuilds automatically.
 | **Yandex Cache** | `%LOCALAPPDATA%\Yandex\YandexBrowser\User Data\Default\Cache` |
 | **Edge Code Cache** | `%LOCALAPPDATA%\Microsoft\Edge\User Data\Default\Code Cache` |
 | **Chrome Code Cache** | `%LOCALAPPDATA%\Google\Chrome\User Data\Default\Code Cache` |
-| **Firefox Cache** | `%LOCALAPPDATA%\Mozilla\Firefox\Profiles\*\cache2` |
+| **Firefox Cache2** | `%LOCALAPPDATA%\Mozilla\Firefox\Profiles\*\cache2` |
 | **Windows Prefetch** | `%SystemRoot%\Prefetch` |
 | **AMD GPU Cache** | `%LOCALAPPDATA%\AMD\DxCache`, `CLCache` |
 | **NVIDIA Shader Cache** | `%LOCALAPPDATA%\NVIDIA\DXCache`, `GLCache`, `NV_Cache` |
@@ -41,7 +41,7 @@ App caches and logs. Enabled in Standard and Deep presets.
 | **Empty Folders** | Empty dirs in `%TEMP%`, `%USERPROFILE%\Downloads` |
 | **Messenger Cache** | Discord (Cache, Code Cache), Telegram, Slack (Cache, Code Cache, GPUCache), Teams |
 | **Game Launcher Cache** | Steam, Epic, Battle.net, Rockstar, EA, Ubisoft, GOG |
-| **Dev Cache** | VSCode, npm, pip, Git, Visual Studio, JetBrains, Go build, Rust cargo |
+| **Dev Cache** (⚠ Review) | VSCode, npm, pip, Git, Visual Studio, JetBrains, Go build, Rust cargo |
 | **Logs** | `*.log` files in `%TEMP%` |
 | **Windows Update Cache** (⚠ Review) | `%SystemRoot%\SoftwareDistribution\Download` |
 | **Nvidia Installer Leftovers** (⚠ Review) | `C:\NVIDIA\DisplayDriver`, `%ProgramData%\NVIDIA Corporation\Downloader` |
@@ -96,6 +96,6 @@ Areas that may contain user data or affect system behavior. Review carefully.
 ## Adding a Category
 
 1. Add a `Def` entry to `pkg/categories/categories.go`  
-2. Write a scan function in `pkg/scanner/scanner.go`  
+2. Write a scan function in `pkg/scanner/scanner_xxx.go` (in the appropriate scanner file, e.g. scanner_windows.go, scanner_browsers.go, etc.)  
 3. Wire it in `pkg/scanner/scanner_registry.go`  
-4. Add `cat_*` and `cat_desc_*` strings for EN and RU in `pkg/i18n/i18n.go`
+4. Add `cat_*` and `cat_desc_*` translation strings in `pkg/i18n/strings_en.go` and `pkg/i18n/strings_ru.go`

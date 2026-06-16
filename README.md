@@ -36,7 +36,7 @@ Or download from [releases](https://github.com/elev1e1nSure/broominal/releases).
 
 ```powershell
 broominal scan              # find cleanup candidates
-broominal clean --safe      # clean safe items
+broominal clean --yes       # execute safe cleanup (Quick preset)
 broominal restore last      # undo last cleanup
 broominal ui                # interactive TUI
 ```
@@ -61,7 +61,7 @@ Three presets: **Quick** (19 safe categories) → **Standard** (42 total) → **
 
 ## Commands
 
-`scan` · `clean` · `restore` · `ui` · `doctor` · `config` · `quarantine-cleanup` · `report` · `path`
+`scan` · `clean` · `restore` · `ui` · `doctor` · `config` · `quarantine` · `report` · `path`
 
 See [docs/commands.md](docs/commands.md) for full reference.
 
