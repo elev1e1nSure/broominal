@@ -49,10 +49,11 @@ const (
 )
 
 type restoreEntry struct {
-	id        string
-	createdAt time.Time
-	totalSize int64
-	files     int
+	id         string
+	createdAt  time.Time
+	totalSize  int64
+	files      int
+	categories []string
 }
 
 type model struct {

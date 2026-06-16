@@ -2,9 +2,12 @@ package tui
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	lipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/util"
@@ -141,15 +144,34 @@ func (m model) viewRestore() string {
 			visible = 5
 		}
 		start, end := clampWindow(m.restoreIdx, len(m.restoreEntries), visible)
+
+		const timeW = 16
+		const sizeW = 9
 		for i := start; i < end; i++ {
 			e := m.restoreEntries[i]
-			dateStr := e.createdAt.Format("2006-01-02 15:04")
-			line := fmt.Sprintf("%s  %s  %s, %d files", e.id, dateStr, util.FormatSize(e.totalSize), e.files)
+
+			rowStyle := mutedStyle
+			prefix := "  "
 			if i == m.restoreIdx {
-				body += selectedStyle.Render(fmt.Sprintf("> %s", line)) + "\n"
-			} else {
-				body += mutedStyle.Render(fmt.Sprintf("  %s", line)) + "\n"
+				rowStyle = selectedStyle
+				prefix = selectedStyle.Render("> ")
 			}
+
+			timeSt := lipgloss.NewStyle().Width(timeW).Inherit(rowStyle)
+			sizeSt := lipgloss.NewStyle().Width(sizeW).Align(lipgloss.Right).Inherit(rowStyle)
+
+			catMaxW := m.width - 2 - timeW - 2 - sizeW - 2
+			if catMaxW < 20 {
+				catMaxW = 20
+			}
+
+			line := timeSt.Render(quarantineDate(e.createdAt)) +
+				"  " +
+				sizeSt.Render(util.FormatSize(e.totalSize)) +
+				"  " +
+				rowStyle.Render(formatQuarantineCategories(e.categories))
+
+			body += prefix + line + "\n"
 		}
 	}
 	if m.restoreResult != "" {
@@ -169,7 +191,11 @@ func (m model) viewConfirmDeleteQuarantine() string {
 	var entry string
 	if m.restoreIdx < len(m.restoreEntries) {
 		e := m.restoreEntries[m.restoreIdx]
-		entry = fmt.Sprintf("%s  %s  %s", e.id, e.createdAt.Format("2006-01-02 15:04"), util.FormatSize(e.totalSize))
+		cats := formatQuarantineCategories(e.categories)
+		entry = quarantineDate(e.createdAt) + "   " + util.FormatSize(e.totalSize)
+		if cats != "" {
+			entry += "   " + cats
+		}
 	}
 	return m.appTitle(i18n.T("warning")) + "\n\n" +
 		reviewStyle.Render("  "+i18n.T("confirm_delete_one")) + "\n" +
@@ -202,11 +228,54 @@ func reloadEntries() []restoreEntry {
 			continue
 		}
 		entries = append(entries, restoreEntry{
-			id:        mf.ID,
-			createdAt: mf.CreatedAt,
-			totalSize: mf.TotalSize,
-			files:     mf.Files,
+			id:         mf.ID,
+			createdAt:  mf.CreatedAt,
+			totalSize:  mf.TotalSize,
+			files:      mf.Files,
+			categories: mf.Categories,
 		})
 	}
 	return entries
+}
+
+// quarantineDate formats a quarantine timestamp as a human-readable relative date.
+func quarantineDate(t time.Time) string {
+	now := time.Now()
+	ty, tm, td := t.Date()
+	ny, nm, nd := now.Date()
+	if ty == ny && tm == nm && td == nd {
+		return i18n.T("today") + " " + t.Format("15:04")
+	}
+	py, pm, pd := now.AddDate(0, 0, -1).Date()
+	if ty == py && tm == pm && td == pd {
+		return i18n.T("yesterday") + " " + t.Format("15:04")
+	}
+	if t.Year() == now.Year() {
+		return t.Format("02.01, 15:04")
+	}
+	return t.Format("02.01.06, 15:04")
+}
+
+// formatQuarantineCategories returns translated category names joined by " · ",
+// capped at 3 with "+N" suffix for the rest.
+func formatQuarantineCategories(cats []string) string {
+	if len(cats) == 0 {
+		return ""
+	}
+	const maxShow = 3
+	shown := cats
+	extra := 0
+	if len(cats) > maxShow {
+		shown = cats[:maxShow]
+		extra = len(cats) - maxShow
+	}
+	names := make([]string, len(shown))
+	for i, c := range shown {
+		names[i] = i18n.CategoryName(c)
+	}
+	result := strings.Join(names, " · ")
+	if extra > 0 {
+		result += fmt.Sprintf(" +%d", extra)
+	}
+	return result
 }

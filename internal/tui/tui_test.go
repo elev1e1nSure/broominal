@@ -421,16 +421,23 @@ func TestViewRestoreWithIDs(t *testing.T) {
 	m := initialModel()
 	m.screen = ScreenRestore
 	m.restoreEntries = []restoreEntry{
-		{id: "2025-06-09-143052", createdAt: time.Now(), totalSize: 100, files: 2},
-		{id: "2025-06-08-120000", createdAt: time.Now().Add(-24 * time.Hour), totalSize: 200, files: 5},
+		{id: "2025-06-09-143052", createdAt: time.Now(), totalSize: 1024, files: 2},
+		{id: "2025-06-08-120000", createdAt: time.Now().AddDate(0, 0, -1), totalSize: 2048, files: 5},
 	}
 	m.restoreIdx = 1
 	out := m.View()
-	if !strings.Contains(out, "2025-06-09") {
-		t.Error("view should contain first entry date")
+	// New format: entries show relative dates and sizes, not raw IDs
+	todayKey := "Today"
+	yesterdayKey := "Yesterday"
+	if strings.Contains(out, "Сегодня") {
+		todayKey = "Сегодня"
+		yesterdayKey = "Вчера"
 	}
-	if !strings.Contains(out, "2025-06-08") {
-		t.Error("view should contain second entry date")
+	if !strings.Contains(out, todayKey) {
+		t.Errorf("view should contain %q for today's entry", todayKey)
+	}
+	if !strings.Contains(out, yesterdayKey) {
+		t.Errorf("view should contain %q for yesterday's entry", yesterdayKey)
 	}
 }
 

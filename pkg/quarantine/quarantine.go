@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -103,6 +104,18 @@ func Move(ctx context.Context, items []types.Item) (string, int64, int, int, err
 	}
 	manifest.TotalSize = freed
 	manifest.Files = files
+
+	catSet := make(map[string]struct{})
+	for _, it := range items {
+		if it.Selected && it.Category != "" {
+			catSet[it.Category] = struct{}{}
+		}
+	}
+	manifest.Categories = make([]string, 0, len(catSet))
+	for c := range catSet {
+		manifest.Categories = append(manifest.Categories, c)
+	}
+	sort.Strings(manifest.Categories)
 
 	manifestPath := filepath.Join(qDir, "manifest.json")
 	if err := writeManifest(manifestPath, &manifest); err != nil {

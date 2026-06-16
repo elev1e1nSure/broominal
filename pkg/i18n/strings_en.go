@@ -262,6 +262,8 @@ var enStrings = map[string]string{
 	"cat_desc_windows_installer_patches":  "Cached patch files for older MSI-based programs stored in $PatchCache$. Removing them may break the Repair and Modify options for those applications. Safe to remove only if you no longer need to repair or reinstall those programs.",
 	"cat_desc_android_cache":              "Android SDK download temp files, Gradle build caches and Android build tool caches. Rebuilt on next build. Does not affect installed SDKs or AVD images.",
 	// Updates
+	"today":                   "Today",
+	"yesterday":               "Yesterday",
 	"check_updates":           "Check for Updates",
 	"update_available":        "Update Available",
 	"current_version":         "Current version",
