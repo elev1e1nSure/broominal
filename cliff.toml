@@ -27,7 +27,7 @@ commit_parsers = [
     { message = "^build", group = "🏗️ Build" },
     { message = "^style", group = "🎨 Style" },
     { message = "^lint", group = "🧹 Lint" },
-    { body = ".*security", group = "🔒 Security" },
+    { body = ".*security", group = "🔐 Security" },
 ]
 protect_breaking_commits = false
 filter_commits = false
