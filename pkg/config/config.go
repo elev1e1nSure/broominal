@@ -25,7 +25,7 @@ type Config struct {
 	QuarantineEnabled bool `json:"quarantine_enabled"`
 	// QuarantineAutoCleanupDays: 0 = disabled. When > 0, a Windows scheduled task runs
 	// `broominal quarantine-cleanup --force --max-age-days N` daily at 03:00.
-	QuarantineAutoCleanupDays int    `json:"quarantine_auto_cleanup_days,omitempty"`
+	QuarantineAutoCleanupDays int    `json:"quarantine_auto_cleanup_days"`
 	Language                  string `json:"language"`
 }
 
@@ -43,11 +43,12 @@ func Default() *Config {
 			".git":         "review",
 			"node_modules": "review",
 		},
-		OldInstallerMonths: 6,
-		LargeFileMinSizeMB: 100,
-		LargeFileMonths:    6,
-		QuarantineEnabled:  true,
-		Language:           "",
+		OldInstallerMonths:        6,
+		LargeFileMinSizeMB:        100,
+		LargeFileMonths:           6,
+		QuarantineEnabled:         true,
+		QuarantineAutoCleanupDays: 7,
+		Language:                  "",
 	}
 }
 
@@ -115,6 +116,9 @@ func Load() (*Config, error) {
 	if err := json.Unmarshal(data, &raw); err == nil {
 		if _, exists := raw["quarantine_enabled"]; !exists {
 			cfg.QuarantineEnabled = true
+		}
+		if _, exists := raw["quarantine_auto_cleanup_days"]; !exists {
+			cfg.QuarantineAutoCleanupDays = 7
 		}
 	}
 	return &cfg, nil
