@@ -13,6 +13,8 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/util"
 )
 
+type clearRestoreResultMsg struct{}
+
 func (m model) handleKeyRestore(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
 		return m, tea.Quit
@@ -69,7 +71,9 @@ func (m model) handleKeyRestore(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				m.restoreIdx = 0
 			}
 		}
-		return m, nil
+		return m, tea.Tick(3*time.Second, func(time.Time) tea.Msg {
+			return clearRestoreResultMsg{}
+		})
 	}
 	return m, nil
 }
@@ -131,15 +135,24 @@ func (m model) viewDeletingQuarantine() string {
 	if !m.deleteAllQuarantine && m.restoreIdx < len(m.restoreEntries) {
 		label = fmt.Sprintf("%s %s", i18n.T("cleaning_quarantines"), m.restoreEntries[m.restoreIdx].id)
 	}
-	content := fmt.Sprintf("\n  %s %s\n", m.spinner.View(), label) +
-		mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
+
+	width := 40
+	pos := m.updateTick % (width * 2)
+	if pos >= width {
+		pos = width*2 - 1 - pos
+	}
+	fraction := float64(pos) / float64(width-1)
+	bar := m.progress.ViewAs(fraction)
+
+	statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Left).Render(mutedStyle.Render(label))
+	content := fmt.Sprintf("  %s\n\n  %s\n", bar, statusLine)
 	return m.appFrame(i18n.T("cleaning_quarantines"), content, "")
 }
 
 func (m model) viewRestore() string {
 	var content string
 	if len(m.restoreEntries) == 0 {
-		content += mutedStyle.Render("  "+i18n.T("no_quarantines")) + "\n"
+		content += mutedStyle.Render(i18n.T("no_quarantines")) + "\n"
 	} else {
 		visible := m.height - 8
 		if visible < 5 {
@@ -194,8 +207,8 @@ func (m model) viewConfirmDeleteQuarantine() string {
 			entry += "   " + cats
 		}
 	}
-	content := reviewStyle.Render("  "+i18n.T("confirm_delete_one")) + "\n" +
-		mutedStyle.Render("  "+entry) + "\n"
+	content := reviewStyle.Render(i18n.T("confirm_delete_one")) + "\n" +
+		mutedStyle.Render(entry) + "\n"
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("confirm")),
@@ -206,7 +219,7 @@ func (m model) viewConfirmDeleteQuarantine() string {
 
 func (m model) viewConfirmDeleteAllQuarantine() string {
 	msg := fmt.Sprintf(i18n.T("confirm_delete_all"), len(m.restoreEntries))
-	content := dangerStyle.Render("  "+msg) + "\n"
+	content := dangerStyle.Render(msg) + "\n"
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("confirm")),

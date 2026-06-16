@@ -2,11 +2,15 @@ package quarantine
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/elev1e1nSure/broominal/pkg/types"
@@ -77,10 +81,11 @@ func cleanupQuarantines(shouldDelete func(time.Time) bool) (int, int64, error) {
 				size += info.Size()
 				return nil
 			})
-			if err := removeAllRetry(dirPath); err != nil {
-				// If the manifest is already gone the entry won't appear in the list anymore —
-				// treat as a functional success and only warn about leftover locked files.
-				if _, statErr := os.Stat(manifestPath); os.IsNotExist(statErr) {
+			if err := forceRemoveAll(dirPath); err != nil {
+				if errors.Is(err, ErrScheduledForReboot) {
+					deleted++
+					freed += size
+				} else if _, statErr := os.Stat(manifestPath); os.IsNotExist(statErr) {
 					slog.Warn("quarantine cleanup: manifest removed but dir has locked files", "path", dirPath, "error", err)
 					deleted++
 					freed += size
@@ -101,10 +106,127 @@ func cleanupQuarantines(shouldDelete func(time.Time) bool) (int, int64, error) {
 	return deleted, freed, nil
 }
 
-// PurgeDamaged removes all quarantine directories whose manifest is missing or
-// unparseable. These entries cannot be restored and serve no purpose, but they
-// cause doctor to report WARN on every run until cleaned up.
-func PurgeDamaged() (int, error) {
+// RepairDamaged attempts to recover items from corrupted manifest.json files.
+// It uses a tolerant regex parser to extract items that are still present on disk.
+// Returns the number of directories repaired, the number of completely dead ones, and any error.
+func RepairDamaged() (int, int, error) {
+	qDir := BaseDir()
+	entries, err := os.ReadDir(qDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, 0, nil
+		}
+		return 0, 0, err
+	}
+
+	var repaired int
+	var dead int
+	var firstErr error
+
+	re := regexp.MustCompile(`"original"\s*:\s*"([^"]+)",\s*"quarantined"\s*:\s*"([^"]+)",\s*"size"\s*:\s*(\d+)`)
+
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		id := e.Name()
+		if err := validateID(id); err != nil {
+			continue
+		}
+		dirPath := filepath.Join(qDir, id)
+		mfPath := filepath.Join(dirPath, "manifest.json")
+		deadPath := filepath.Join(dirPath, "manifest.dead")
+
+		if _, err := os.Stat(deadPath); err == nil {
+			dead++
+			continue
+		}
+
+		data, err := os.ReadFile(mfPath)
+		if err == nil {
+			var m types.Manifest
+			if json.Unmarshal(data, &m) == nil {
+				// manifest is intact — skip
+				continue
+			}
+		} else if !os.IsNotExist(err) {
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+
+		// It's damaged or missing. Let's try to repair.
+		var recovered []types.ManifestItem
+		var totalSize int64
+
+		if data != nil {
+			matches := re.FindAllStringSubmatch(string(data), -1)
+			for _, m := range matches {
+				orig := unescapeJSONString(m[1])
+				quar := unescapeJSONString(m[2])
+				size, _ := strconv.ParseInt(m[3], 10, 64)
+
+				// Verify it exists in quarantine
+				if _, statErr := os.Stat(quar); statErr == nil {
+					recovered = append(recovered, types.ManifestItem{
+						Original:    orig,
+						Quarantined: quar,
+						Size:        size,
+					})
+					totalSize += size
+				}
+			}
+		}
+
+		if len(recovered) > 0 {
+			info, _ := os.Stat(dirPath)
+			createdAt := time.Now()
+			if info != nil {
+				createdAt = info.ModTime()
+			}
+			m := types.Manifest{
+				ID:        id,
+				CreatedAt: createdAt,
+				Label:     "Recovered Cleanup " + id,
+				TotalSize: totalSize,
+				Files:     len(recovered),
+				Items:     recovered,
+			}
+			if err := writeManifest(mfPath, &m); err != nil {
+				if firstErr == nil {
+					firstErr = err
+				}
+			} else {
+				repaired++
+			}
+		} else {
+			// Unrecoverable
+			if err == nil { // mfPath exists
+				os.Rename(mfPath, deadPath)
+			} else { // mfPath didn't exist, just create a dummy .dead
+				os.WriteFile(deadPath, nil, 0600)
+			}
+			dead++
+		}
+	}
+	return repaired, dead, firstErr
+}
+
+func unescapeJSONString(s string) string {
+	s = strings.ReplaceAll(s, `\\`, `\`)
+	s = strings.ReplaceAll(s, `\"`, `"`)
+	s = strings.ReplaceAll(s, `\/`, `/`)
+	s = strings.ReplaceAll(s, `\b`, "\b")
+	s = strings.ReplaceAll(s, `\f`, "\f")
+	s = strings.ReplaceAll(s, `\n`, "\n")
+	s = strings.ReplaceAll(s, `\r`, "\r")
+	s = strings.ReplaceAll(s, `\t`, "\t")
+	return s
+}
+
+// PurgeDead removes all quarantine directories that were marked as unrecoverable.
+func PurgeDead() (int, error) {
 	qDir := BaseDir()
 	entries, err := os.ReadDir(qDir)
 	if err != nil {
@@ -124,17 +246,24 @@ func PurgeDamaged() (int, error) {
 			continue
 		}
 		dirPath := filepath.Join(qDir, id)
-		mf := filepath.Join(dirPath, "manifest.json")
-		data, err := os.ReadFile(mf)
-		if err == nil {
-			var m types.Manifest
-			if json.Unmarshal(data, &m) == nil {
-				// manifest is intact — skip
-				continue
-			}
+		deadPath := filepath.Join(dirPath, "manifest.dead")
+
+		if _, err := os.Stat(deadPath); err != nil {
+			// Not marked as dead
+			continue
 		}
-		if err := forceRemoveAll(dirPath); err != nil && firstErr == nil {
-			firstErr = err
+
+		if err := forceRemoveAll(dirPath); err != nil {
+			if errors.Is(err, ErrScheduledForReboot) {
+				removed++
+				if firstErr == nil {
+					firstErr = err
+				}
+			} else {
+				if firstErr == nil {
+					firstErr = err
+				}
+			}
 		} else {
 			removed++
 		}
@@ -168,7 +297,10 @@ func Delete(id string) (int64, error) {
 			return nil
 		})
 	}
-	if err := removeAllRetry(dirPath); err != nil {
+	if err := forceRemoveAll(dirPath); err != nil {
+		if errors.Is(err, ErrScheduledForReboot) {
+			return size, ErrScheduledForReboot
+		}
 		// If manifest is gone the entry won't reappear — locked leftover files are best-effort.
 		manifestPath := filepath.Join(dirPath, "manifest.json")
 		if _, statErr := os.Stat(manifestPath); os.IsNotExist(statErr) {

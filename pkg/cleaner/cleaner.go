@@ -3,6 +3,7 @@ package cleaner
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"sort"
@@ -41,6 +42,18 @@ func Run(ctx context.Context, items []types.Item, scanResult *types.ScanResult, 
 			Skipped:   skipped,
 		}
 	} else {
+		if cfg != nil && cfg.QuarantineEnabled {
+			var totalSize int64
+			for _, it := range items {
+				if it.Selected {
+					totalSize += it.Size
+				}
+			}
+			if err := quarantine.CheckHealth(ctx, totalSize); err != nil {
+				return nil, fmt.Errorf("quarantine health check failed: %w", err)
+			}
+		}
+
 		id, freed, files, skipped, err := quarantine.Move(ctx, items)
 		if err != nil {
 			return nil, err

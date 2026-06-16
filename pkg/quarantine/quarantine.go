@@ -107,11 +107,17 @@ func Move(ctx context.Context, items []types.Item) (string, int64, int, int, err
 		Items:     make([]types.ManifestItem, 0, len(items)),
 	}
 
+	journal, err := NewJournal(qDir)
+	if err != nil {
+		return "", 0, 0, 0, fmt.Errorf("create journal: %w", err)
+	}
+
 	var freed int64
 	var files int
 	var skipped int
 	for _, it := range items {
 		if ctx.Err() != nil {
+			journal.Close()
 			return id, freed, files, skipped, ctx.Err()
 		}
 		if !it.Selected {
@@ -128,7 +134,13 @@ func Move(ctx context.Context, items []types.Item) (string, int64, int, int, err
 			continue
 		}
 
-		qPath := uniquePath(qDir, filepath.Base(it.Path))
+		qPath := uniquePath(qDir, filepath.Base(it.Path)+".brm")
+
+		if err := journal.Begin(it.Path, qPath, it.Size, it.Category); err != nil {
+			skipped++
+			slog.Warn("quarantine: failed to write journal begin", "error", err)
+			continue
+		}
 
 		moved := true
 		if err := os.Rename(it.Path, qPath); err != nil {
@@ -139,6 +151,12 @@ func Move(ctx context.Context, items []types.Item) (string, int64, int, int, err
 		}
 
 		if moved {
+			if err := journal.Commit(it.Path, qPath); err != nil {
+				slog.Warn("quarantine: failed to write journal commit", "error", err)
+				journal.Close()
+				return id, freed, files, skipped, err
+			}
+
 			manifest.Items = append(manifest.Items, types.ManifestItem{
 				Original:    it.Path,
 				Quarantined: qPath,
@@ -167,8 +185,12 @@ func Move(ctx context.Context, items []types.Item) (string, int64, int, int, err
 
 	manifestPath := filepath.Join(qDir, "manifest.json")
 	if err := writeManifest(manifestPath, &manifest); err != nil {
+		journal.Close()
 		return "", 0, 0, 0, fmt.Errorf("write manifest: %w", err)
 	}
+
+	journal.Close()
+	_ = os.Remove(filepath.Join(qDir, "journal.jsonl"))
 
 	return id, freed, files, skipped, nil
 }

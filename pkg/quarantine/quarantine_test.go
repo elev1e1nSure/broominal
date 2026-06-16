@@ -157,15 +157,15 @@ func TestMoveDuplicateNames(t *testing.T) {
 	hasSame := false
 	hasSame1 := false
 	for _, n := range names {
-		if n == "same.txt" {
+		if n == "same.txt.brm" {
 			hasSame = true
 		}
-		if n == "same_1.txt" {
+		if n == "same.txt_1.brm" {
 			hasSame1 = true
 		}
 	}
 	if !hasSame || !hasSame1 {
-		t.Errorf("names = %v, want same.txt and same_1.txt", names)
+		t.Errorf("names = %v, want same.txt.brm and same.txt_1.brm", names)
 	}
 }
 

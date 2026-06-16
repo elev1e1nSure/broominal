@@ -143,7 +143,7 @@ var (
 	appFrameStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(colorBorder).
-			Padding(0, 1)
+			Padding(0, 2)
 
 	headerStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), false, false, true, false).
@@ -177,12 +177,17 @@ func (m model) appFrame(title, content, foot string) string {
 	var head string
 	var headHeight int
 
+	innerWidth := m.width - 6
+	if innerWidth < 0 {
+		innerWidth = 0
+	}
+
 	if title != "" {
-		head = headerStyle.Width(m.width - 4).Render(titleStyle.Render(title))
+		head = headerStyle.Width(innerWidth).Render(titleStyle.Render(title))
 		headHeight = lipgloss.Height(head)
 	}
 
-	footRender := footerStyle.Width(m.width - 4).Render(foot)
+	footRender := footerStyle.Width(innerWidth).Render(foot)
 	footHeight := lipgloss.Height(footRender)
 
 	targetContentHeight := m.height - 2 - headHeight - footHeight // -2 for frame top/bottom border
@@ -192,6 +197,7 @@ func (m model) appFrame(title, content, foot string) string {
 
 	// Pad content to fill the remaining height so footer sticks to the bottom
 	paddedContent := lipgloss.NewStyle().
+		Width(innerWidth).
 		Height(targetContentHeight).
 		PaddingTop(1).
 		Render(content)
@@ -205,7 +211,7 @@ func (m model) appFrame(title, content, foot string) string {
 	ui := lipgloss.JoinVertical(lipgloss.Left, uiBlocks...)
 
 	return appFrameStyle.
-		Width(m.width - 2). // -2 for borders
+		Width(m.width - 2). // -2 for vertical borders
 		Height(m.height - 2).
 		Render(ui)
 }

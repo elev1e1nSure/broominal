@@ -24,7 +24,11 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if err != nil {
 				m.doctorFixResult = style.Failf("[FAIL]") + " " + err.Error()
 			} else {
-				m.doctorFixResult = style.Passf("[OK]") + " " + result
+				if result == i18n.T("purge_scheduled_reboot") {
+					m.doctorFixResult = result
+				} else {
+					m.doctorFixResult = style.Passf("[OK]") + " " + result
+				}
 				// Refresh checks so the WARN disappears.
 				m.doctorChecks = doctor.Run()
 			}
@@ -45,7 +49,7 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				continue
 			}
 			fixKey := m.doctorChecks[i].FixKey
-			if fixKey == "purge_damaged" {
+			if fixKey == "purge_dead" {
 				// Require confirmation before deleting.
 				m.doctorPendingFix = fixKey
 				m.doctorFixResult = ""
@@ -54,11 +58,16 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					m.doctorFixResult = style.Failf("[FAIL]") + " " + err.Error()
 				} else {
-					m.doctorFixResult = style.Passf("[OK]") + " " + result
+					if result == i18n.T("purge_scheduled_reboot") {
+						m.doctorFixResult = result
+					} else {
+						m.doctorFixResult = style.Passf("[OK]") + " " + result
+					}
 					if fixKey == "admin" {
 						return m, tea.Quit
 					}
 				}
+				m.doctorChecks = doctor.Run()
 			}
 			break
 		}
@@ -83,9 +92,7 @@ func (m model) viewDoctor() string {
 		}
 		content += fmt.Sprintf("  %-30s %s  %s\n", c.Name, marker, mutedStyle.Render(c.Detail))
 		if c.Status != doctor.StatusPass {
-			if c.FixKey != "" {
-				content += mutedStyle.Render(fmt.Sprintf("    → %s", i18n.T("suggest_press_f_to_fix"))) + "\n"
-			} else if c.Suggestion != "" {
+			if c.Suggestion != "" {
 				content += mutedStyle.Render(fmt.Sprintf("    → %s", c.Suggestion)) + "\n"
 			}
 		}

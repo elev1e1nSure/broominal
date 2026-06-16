@@ -1,11 +1,13 @@
 package quarantine
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -86,6 +88,55 @@ func removeAllRetry(path string) error {
 	return os.RemoveAll(path)
 }
 
+// ErrScheduledForReboot is returned when a locked file is scheduled for deletion on next reboot.
+var ErrScheduledForReboot = errors.New("scheduled for reboot")
+
+func removeOnReboot(path string) error {
+	ptr, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return err
+	}
+	return windows.MoveFileEx(ptr, nil, windows.MOVEFILE_DELAY_UNTIL_REBOOT)
+}
+
+func removeAllOnReboot(dir string) error {
+	var errs []error
+	_ = filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if !d.IsDir() {
+			if e := removeOnReboot(p); e != nil {
+				errs = append(errs, e)
+			}
+		}
+		return nil
+	})
+
+	var dirs []string
+	_ = filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if err == nil && d.IsDir() {
+			dirs = append(dirs, p)
+		}
+		return nil
+	})
+
+	sort.Slice(dirs, func(i, j int) bool {
+		return len(dirs[i]) > len(dirs[j])
+	})
+
+	for _, d := range dirs {
+		if e := removeOnReboot(d); e != nil {
+			errs = append(errs, e)
+		}
+	}
+
+	if len(errs) > 0 {
+		return errs[0]
+	}
+	return nil
+}
+
 // forceRemoveAll resets file attributes via SetFileAttributes before removal.
 // os.Chmod only clears FILE_ATTRIBUTE_READONLY; HIDDEN and SYSTEM flags also
 // cause "Access is denied" on RemoveAll. FILE_ATTRIBUTE_NORMAL clears all of
@@ -107,12 +158,20 @@ func forceRemoveAll(path string) error {
 		_ = windows.SetFileAttributes(ptr, attr)
 		return nil
 	})
-	return removeAllRetry(path)
+
+	err := removeAllRetry(path)
+	if err != nil {
+		if rebootErr := removeAllOnReboot(path); rebootErr == nil {
+			return ErrScheduledForReboot
+		}
+		return err
+	}
+	return nil
 }
 
 func uniquePath(dir, name string) string {
 	path := filepath.Join(dir, name)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Lstat(path); os.IsNotExist(err) {
 		return path
 	}
 	ext := filepath.Ext(name)
@@ -120,16 +179,22 @@ func uniquePath(dir, name string) string {
 	for i := 1; ; i++ {
 		newName := fmt.Sprintf("%s_%d%s", base, i, ext)
 		newPath := filepath.Join(dir, newName)
-		if _, err := os.Stat(newPath); os.IsNotExist(err) {
+		if _, err := os.Lstat(newPath); os.IsNotExist(err) {
 			return newPath
 		}
 	}
 }
 
 func copyAndDelete(src, dst string) error {
-	if info, err := os.Lstat(src); err == nil && info.Mode()&os.ModeSymlink != 0 {
+	srcStat, err := os.Lstat(src)
+	if err != nil {
+		return err
+	}
+	if srcStat.Mode()&os.ModeSymlink != 0 {
 		return fmt.Errorf("refusing to follow symlink: %s", src)
 	}
+	expectedSize := srcStat.Size()
+
 	if _, err := os.Lstat(dst); err == nil {
 		return fmt.Errorf("destination already exists: %s", dst)
 	}
@@ -158,11 +223,41 @@ func copyAndDelete(src, dst string) error {
 	if err := out.Sync(); err != nil {
 		return err
 	}
+
+	dstStat, err := out.Stat()
+	if err != nil {
+		return err
+	}
+	if dstStat.Size() != expectedSize {
+		_ = out.Close()
+		_ = in.Close()
+		_ = removeRetry(dst) // revert copy
+		return fmt.Errorf("size mismatch after copy: expected %d, got %d", expectedSize, dstStat.Size())
+	}
+
 	if err := out.Close(); err != nil {
 		return err
 	}
 	// Close before unlink: on Windows an open file cannot be removed,
 	// and the deferred close runs after the explicit one only on panic.
 	_ = in.Close()
-	return removeRetry(src)
+	err = removeRetry(src)
+	if err != nil {
+		_ = removeRetry(dst) // revert copy if we can't remove original
+		return err
+	}
+	return nil
+}
+
+func getDiskFreeSpace(dirPath string) (int64, error) {
+	var freeBytesAvailableToCaller, totalNumberOfBytes, totalNumberOfFreeBytes uint64
+	dirPtr, err := windows.UTF16PtrFromString(dirPath)
+	if err != nil {
+		return 0, err
+	}
+	err = windows.GetDiskFreeSpaceEx(dirPtr, &freeBytesAvailableToCaller, &totalNumberOfBytes, &totalNumberOfFreeBytes)
+	if err != nil {
+		return 0, err
+	}
+	return int64(freeBytesAvailableToCaller), nil
 }
