@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "v1.6.2"
+var Version = "v1.9.0"
 
 func init() {
 	cobra.AddTemplateFunc("bold", func(s string) string { return style.Bold + s + style.Reset })
@@ -110,7 +110,6 @@ func main() {
 	rootCmd.AddCommand(configCmd())
 	rootCmd.AddCommand(doctorCmd())
 	rootCmd.AddCommand(quarantineCmd())
-	rootCmd.AddCommand(quarantineCleanupCmd()) // hidden compat alias for existing scheduled tasks
 	rootCmd.AddCommand(pathCmd())
 	rootCmd.AddCommand(updateCmd())
 
