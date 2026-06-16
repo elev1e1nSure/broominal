@@ -77,22 +77,39 @@ func GetLast() (string, error) {
 }
 
 func writeManifest(path string, manifest *types.Manifest) error {
-	tmp := path + ".tmp"
-	f, err := os.Create(tmp)
+	// Use CreateTemp for a unique temp name — avoids collisions if a previous
+	// write crashed and left a stale .tmp file behind.
+	dir := filepath.Dir(path)
+	f, err := os.CreateTemp(dir, "manifest-*.json.tmp")
 	if err != nil {
 		return fmt.Errorf("create temp manifest: %w", err)
 	}
+	tmp := f.Name()
+	// Clean up temp file on any error path.
+	var writeErr error
+	defer func() {
+		if writeErr != nil {
+			_ = f.Close()
+			_ = os.Remove(tmp)
+		}
+	}()
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(manifest); err != nil {
-		f.Close()
-		os.Remove(tmp)
-		return fmt.Errorf("encode manifest: %w", err)
+	if writeErr = enc.Encode(manifest); writeErr != nil {
+		return fmt.Errorf("encode manifest: %w", writeErr)
 	}
-	if err := f.Close(); err != nil {
-		os.Remove(tmp)
-		return fmt.Errorf("close temp manifest: %w", err)
+	if writeErr = f.Sync(); writeErr != nil {
+		return fmt.Errorf("sync temp manifest: %w", writeErr)
 	}
+	if writeErr = f.Close(); writeErr != nil {
+		return fmt.Errorf("close temp manifest: %w", writeErr)
+	}
+	// On Windows Rename cannot overwrite an existing file — remove first.
+	// There is a narrow window between Remove and Rename where the manifest
+	// does not exist; the lock in Move/Restore prevents concurrent readers.
 	_ = os.Remove(path)
-	return os.Rename(tmp, path)
+	if writeErr = os.Rename(tmp, path); writeErr != nil {
+		return fmt.Errorf("rename manifest: %w", writeErr)
+	}
+	return nil
 }

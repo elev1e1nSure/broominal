@@ -15,6 +15,47 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
+// lockPath returns the path to the quarantine lock file.
+func lockPath() string {
+	return filepath.Join(BaseDir(), ".lock")
+}
+
+// acquireLock creates an exclusive lock file to prevent concurrent Move/Restore
+// from different processes (e.g. TUI + scheduled schtasks cleanup).
+// Retries for up to 5 seconds, then returns an error.
+func acquireLock() error {
+	if err := os.MkdirAll(BaseDir(), 0700); err != nil {
+		return fmt.Errorf("quarantine lock: create base dir: %w", err)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		f, err := os.OpenFile(lockPath(), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if err == nil {
+			_ = f.Close()
+			return nil
+		}
+		if !os.IsExist(err) {
+			return fmt.Errorf("quarantine lock: %w", err)
+		}
+		// Lock held by another process — check staleness (> 60s old = stale).
+		if info, statErr := os.Stat(lockPath()); statErr == nil {
+			if time.Since(info.ModTime()) > 60*time.Second {
+				_ = os.Remove(lockPath())
+				continue
+			}
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("quarantine: timed out waiting for lock (another process is running)")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+// releaseLock removes the lock file.
+func releaseLock() {
+	_ = os.Remove(lockPath())
+}
+
 // BaseDir returns the quarantine base directory under the app data folder.
 func BaseDir() string {
 	return filepath.Join(config.AppDir(), "quarantine")
@@ -43,8 +84,15 @@ func generateBackupID() (string, error) {
 	}
 }
 
-// Move перемещает файлы в карантин и возвращает restore ID.
+// Move transfers the given items to a fresh quarantine batch and returns its
+// restore ID. Items that are missing, locked, or symlinks are counted as
+// skipped and excluded from the manifest so a later restore cannot resurrect
+// dangerous targets.
 func Move(ctx context.Context, items []types.Item) (string, int64, int, int, error) {
+	if err := acquireLock(); err != nil {
+		return "", 0, 0, 0, err
+	}
+	defer releaseLock()
 	id, err := generateBackupID()
 	if err != nil {
 		return "", 0, 0, 0, err
@@ -125,8 +173,16 @@ func Move(ctx context.Context, items []types.Item) (string, int64, int, int, err
 	return id, freed, files, skipped, nil
 }
 
-// Restore восстанавливает файлы из карантина по ID.
+// Restore returns quarantined files to their original paths using the manifest
+// for the given ID. The allow-list in isAllowedRestorePath is the security
+// boundary — manifest entries pointing outside user-writable roots stay in
+// quarantine to prevent path-traversal abuse via a tampered manifest.
 func Restore(id string, forceOverwrite bool) (int, int, error) {
+	if err := acquireLock(); err != nil {
+		return 0, 0, err
+	}
+	defer releaseLock()
+
 	if err := validateID(id); err != nil {
 		return 0, 0, err
 	}
@@ -137,13 +193,12 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 	if err != nil {
 		return 0, 0, fmt.Errorf("open manifest: %w", err)
 	}
+	defer mf.Close()
 
 	var manifest types.Manifest
 	if err := json.NewDecoder(mf).Decode(&manifest); err != nil {
-		mf.Close()
 		return 0, 0, fmt.Errorf("decode manifest: %w", err)
 	}
-	mf.Close()
 
 	var restored int
 	var skipped int
@@ -201,7 +256,9 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 	return restored, skipped, nil
 }
 
-// CheckRestoreConflicts возвращает пути оригинальных файлов, которые уже существуют.
+// CheckRestoreConflicts returns original paths that already exist on disk and
+// would be overwritten by a restore. The TUI uses this to offer the user a
+// per-conflict overwrite/skip choice before any file is touched.
 func CheckRestoreConflicts(id string) ([]string, error) {
 	if err := validateID(id); err != nil {
 		return nil, err

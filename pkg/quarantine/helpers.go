@@ -33,6 +33,9 @@ func isAllowedRestorePath(path string) bool {
 	if !filepath.IsAbs(clean) {
 		return false
 	}
+	// Only allow restore to user-writable directories.
+	// Intentionally excludes SystemRoot/WINDIR/SYSTEMDRIVE to prevent
+	// privilege escalation via manifest poisoning (e.g. writing into System32).
 	allowedRoots := []string{
 		os.Getenv("TEMP"),
 		os.Getenv("TMP"),
@@ -40,11 +43,8 @@ func isAllowedRestorePath(path string) bool {
 		os.Getenv("LOCALAPPDATA"),
 		os.Getenv("APPDATA"),
 		os.Getenv("ProgramData"),
-		os.Getenv("SystemRoot"),
-		os.Getenv("WINDIR"),
 		os.Getenv("ProgramFiles"),
 		os.Getenv("ProgramFiles(x86)"),
-		os.Getenv("SYSTEMDRIVE"),
 	}
 	lowerClean := strings.ToLower(clean)
 	for _, root := range allowedRoots {
@@ -59,9 +59,6 @@ func isAllowedRestorePath(path string) bool {
 		if strings.HasPrefix(lowerClean, rootCleanSep) || lowerClean == rootClean {
 			return true
 		}
-	}
-	if strings.HasPrefix(lowerClean, `c:\nvidia`) {
-		return true
 	}
 	return false
 }
@@ -113,20 +110,32 @@ func copyAndDelete(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() {
+		// Defensive: the explicit Close below can be skipped by an early
+		// return on the io.Copy error path. Double-close is a no-op for
+		// *os.File, so we can always defer this.
+		_ = in.Close()
+	}()
 	out, err := os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		// Defensive: see note on the matching in.Close() above.
+		_ = out.Close()
+	}()
 	if _, err := io.Copy(out, in); err != nil {
+		return err
+	}
+	// Flush to disk before deleting source to prevent data loss on crash.
+	if err := out.Sync(); err != nil {
 		return err
 	}
 	if err := out.Close(); err != nil {
 		return err
 	}
-	if err := in.Close(); err != nil {
-		return err
-	}
+	// Close before unlink: on Windows an open file cannot be removed,
+	// and the deferred close runs after the explicit one only on panic.
+	_ = in.Close()
 	return removeRetry(src)
 }
