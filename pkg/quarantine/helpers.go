@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"golang.org/x/sys/windows"
 )
 
 func validateID(id string) error {
@@ -84,15 +86,25 @@ func removeAllRetry(path string) error {
 	return os.RemoveAll(path)
 }
 
-// forceRemoveAll strips read-only attributes before removal so that Windows
-// does not return "Access is denied" on files the user owns but cannot delete
-// due to FILE_ATTRIBUTE_READONLY being set.
+// forceRemoveAll resets file attributes via SetFileAttributes before removal.
+// os.Chmod only clears FILE_ATTRIBUTE_READONLY; HIDDEN and SYSTEM flags also
+// cause "Access is denied" on RemoveAll. FILE_ATTRIBUTE_NORMAL clears all of
+// them in one call. Directories get FILE_ATTRIBUTE_DIRECTORY instead, since
+// FILE_ATTRIBUTE_NORMAL is not valid for directory entries on Windows.
 func forceRemoveAll(path string) error {
 	_ = filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
-		_ = os.Chmod(p, 0666)
+		ptr, err := windows.UTF16PtrFromString(p)
+		if err != nil {
+			return nil
+		}
+		attr := uint32(windows.FILE_ATTRIBUTE_NORMAL)
+		if d.IsDir() {
+			attr = windows.FILE_ATTRIBUTE_DIRECTORY
+		}
+		_ = windows.SetFileAttributes(ptr, attr)
 		return nil
 	})
 	return removeAllRetry(path)
