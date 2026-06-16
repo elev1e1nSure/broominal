@@ -45,15 +45,20 @@ func Start(version string) (bool, error) {
 	if !doctor.IsAdmin() {
 		m.screen = ScreenAdminPrompt
 	} else if cfg == nil || cfg.Language == "" {
+		// No language saved yet — detect from Windows locale, persist, and skip the
+		// selection screen. The user can change it later from Settings → Language.
 		lang := i18n.DetectFromWindowsLocale()
 		i18n.SetLanguage(lang)
-		if cfg != nil {
-			cfg.Language = lang
-			if err := config.Save(cfg); err != nil {
-				slog.Warn("tui: failed to save language config", "error", err)
-			}
+		if cfg == nil {
+			cfg = config.Default()
 		}
-		m.screen = ScreenLanguage
+		cfg.Language = lang
+		if err := config.Save(cfg); err != nil {
+			slog.Warn("tui: failed to save language config", "error", err)
+		}
+		m.screen = ScreenUpdating
+		m.updateProgress = i18n.T("checking_updates")
+		m.checkUpdateOnStartup = true
 	} else {
 		// Check for updates on startup
 		m.screen = ScreenUpdating

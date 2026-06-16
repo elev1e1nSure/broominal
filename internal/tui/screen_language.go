@@ -50,11 +50,12 @@ func (m *model) applySelectedLanguage() {
 	if err != nil {
 		slog.Warn("tui: failed to load config for language change", "error", err)
 	}
-	if cfg != nil {
-		cfg.Language = lang
-		if err := config.Save(cfg); err != nil {
-			slog.Warn("tui: failed to save language config", "error", err)
-		}
+	if cfg == nil {
+		cfg = config.Default()
+	}
+	cfg.Language = lang
+	if err := config.Save(cfg); err != nil {
+		slog.Warn("tui: failed to save language config", "error", err)
 	}
 }
 
