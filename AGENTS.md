@@ -81,6 +81,13 @@ Every user-facing logical change in the TUI **must** be reflected in the CLI, an
 Shared helpers live in `cmd/broominal/util.go` (CLI-only) and `internal/tui/model.go` (TUI-only).
 Shared logic that applies to both belongs in the appropriate `pkg/` package, not duplicated.
 
+## TUI Styling & Visual Rules
+
+- **Padding/Margin consistency**: The main application frame (`appFrameStyle`) enforces a strict inner padding of `Padding(0, 2)`.
+- **No manual indents**: Do not manually prepend spaces (e.g., `"  " + text`) to raw strings in `screen_*.go` for indentation. Rely entirely on Lipgloss styles and the inherited container padding.
+- **Width calculations**: Since the main frame applies `Padding(0, 2)`, the available inner content width for dynamically sized elements (like progress bars or separators) is exactly `m.width - 6` (2 for left/right borders, 4 for left/right padding).
+- **Alignment**: Standard text, titles, and list pointers (`> `) should align flush left (column 0 relative to the content block). List items without a pointer start with a `prefix` of 2 spaces (`"  "`) so their text aligns seamlessly.
+
 ## Code Conventions
 
 - `scanDir()` helper for simple directory walks

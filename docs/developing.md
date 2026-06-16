@@ -59,7 +59,7 @@ pkg/
   categories/      Single registry of all scanner categories
   scanner/         File discovery by cleanup category
   cleaner/         Quarantine move + report save pipeline
-  quarantine/      Move, restore, cleanup, JSON manifests
+  quarantine/      Move, restore, cleanup, JSON manifests, WAL (journal.jsonl)
   config/          JSON configuration, defaults, presets
   doctor/          Health checks for runtime environment
   report/          JSON report generation
@@ -72,7 +72,13 @@ pkg/
   taskscheduler/   Windows Task Scheduler integration
 internal/
   tui/             Bubbletea interactive interface
-```
+
+## TUI Styling & Visual Rules
+
+- **Padding/Margin consistency**: The main application frame (`appFrameStyle`) enforces a strict inner padding of `Padding(0, 2)`.
+- **No manual indents**: Do not manually prepend spaces (e.g., `"  " + text`) to raw strings in `screen_*.go` for indentation. Rely entirely on Lipgloss styles and the inherited container padding.
+- **Width calculations**: Since the main frame applies `Padding(0, 2)`, the available inner content width for dynamically sized elements (like progress bars or separators) is exactly `m.width - 6` (2 for left/right borders, 4 for left/right padding).
+- **Alignment**: Standard text, titles, and list pointers (`> `) should align flush left (column 0 relative to the content block). List items without a pointer start with a `prefix` of 2 spaces (`"  "`) so their text aligns seamlessly.
 
 ## Adding a Scanner Category
 

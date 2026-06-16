@@ -44,6 +44,9 @@ If `QuarantineEnabled = false` in config, `os.RemoveAll` is called directly. **N
 
 ## Security Guards
 
+- **Write-Ahead Log (WAL)** — every quarantine operation is recorded to `journal.jsonl`.
+- **Background Auto-Repair** — if the application crashes or loses power during cleanup, the background repair system (`RepairState()`) automatically verifies journal transactions on next launch, purging corrupted partial data and reverting incomplete manifests.
+- **Strict Atomic Copying** — disk space is pre-checked via `GetDiskFreeSpaceEx` and copied files are verified against `expectedSize` before the original file is removed.
 - **Symlinks are skipped** — never followed during quarantine
 - **Path traversal blocked** — restore IDs validated, paths checked against allowed roots
 - **Atomic writes** — manifests written to `.tmp` then renamed

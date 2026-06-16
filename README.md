@@ -46,8 +46,8 @@ broominal ui                # interactive TUI
 ```
 Scan → Review → Clean → Quarantine → Restore
 ```
-
 Files go to `%LOCALAPPDATA%\broominal\quarantine\<id>\` with a `manifest.json`. Restore reads the manifest and moves files back.
+Operations are protected by a **Write-Ahead Log (WAL)** (`journal.jsonl`) that guarantees 100% atomic cleanups and automatically repairs interrupted operations (e.g. power loss) on next launch.
 
 ## Safety
 
@@ -61,7 +61,7 @@ Three presets: **Quick** (19 safe categories) → **Standard** (42 total) → **
 
 ## Commands
 
-`scan` · `clean` · `restore` · `ui` · `doctor` · `config` · `quarantine` · `report` · `path`
+`scan` · `clean` · `restore` · `ui` · `doctor` · `config` · `quarantine` · `report` · `path` · `update`
 
 See [docs/commands.md](docs/commands.md) for full reference.
 

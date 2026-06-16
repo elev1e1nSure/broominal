@@ -109,18 +109,7 @@ broominal quarantine delete --all --yes         # delete all backups
 * `--yes`: Execute the deletion (default is dry-run preview).
 * `--all`: Delete all backups.
 
----
 
-## quarantine-cleanup (Deprecated)
-
-Deprecated compatibility alias for `quarantine clean` (useful for backward-compatibility with older scheduled tasks).
-
-```powershell
-broominal quarantine-cleanup                    # preview cleanup
-broominal quarantine-cleanup --force            # execute cleanup (deprecated, use --yes)
-```
-
----
 
 ## report
 
@@ -151,6 +140,16 @@ broominal path remove                           # remove broominal directory fro
 ```
 
 Changes take effect after restarting the terminal.
+
+---
+
+## update
+
+Check for updates on GitHub and install the latest release if available.
+
+```powershell
+broominal update
+```
 
 ---
 
