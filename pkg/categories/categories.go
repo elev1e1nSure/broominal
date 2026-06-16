@@ -48,7 +48,7 @@ var All = []Def{
 	{Name: "Empty Folders", InternalKey: "empty_folders", Risk: types.RiskSafe, MinPreset: Standard},
 	{Name: "Messenger Cache", InternalKey: "messenger_cache", Risk: types.RiskSafe, MinPreset: Standard},
 	{Name: "Game Launcher Cache", InternalKey: "game_launcher_cache", Risk: types.RiskSafe, MinPreset: Standard},
-	{Name: "Dev Cache", InternalKey: "dev_cache", Risk: types.RiskSafe, MinPreset: Standard},
+	{Name: "Dev Cache", InternalKey: "dev_cache", Risk: types.RiskReview, MinPreset: Standard},
 	{Name: "Logs", InternalKey: "logs", Risk: types.RiskSafe, MinPreset: Standard},
 	{Name: "Windows Update Cache", InternalKey: "windows_update_cache", Risk: types.RiskReview, MinPreset: Standard},
 	{Name: "Nvidia Installer Leftovers", InternalKey: "nvidia_installer_leftovers", Risk: types.RiskReview, MinPreset: Standard},
