@@ -221,7 +221,8 @@ func checkManifests() Check {
 			Name:       i18n.T("check_manifests"),
 			Status:     StatusWarn,
 			Detail:     fmt.Sprintf(i18n.T("invalid_manifests"), invalid),
-			Suggestion: i18n.T("suggest_remove_damaged"),
+			Suggestion: i18n.T("suggest_press_f_to_fix"),
+			FixKey:     "purge_damaged",
 		}
 	}
 	if valid == 0 && len(entries) == 0 {
@@ -269,6 +270,12 @@ func Fix(fixKey string) (string, error) {
 			return "", fmt.Errorf("failed to elevate: %w", err)
 		}
 		return "Restarting as administrator...", nil
+	case "purge_damaged":
+		n, err := quarantine.PurgeDamaged()
+		if err != nil {
+			return "", fmt.Errorf("purge failed: %w", err)
+		}
+		return fmt.Sprintf(i18n.T("purge_damaged_ok"), n), nil
 	default:
 		return "", fmt.Errorf("no automatic fix for %s", fixKey)
 	}

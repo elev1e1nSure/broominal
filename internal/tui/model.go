@@ -81,6 +81,7 @@ type model struct {
 	// Doctor screen
 	doctorChecks    []doctor.Check
 	doctorFixResult string
+	doctorPendingFix string // fix key awaiting user confirmation
 	// Config screen
 	configCfg             *config.Config
 	lastConfigIdx         int

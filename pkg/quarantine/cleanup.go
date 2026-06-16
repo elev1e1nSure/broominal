@@ -101,6 +101,47 @@ func cleanupQuarantines(shouldDelete func(time.Time) bool) (int, int64, error) {
 	return deleted, freed, nil
 }
 
+// PurgeDamaged removes all quarantine directories whose manifest is missing or
+// unparseable. These entries cannot be restored and serve no purpose, but they
+// cause doctor to report WARN on every run until cleaned up.
+func PurgeDamaged() (int, error) {
+	qDir := BaseDir()
+	entries, err := os.ReadDir(qDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	var removed int
+	var firstErr error
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		id := e.Name()
+		if err := validateID(id); err != nil {
+			continue
+		}
+		dirPath := filepath.Join(qDir, id)
+		mf := filepath.Join(dirPath, "manifest.json")
+		data, err := os.ReadFile(mf)
+		if err == nil {
+			var m types.Manifest
+			if json.Unmarshal(data, &m) == nil {
+				// manifest is intact — skip
+				continue
+			}
+		}
+		if err := removeAllRetry(dirPath); err != nil && firstErr == nil {
+			firstErr = err
+		} else {
+			removed++
+		}
+	}
+	return removed, firstErr
+}
+
 func Delete(id string) (int64, error) {
 	if err := validateID(id); err != nil {
 		return 0, err

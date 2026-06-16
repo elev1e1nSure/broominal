@@ -14,6 +14,26 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
 		return m, tea.Quit
 	}
+
+	// Confirmation mode: Y/Enter confirms, Esc/N cancels.
+	if m.doctorPendingFix != "" {
+		switch {
+		case key.Matches(msg, key.NewBinding(key.WithKeys("y", "enter"))):
+			result, err := doctor.Fix(m.doctorPendingFix)
+			m.doctorPendingFix = ""
+			if err != nil {
+				m.doctorFixResult = style.Failf("[FAIL]") + " " + err.Error()
+			} else {
+				m.doctorFixResult = style.Passf("[OK]") + " " + result
+				// Refresh checks so the WARN disappears.
+				m.doctorChecks = doctor.Run()
+			}
+		case key.Matches(msg, key.NewBinding(key.WithKeys("n", "esc"))):
+			m.doctorPendingFix = ""
+		}
+		return m, nil
+	}
+
 	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
 		m.screen = ScreenMainMenu
 		m.selectedIdx = m.lastMainMenuIdx
@@ -21,18 +41,26 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("f"))) {
 		for i := range m.doctorChecks {
-			if m.doctorChecks[i].FixKey != "" {
-				msg, err := doctor.Fix(m.doctorChecks[i].FixKey)
+			if m.doctorChecks[i].FixKey == "" {
+				continue
+			}
+			fixKey := m.doctorChecks[i].FixKey
+			if fixKey == "purge_damaged" {
+				// Require confirmation before deleting.
+				m.doctorPendingFix = fixKey
+				m.doctorFixResult = ""
+			} else {
+				result, err := doctor.Fix(fixKey)
 				if err != nil {
 					m.doctorFixResult = style.Failf("[FAIL]") + " " + err.Error()
-					return m, nil
+				} else {
+					m.doctorFixResult = style.Passf("[OK]") + " " + result
+					if fixKey == "admin" {
+						return m, tea.Quit
+					}
 				}
-				m.doctorFixResult = style.Passf("[OK]") + " " + msg
-				if m.doctorChecks[i].FixKey == "admin" {
-					return m, tea.Quit
-				}
-				break
 			}
+			break
 		}
 		return m, nil
 	}
@@ -61,6 +89,15 @@ func (m model) viewDoctor() string {
 		if c.FixKey != "" {
 			hasFix = true
 		}
+	}
+
+	if m.doctorPendingFix != "" {
+		body += "\n  " + reviewStyle.Render(i18n.T("confirm_purge_damaged")) + "\n"
+		body += "\n" + footer(
+			keyHint("Y/Enter", i18n.T("confirm_yes")),
+			keyHint("N/Esc", i18n.T("confirm_no")),
+		)
+		return body
 	}
 
 	if m.doctorFixResult != "" {
