@@ -74,8 +74,5 @@ func FuzzManifestDecode(f *testing.F) {
 		var m types.Manifest
 		err := json.Unmarshal(data, &m)
 		_ = err // should not panic regardless of input
-		if m.ID != "" && len(m.ID) > 1000 {
-			// id fields should not explode in size
-		}
 	})
 }

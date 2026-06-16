@@ -55,7 +55,7 @@ func riskDisplay(r types.RiskLevel) (string, func(string, ...any) string) {
 	case types.RiskDanger:
 		return "danger", func(f string, a ...any) string { return "\033[31m" + fmt.Sprintf(f, a...) + "\033[0m" }
 	default:
-		return string(r), func(f string, a ...any) string { return fmt.Sprintf(f, a...) }
+		return string(r), fmt.Sprintf
 	}
 }
 
