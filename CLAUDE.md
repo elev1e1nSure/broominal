@@ -52,14 +52,22 @@ Missing registration → startup panic (safe by design).
 
 ## Dev Commands
 
+Always use `just` for builds, tests, and checks — never invoke `go build`, `go test`, or `gofmt` directly.
+
 ```
-just build             # build dev binary
-just build-release v1  # build with version
-just run scan          # build + run
-just test              # all tests
-just check             # fmt → vet → lint → test
+just build             # build dev binary (go build with dev version)
+just build-release v1  # build with explicit version tag
+just run scan          # build + run with args (e.g. just run tui)
+just test              # all tests (go test ./...)
+just test-pkg          # package tests only, skips TUI
+just fmt               # format code (gofmt -w .)
+just vet               # go vet ./...
+just lint              # golangci-lint run
+just check             # full check: fmt → vet → lint → test-pkg
 just changelog-raw     # preview raw commits since last tag
 just changelog         # AI-polished changelog via OpenRouter
+just changelog-save f  # save changelog to file
+just clean             # remove broominal.exe
 ```
 
 ## Code Conventions
