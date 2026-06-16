@@ -68,8 +68,7 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewDoctor() string {
-	var body string
-	body += m.appTitle(i18n.T("doctor")) + "\n\n"
+	var content string
 
 	var hasFix bool
 	for _, c := range m.doctorChecks {
@@ -82,12 +81,12 @@ func (m model) viewDoctor() string {
 		case doctor.StatusFail:
 			marker = dangerStyle.Render("[FAIL]")
 		}
-		body += fmt.Sprintf("  %-30s %s  %s\n", c.Name, marker, mutedStyle.Render(c.Detail))
+		content += fmt.Sprintf("  %-30s %s  %s\n", c.Name, marker, mutedStyle.Render(c.Detail))
 		if c.Status != doctor.StatusPass {
 			if c.FixKey != "" {
-				body += mutedStyle.Render(fmt.Sprintf("    → %s", i18n.T("suggest_press_f_to_fix"))) + "\n"
+				content += mutedStyle.Render(fmt.Sprintf("    → %s", i18n.T("suggest_press_f_to_fix"))) + "\n"
 			} else if c.Suggestion != "" {
-				body += mutedStyle.Render(fmt.Sprintf("    → %s", c.Suggestion)) + "\n"
+				content += mutedStyle.Render(fmt.Sprintf("    → %s", c.Suggestion)) + "\n"
 			}
 		}
 		if c.FixKey != "" {
@@ -96,16 +95,16 @@ func (m model) viewDoctor() string {
 	}
 
 	if m.doctorPendingFix != "" {
-		body += "\n  " + reviewStyle.Render(i18n.T("confirm_purge_damaged")) + "\n"
-		body += "\n" + footer(
+		content += "\n  " + reviewStyle.Render(i18n.T("confirm_purge_damaged")) + "\n"
+		foot := footer(
 			keyHint("Enter", i18n.T("confirm_yes")),
 			keyHint("Esc", i18n.T("confirm_no")),
 		)
-		return body
+		return m.appFrame(i18n.T("doctor"), content, foot)
 	}
 
 	if m.doctorFixResult != "" {
-		body += "\n  " + m.doctorFixResult + "\n"
+		content += "\n  " + m.doctorFixResult + "\n"
 	}
 
 	var hints []string
@@ -114,6 +113,6 @@ func (m model) viewDoctor() string {
 		hints = append(hints, keyHint("F", i18n.T("fix_issue")))
 	}
 	hints = append(hints, keyHint("Esc", i18n.T("back")))
-	body += "\n" + footer(hints...)
-	return body
+	foot := footer(hints...)
+	return m.appFrame(i18n.T("doctor"), content, foot)
 }

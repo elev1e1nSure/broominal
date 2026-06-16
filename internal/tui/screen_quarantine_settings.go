@@ -190,18 +190,17 @@ func (m model) viewQuarantineSettings() string {
 		{label: autoLabel, disabled: !quarantineEnabled},
 	}
 
-	var body string
-	body += m.appTitle(i18n.T("quarantine_settings")) + "\n\n"
+	var content string
 	for i, item := range items {
 		if item.disabled {
-			body += disabledStyle.Render(fmt.Sprintf("  %s", item.label)) + "\n"
+			content += disabledStyle.Render(fmt.Sprintf("  %s", item.label)) + "\n"
 		} else if i == m.selectedIdx {
-			body += selectedStyle.Render(fmt.Sprintf("> %s", item.label)) + "\n"
+			content += selectedStyle.Render(fmt.Sprintf("► %s", item.label)) + "\n"
 		} else {
-			body += mutedStyle.Render(fmt.Sprintf("  %s", item.label)) + "\n"
+			content += mutedStyle.Render(fmt.Sprintf("  %s", item.label)) + "\n"
 		}
 		if i == 0 && quarantineWarn != "" {
-			body += quarantineWarn + "\n"
+			content += quarantineWarn + "\n"
 		}
 	}
 	if m.quarantineSettingsMsg != "" {
@@ -209,12 +208,12 @@ func (m model) viewQuarantineSettings() string {
 		if m.quarantineSettingsMsg == i18n.T("quarantine_task_fail") {
 			msgStyle = dangerStyle
 		}
-		body += "\n" + msgStyle.Render("  "+m.quarantineSettingsMsg) + "\n"
+		content += "\n" + msgStyle.Render("  "+m.quarantineSettingsMsg) + "\n"
 	}
-	body += "\n" + footer(
+	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("toggle")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return body
+	return m.appFrame(i18n.T("quarantine_settings"), content, foot)
 }

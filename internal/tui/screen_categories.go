@@ -148,8 +148,7 @@ func (m model) handleKeyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewCategories() string {
-	var body string
-	body += m.appTitle(i18n.T("categories")) + "\n\n"
+	var content string
 
 	// Header column widths must match the row widths below; otherwise the
 	// table mis-aligns under long category names and the size column drifts.
@@ -159,8 +158,8 @@ func (m model) viewCategories() string {
 		lipgloss.NewStyle().Width(filesW).Align(lipgloss.Right).Render(i18n.T("files")) + " " +
 		lipgloss.NewStyle().Width(riskW).Render(i18n.T("risk")) + " " +
 		lipgloss.NewStyle().Width(selW).Render(i18n.T("select"))
-	body += mutedStyle.Render("  "+head) + "\n"
-	body += mutedStyle.Render("  "+strings.Repeat("─", catW+sizeW+filesW+riskW+selW+4)) + "\n"
+	content += mutedStyle.Render("  "+head) + "\n"
+	content += mutedStyle.Render("  "+strings.Repeat("─", catW+sizeW+filesW+riskW+selW+4)) + "\n"
 
 	visible := m.height - 9
 	if visible < 5 {
@@ -179,7 +178,7 @@ func (m model) viewCategories() string {
 		filesSt := lipgloss.NewStyle().Width(filesW).Align(lipgloss.Right)
 		riskSt := lipgloss.NewStyle().Width(riskW)
 		if i == m.selectedIdx {
-			prefix = selectedStyle.Render("> ")
+			prefix = selectedStyle.Render("► ")
 			nameSt = nameSt.Inherit(selectedStyle)
 			sizeSt = sizeSt.Inherit(selectedStyle)
 			filesSt = filesSt.Inherit(selectedStyle)
@@ -188,11 +187,11 @@ func (m model) viewCategories() string {
 		riskCol := lipgloss.Color("#9ca3af")
 		switch c.cat.Risk {
 		case types.RiskSafe:
-			riskCol = lipgloss.Color("#4ade80")
+			riskCol = colorSafe
 		case types.RiskReview:
-			riskCol = lipgloss.Color("#fbbf24")
+			riskCol = colorWarning
 		case types.RiskDanger:
-			riskCol = lipgloss.Color("#f87171")
+			riskCol = colorDanger
 		}
 		riskSt = riskSt.Foreground(riskCol).Bold(true)
 		riskLabel := i18n.T("risk_" + strings.ToLower(string(c.cat.Risk)))
@@ -203,38 +202,38 @@ func (m model) viewCategories() string {
 			filesSt.Render(fmt.Sprintf("%d", c.cat.Files)) + " " +
 			riskSt.Render(riskLabel) + " " +
 			marker
-		body += line + "\n"
+		content += line + "\n"
 	}
-	body += "\n" + footer(
+	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Space", i18n.T("toggle")),
 		keyHint("D", i18n.T("details")),
 		keyHint("Enter", i18n.T("confirm")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return body
+	return m.appFrame(i18n.T("categories"), content, foot)
 }
 
 func (m model) viewWarnRecycleBin() string {
 	cat := m.categories[m.detailCat].cat
-	return m.appTitle(i18n.T("warning")) + "\n\n" +
-		dangerStyle.Render(fmt.Sprintf("  "+i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
-		mutedStyle.Render("  "+i18n.T("hint_recycle_warn")) + "\n\n" +
-		footer(
-			keyHint("Q", i18n.T("quit")),
-			keyHint("Enter", i18n.T("proceed")),
-			keyHint("Esc", i18n.T("back")),
-		)
+	content := dangerStyle.Render(fmt.Sprintf("  "+i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
+		mutedStyle.Render("  "+i18n.T("hint_recycle_warn")) + "\n"
+	foot := footer(
+		keyHint("Q", i18n.T("quit")),
+		keyHint("Enter", i18n.T("proceed")),
+		keyHint("Esc", i18n.T("back")),
+	)
+	return m.appFrame(i18n.T("warning"), content, foot)
 }
 
 func (m model) viewWarnDuplicates() string {
-	return m.appTitle(i18n.T("warning")) + "\n\n" +
-		reviewStyle.Render("  "+i18n.T("duplicate_files_warn")) + "\n\n" +
-		footer(
-			keyHint("Q", i18n.T("quit")),
-			keyHint("Enter", i18n.T("proceed")),
-			keyHint("Esc", i18n.T("back")),
-		)
+	content := reviewStyle.Render("  "+i18n.T("duplicate_files_warn")) + "\n"
+	foot := footer(
+		keyHint("Q", i18n.T("quit")),
+		keyHint("Enter", i18n.T("proceed")),
+		keyHint("Esc", i18n.T("back")),
+	)
+	return m.appFrame(i18n.T("warning"), content, foot)
 }
 
 func (m model) viewCategoryInfo() string {
@@ -244,12 +243,11 @@ func (m model) viewCategoryInfo() string {
 	cat := m.categories[m.detailCat].cat
 	desc := i18n.CategoryDescription(cat.Category)
 
-	var body string
-	body += m.appTitle(i18n.T("details")) + "\n\n"
+	var content string
 
 	// Category name and basic stats
-	body += "  " + selectedStyle.Render(i18n.CategoryName(cat.Category)) + "\n"
-	body += "  " + mutedStyle.Render(fmt.Sprintf("  %s: %s  |  %s: %d  |  %s: %s",
+	content += "  " + selectedStyle.Render(i18n.CategoryName(cat.Category)) + "\n"
+	content += "  " + mutedStyle.Render(fmt.Sprintf("  %s: %s  |  %s: %d  |  %s: %s",
 		i18n.T("size"), util.FormatSize(cat.Size),
 		i18n.T("files"), cat.Files,
 		i18n.T("risk"), i18n.T("risk_"+strings.ToLower(string(cat.Risk))))) + "\n\n"
@@ -260,22 +258,22 @@ func (m model) viewCategoryInfo() string {
 		if maxW < 40 {
 			maxW = 40
 		}
-		body += "  " + mutedStyle.Width(maxW).Render(desc) + "\n\n"
+		content += "  " + mutedStyle.Width(maxW).Render(desc) + "\n"
 	}
 
-	body += footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
-	return body
+	foot := footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
+	return m.appFrame(i18n.T("details"), content, foot)
 }
 
 func (m model) viewConfirm() string {
-	head := m.appTitle(i18n.T("confirm_cleanup"))
-	return head + "\n\n" + m.confirmMsg +
-		"  " + mutedStyle.Render(strings.Repeat("─", 42)) + "\n\n" +
-		footer(
-			keyHint("Q", i18n.T("quit")),
-			keyHint("Enter", i18n.T("confirm")),
-			keyHint("Esc", i18n.T("back")),
-		)
+	content := m.confirmMsg +
+		"  " + mutedStyle.Render(strings.Repeat("─", 42)) + "\n"
+	foot := footer(
+		keyHint("Q", i18n.T("quit")),
+		keyHint("Enter", i18n.T("confirm")),
+		keyHint("Esc", i18n.T("back")),
+	)
+	return m.appFrame(i18n.T("confirm_cleanup"), content, foot)
 }
 
 func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {

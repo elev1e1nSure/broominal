@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	lipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/util"
@@ -108,45 +109,52 @@ func (m model) handleKeyRestoreConflict(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewCleaning() string {
-	return m.appTitle(i18n.T("cleaning")) + "\n\n" +
-		fmt.Sprintf("  %s %s\n", m.spinner.View(), i18n.T("moving_files")) +
-		mutedStyle.Render("  "+i18n.T("please_wait")) + "\n\n" +
-		footer(keyHint("Esc", i18n.T("cancel")))
+	var content string
+	fraction := 0.0
+	if m.scanTotal > 0 {
+		fraction = float64(m.scanCompleted) / float64(m.scanTotal)
+	}
+
+	bar := m.progress.ViewAs(fraction)
+	statusText := fmt.Sprintf("%d%% | %s %d/%d", int(fraction*100), i18n.T("cleaning_in_progress"), m.scanCompleted, m.scanTotal)
+	statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Right).Render(mutedStyle.Render(statusText))
+
+	content += fmt.Sprintf("\n%s\n%s\n", bar, statusLine)
+
+	foot := footer(keyHint("Esc", i18n.T("cancel")))
+	return m.appFrame(i18n.T("cleaning"), content, foot)
 }
 
 func (m model) viewResult() string {
 	if m.cleanResult == nil {
-		return m.appTitle(i18n.T("restored")) + "\n\n" +
-			safeStyle.Render("  [OK] "+i18n.T("hint_restored")) + "\n\n" +
-			footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
+		content := "\n  " + safeStyle.Render("[OK] "+i18n.T("hint_restored")) + "\n"
+		foot := footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
+		return m.appFrame(i18n.T("restored"), content, foot)
 	}
-	body := m.appTitle(i18n.T("cleanup_complete")) + "\n\n" +
-		fmt.Sprintf("  Freed:      %s\n", safeStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
+	content := fmt.Sprintf("  Freed:      %s\n", safeStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
 		fmt.Sprintf("  Files:      %s\n", valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files)))
 	if m.cleanResult.Skipped > 0 {
-		body += fmt.Sprintf("  Skipped:    %s\n", reviewStyle.Render(fmt.Sprintf("%d", m.cleanResult.Skipped)))
+		content += fmt.Sprintf("  Skipped:    %s\n", reviewStyle.Render(fmt.Sprintf("%d", m.cleanResult.Skipped)))
 	}
-	body += fmt.Sprintf("  Restore ID: %s\n", mutedStyle.Render(m.cleanResult.RestoreID))
-	body += "\n" + footer(
+	content += fmt.Sprintf("  Restore ID: %s\n", mutedStyle.Render(m.cleanResult.RestoreID))
+	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("R", i18n.T("restore_last")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return body
+	return m.appFrame(i18n.T("cleanup_complete"), content, foot)
 }
 
 func (m model) viewRestoreConflict() string {
-	var body string
-	body += m.appTitle(i18n.T("restore_conflicts")) + "\n\n"
-	body += dangerStyle.Render(fmt.Sprintf("  %d %s:", len(m.conflicts), i18n.T("files_already_exist"))) + "\n"
+	content := dangerStyle.Render(fmt.Sprintf("  %d %s:", len(m.conflicts), i18n.T("files_already_exist"))) + "\n"
 	for _, p := range m.conflicts {
-		body += mutedStyle.Render("    "+p) + "\n"
+		content += mutedStyle.Render("    "+p) + "\n"
 	}
-	body += "\n" + footer(
+	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("O", i18n.T("overwrite_all")),
 		keyHint("S", i18n.T("skip_all")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return body
+	return m.appFrame(i18n.T("restore_conflicts"), content, foot)
 }

@@ -3,7 +3,7 @@ package tui
 import (
 	"context"
 	"errors"
-	"fmt"
+
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/config"
@@ -86,15 +87,6 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) appTitle(subtitle string) string {
-	const maxSubtitleWidth = 40
-	if len(subtitle) > maxSubtitleWidth {
-		subtitle = subtitle[:maxSubtitleWidth-3] + "..."
-	}
-	title := fmt.Sprintf("broominal [%s] | %s", m.version, subtitle)
-	return titleStyle.Render(title)
-}
-
 type scanDoneMsg struct {
 	result *types.ScanResult
 }
@@ -167,8 +159,7 @@ func init() {
 	registerKeyHandler(ScreenUpdateAvailable, model.handleKeyUpdateAvailable)
 	registerKeyHandler(ScreenUpdating, model.handleKeyUpdating)
 	registerKeyHandler(ScreenNoUpdate, model.handleKeyNoUpdate)
-	registerKeyHandler(ScreenPathConfirm, model.handleKeyPathConfirm)
-	registerKeyHandler(ScreenPathResult, model.handleKeyPathResult)
+	registerKeyHandler(ScreenPathSettings, model.handleKeyPathSettings)
 
 	registerViewHandler(ScreenMainMenu, model.viewMainMenu)
 	registerViewHandler(ScreenDashboard, model.viewDashboard)
@@ -194,8 +185,7 @@ func init() {
 	registerViewHandler(ScreenUpdateAvailable, model.viewUpdateAvailable)
 	registerViewHandler(ScreenUpdating, model.viewUpdating)
 	registerViewHandler(ScreenNoUpdate, model.viewNoUpdate)
-	registerViewHandler(ScreenPathConfirm, model.viewPathConfirm)
-	registerViewHandler(ScreenPathResult, model.viewPathResult)
+	registerViewHandler(ScreenPathSettings, model.viewPathSettings)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -203,6 +193,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.progress.Width = msg.Width - 4
 		return m, nil
 
 	case scanProgressMsg:
@@ -303,6 +294,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+
+	case progress.FrameMsg:
+		progressModel, cmd := m.progress.Update(msg)
+		m.progress = progressModel.(progress.Model)
 		return m, cmd
 
 	case tea.KeyMsg:

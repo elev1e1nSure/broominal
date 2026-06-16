@@ -131,16 +131,15 @@ func (m model) viewDeletingQuarantine() string {
 	if !m.deleteAllQuarantine && m.restoreIdx < len(m.restoreEntries) {
 		label = fmt.Sprintf("%s %s", i18n.T("cleaning_quarantines"), m.restoreEntries[m.restoreIdx].id)
 	}
-	return m.appTitle(i18n.T("cleaning_quarantines")) + "\n\n" +
-		fmt.Sprintf("  %s %s\n", m.spinner.View(), label) +
+	content := fmt.Sprintf("\n  %s %s\n", m.spinner.View(), label) +
 		mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
+	return m.appFrame(i18n.T("cleaning_quarantines"), content, "")
 }
 
 func (m model) viewRestore() string {
-	var body string
-	body += m.appTitle(i18n.T("restore")) + "\n\n"
+	var content string
 	if len(m.restoreEntries) == 0 {
-		body += mutedStyle.Render("  "+i18n.T("no_quarantines")) + "\n"
+		content += mutedStyle.Render("  "+i18n.T("no_quarantines")) + "\n"
 	} else {
 		visible := m.height - 8
 		if visible < 5 {
@@ -157,16 +156,11 @@ func (m model) viewRestore() string {
 			prefix := "  "
 			if i == m.restoreIdx {
 				rowStyle = selectedStyle
-				prefix = selectedStyle.Render("> ")
+				prefix = selectedStyle.Render("► ")
 			}
 
 			timeSt := lipgloss.NewStyle().Width(timeW).Inherit(rowStyle)
 			sizeSt := lipgloss.NewStyle().Width(sizeW).Align(lipgloss.Right).Inherit(rowStyle)
-
-			catMaxW := m.width - 2 - timeW - 2 - sizeW - 2
-			if catMaxW < 20 {
-				catMaxW = 20
-			}
 
 			line := timeSt.Render(quarantineDate(e.createdAt)) +
 				"  " +
@@ -174,20 +168,20 @@ func (m model) viewRestore() string {
 				"  " +
 				rowStyle.Render(formatQuarantineCategories(e.categories))
 
-			body += prefix + line + "\n"
+			content += prefix + line + "\n"
 		}
 	}
 	if m.restoreResult != "" {
-		body += "\n" + safeStyle.Render("  [OK] "+m.restoreResult) + "\n"
+		content += "\n" + safeStyle.Render("  [OK] "+m.restoreResult) + "\n"
 	}
-	body += "\n" + footer(
+	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("restore")),
 		keyHint("X", i18n.T("delete")),
 		keyHint("A", i18n.T("delete_all")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return body
+	return m.appFrame(i18n.T("restore"), content, foot)
 }
 
 func (m model) viewConfirmDeleteQuarantine() string {
@@ -200,25 +194,25 @@ func (m model) viewConfirmDeleteQuarantine() string {
 			entry += "   " + cats
 		}
 	}
-	return m.appTitle(i18n.T("warning")) + "\n\n" +
-		reviewStyle.Render("  "+i18n.T("confirm_delete_one")) + "\n" +
-		mutedStyle.Render("  "+entry) + "\n\n" +
-		footer(
-			keyHint("Q", i18n.T("quit")),
-			keyHint("Enter", i18n.T("confirm")),
-			keyHint("Esc", i18n.T("back")),
-		)
+	content := reviewStyle.Render("  "+i18n.T("confirm_delete_one")) + "\n" +
+		mutedStyle.Render("  "+entry) + "\n"
+	foot := footer(
+		keyHint("Q", i18n.T("quit")),
+		keyHint("Enter", i18n.T("confirm")),
+		keyHint("Esc", i18n.T("back")),
+	)
+	return m.appFrame(i18n.T("warning"), content, foot)
 }
 
 func (m model) viewConfirmDeleteAllQuarantine() string {
 	msg := fmt.Sprintf(i18n.T("confirm_delete_all"), len(m.restoreEntries))
-	return m.appTitle(i18n.T("warning")) + "\n\n" +
-		dangerStyle.Render("  "+msg) + "\n\n" +
-		footer(
-			keyHint("Q", i18n.T("quit")),
-			keyHint("Enter", i18n.T("confirm")),
-			keyHint("Esc", i18n.T("back")),
-		)
+	content := dangerStyle.Render("  "+msg) + "\n"
+	foot := footer(
+		keyHint("Q", i18n.T("quit")),
+		keyHint("Enter", i18n.T("confirm")),
+		keyHint("Esc", i18n.T("back")),
+	)
+	return m.appFrame(i18n.T("warning"), content, foot)
 }
 
 // reloadEntries returns an up-to-date list of quarantine entries.

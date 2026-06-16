@@ -59,12 +59,23 @@ func riskColor(risk types.RiskLevel) lipgloss.Color {
 
 func (m model) viewDashboard() string {
 	if m.result == nil {
+		var content string
 		if m.scanTotal > 0 {
-			return m.appTitle(i18n.T("scanning")) + "\n\n  " +
-				m.spinner.View() + " " +
-				fmt.Sprintf("%s  %d / %d", i18n.T("scanning"), m.scanCompleted, m.scanTotal) + "\n"
+			fraction := float64(m.scanCompleted) / float64(m.scanTotal)
+			if fraction > 1.0 {
+				fraction = 1.0
+			}
+			bar := m.progress.ViewAs(fraction)
+			statusText := fmt.Sprintf("%d%% | %s %d/%d", int(fraction*100), i18n.T("scanning"), m.scanCompleted, m.scanTotal)
+			statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Right).Render(mutedStyle.Render(statusText))
+
+			content = fmt.Sprintf("\n%s\n%s\n", bar, statusLine)
+		} else {
+			statusText := fmt.Sprintf("0%% | %s 0/0", i18n.T("scanning"))
+			statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Right).Render(mutedStyle.Render(statusText))
+			content = fmt.Sprintf("\n%s\n%s\n", m.progress.ViewAs(0), statusLine)
 		}
-		return m.spinner.View() + " " + i18n.T("scanning") + "\n"
+		return m.appFrame(i18n.T("scanning"), content, "")
 	}
 
 	var totalFiles int
@@ -78,17 +89,16 @@ func (m model) viewDashboard() string {
 		return cats[i].Size > cats[j].Size
 	})
 
-	// ── Header ──────────────────────────────────────────────────────────────
-	body := m.appTitle(i18n.T("dashboard")) + "\n\n"
+	var content string
 
 	if totalFiles == 0 {
-		body += "  " + safeStyle.Render(i18n.T("nothing_found")) + "\n"
-		body += "  " + mutedStyle.Render(i18n.T("nothing_found_desc")) + "\n\n"
-		body += footer(
+		content += "  " + safeStyle.Render(i18n.T("nothing_found")) + "\n"
+		content += "  " + mutedStyle.Render(i18n.T("nothing_found_desc")) + "\n\n"
+		foot := footer(
 			keyHint("Q", i18n.T("quit")),
 			keyHint("Esc", i18n.T("back")),
 		)
-		return body
+		return m.appFrame(i18n.T("dashboard"), content, foot)
 	}
 
 	// Stats row: total size · files · categories
@@ -96,7 +106,7 @@ func (m model) viewDashboard() string {
 		totalFiles, i18n.T("files"),
 		len(m.result.Categories), i18n.T("stat_categories"),
 	)
-	body += fmt.Sprintf("  %s  %s\n",
+	content += fmt.Sprintf("  %s  %s\n",
 		valueStyle.Render(util.FormatSize(m.result.TotalSize)),
 		mutedStyle.Render("·  "+secondary),
 	)
@@ -109,15 +119,15 @@ func (m model) viewDashboard() string {
 		}
 		return rs.Render("■") + " " + mutedStyle.Render(label) + " " + rs.Render(sizeStr)
 	}
-	body += fmt.Sprintf("  %s    %s    %s\n",
+	content += fmt.Sprintf("  %s    %s    %s\n",
 		riskDot(i18n.T("risk_safe"), m.result.SafeSize, safeStyle),
 		riskDot(i18n.T("risk_review"), m.result.ReviewSize, reviewStyle),
 		riskDot(i18n.T("risk_danger"), m.result.DangerSize, dangerStyle),
 	)
 
-	body += "  " + mutedStyle.Render(strings.Repeat("─", 52)) + "\n\n"
+	content += "  " + mutedStyle.Render(strings.Repeat("─", 52)) + "\n\n"
 
-	// ── Category bars ────────────────────────────────────────────────────────
+	// Category bars
 	const nameWidth = 30
 	const barWidth = 18
 	maxSize := int64(1)
@@ -140,14 +150,15 @@ func (m model) viewDashboard() string {
 		bar := barFillStyle(riskColor(c.Risk)).Render(strings.Repeat(" ", filled)) + barTrackStyle.Render(strings.Repeat(" ", barWidth-filled))
 		sizeStr := fmt.Sprintf("%9s", util.FormatSize(c.Size))
 		nameCell := lipgloss.NewStyle().Width(nameWidth).Render(name)
-		body += fmt.Sprintf("  %s %s  %s\n", nameCell, bar, rs.Render(sizeStr))
+		content += fmt.Sprintf("  %s %s  %s\n", nameCell, bar, rs.Render(sizeStr))
 	}
 
-	body += "\n" + footer(
+	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("confirm")),
 		keyHint("D", i18n.T("select_categories")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return body
+
+	return m.appFrame(i18n.T("dashboard"), content, foot)
 }

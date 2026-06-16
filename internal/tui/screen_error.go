@@ -22,7 +22,7 @@ func (m model) handleKeyError(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewError() string {
-	return m.appTitle(i18n.T("error")) + "\n\n" +
-		dangerStyle.Render(fmt.Sprintf("  %v", m.err)) + "\n\n" +
-		footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
+	content := dangerStyle.Render(fmt.Sprintf("  %v", m.err)) + "\n"
+	foot := footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
+	return m.appFrame(i18n.T("error"), content, foot)
 }

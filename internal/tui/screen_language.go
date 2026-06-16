@@ -62,8 +62,7 @@ func (m *model) applySelectedLanguage() {
 func (m model) viewLanguage() string {
 	langs := i18n.SupportedLanguages()
 	labels := map[string]string{"en": i18n.T("english"), "ru": i18n.T("russian")}
-	var body string
-	body += m.appTitle(i18n.T("select_language")) + "\n\n"
+	var content string
 	for i, lang := range langs {
 		label := labels[lang]
 		if label == "" {
@@ -74,15 +73,15 @@ func (m model) viewLanguage() string {
 			marker = safeStyle.Render(" [x]")
 		}
 		if i == m.selectedIdx {
-			body += selectedStyle.Render(fmt.Sprintf("> %s%s", label, marker)) + "\n"
+			content += selectedStyle.Render(fmt.Sprintf("► %s%s", label, marker)) + "\n"
 		} else {
-			body += mutedStyle.Render(fmt.Sprintf("  %s%s", label, marker)) + "\n"
+			content += mutedStyle.Render(fmt.Sprintf("  %s%s", label, marker)) + "\n"
 		}
 	}
-	body += "\n" + footer(
+	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Space/Enter", i18n.T("apply")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return body
+	return m.appFrame(i18n.T("select_language"), content, foot)
 }

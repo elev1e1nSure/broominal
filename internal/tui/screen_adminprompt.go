@@ -37,9 +37,7 @@ func (m model) handleKeyAdminPrompt(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewAdminPrompt() string {
-	var body string
-	body += m.appTitle(i18n.T("admin_required")) + "\n\n"
-	body += "  " + mutedStyle.Render(i18n.T("admin_required_desc")) + "\n\n"
+	content := "  " + mutedStyle.Render(i18n.T("admin_required_desc")) + "\n\n"
 
 	options := []string{
 		style.Cyanf("[%s]", i18n.T("restart_as_admin")),
@@ -50,12 +48,12 @@ func (m model) viewAdminPrompt() string {
 		options[1] = style.Cyanf("[%s]", i18n.T("exit"))
 	}
 
-	body += "  " + options[0] + "\n"
-	body += "  " + options[1] + "\n\n"
-	body += footer(
+	content += "  " + options[0] + "\n"
+	content += "  " + options[1] + "\n"
+	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("confirm")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return body
+	return m.appFrame(i18n.T("admin_required"), content, foot)
 }

@@ -107,18 +107,20 @@ func (m model) viewMainMenu() string {
 		i18n.T("menu_doctor"),
 		i18n.T("menu_settings"),
 	}
-	var body string
-	body += titleStyle.Render(fmt.Sprintf("broominal [%s] %s", m.version, i18n.T("main_menu"))) + "\n\n"
+	var content string
 	for i, item := range items {
 		if i == m.selectedIdx {
-			body += selectedStyle.Render(fmt.Sprintf("> %s", item)) + "\n"
+			content += selectedStyle.Render(fmt.Sprintf("► %s", item)) + "\n"
 		} else {
-			body += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
+			content += mutedStyle.Render(fmt.Sprintf("  %s", item)) + "\n"
 		}
 	}
-	body += "\n" + footer(
+
+	foot := footer(
 		keyHint("Enter", i18n.T("select")),
 		keyHint("Q", i18n.T("quit")),
 	)
-	return body
+
+	title := fmt.Sprintf("broominal [%s] - %s", m.version, i18n.T("main_menu"))
+	return m.appFrame(title, content, foot)
 }

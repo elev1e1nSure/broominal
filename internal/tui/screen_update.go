@@ -64,29 +64,28 @@ func (m model) handleKeyUpdating(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewUpdateAvailable() string {
-	var body string
-	body += m.appTitle(i18n.T("update_available")) + "\n\n"
-
+	var content string
 	if m.updateAvailableRelease != nil {
-		body += fmt.Sprintf("  %s: %s\n", i18n.T("current_version"), mutedStyle.Render(m.version))
-		body += fmt.Sprintf("  %s: %s\n\n", i18n.T("latest_version"), safeStyle.Render(m.updateAvailableRelease.TagName))
-		body += mutedStyle.Render("  "+i18n.T("update_prompt")) + "\n\n"
+		content += fmt.Sprintf("  %s: %s\n", i18n.T("current_version"), mutedStyle.Render(m.version))
+		content += fmt.Sprintf("  %s: %s\n\n", i18n.T("latest_version"), safeStyle.Render(m.updateAvailableRelease.TagName))
+		content += mutedStyle.Render("  "+i18n.T("update_prompt")) + "\n"
 	}
 
+	var foot string
 	if m.updateFromConfig {
-		body += footer(
+		foot = footer(
 			keyHint("Q", i18n.T("quit")),
 			keyHint("Enter", i18n.T("yes_update")),
 			keyHint("Esc", i18n.T("back")),
 		)
 	} else {
-		body += footer(
+		foot = footer(
 			keyHint("Q", i18n.T("quit")),
 			keyHint("Enter", i18n.T("yes_update")),
 			keyHint("Esc", i18n.T("skip")),
 		)
 	}
-	return body
+	return m.appFrame(i18n.T("update_available"), content, foot)
 }
 
 func (m model) handleKeyNoUpdate(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -103,28 +102,26 @@ func (m model) handleKeyNoUpdate(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) viewNoUpdate() string {
-	var body string
-	body += m.appTitle(i18n.T("no_update")) + "\n\n"
-	body += "  " + safeStyle.Render(i18n.T("no_update_desc")) + "\n\n"
-	body += footer(
+	content := "  " + safeStyle.Render(i18n.T("no_update_desc")) + "\n"
+	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("back")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return body
+	return m.appFrame(i18n.T("no_update"), content, foot)
 }
 
 func (m model) viewUpdating() string {
-	var body string
-	body += m.appTitle(i18n.T("updating")) + "\n\n"
+	var content string
+	var foot string
 	if m.updateError != nil {
-		body += fmt.Sprintf("  %s\n", m.updateProgress)
-		body += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"
-		body += "\n" + footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
+		content += fmt.Sprintf("  %s\n", m.updateProgress)
+		content += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"
+		foot = footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
 	} else {
-		body += fmt.Sprintf("  %s %s\n", m.spinner.View(), m.updateProgress)
-		body += "\n" + mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
-		body += "\n" + footer(keyHint("Esc", i18n.T("cancel")))
+		content += fmt.Sprintf("\n  %s %s\n", m.spinner.View(), m.updateProgress)
+		content += mutedStyle.Render("  "+i18n.T("please_wait")) + "\n"
+		foot = footer(keyHint("Esc", i18n.T("cancel")))
 	}
-	return body
+	return m.appFrame(i18n.T("updating"), content, foot)
 }
