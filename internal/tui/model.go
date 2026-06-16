@@ -84,6 +84,8 @@ type model struct {
 	doctorFixResult  string
 	doctorPendingFix string // fix key awaiting user confirmation
 	// Config screen
+	updateCancelled       bool
+	updateTick            int
 	configCfg             *config.Config
 	lastConfigIdx         int
 	quarantineSettingsMsg string
@@ -104,8 +106,7 @@ type model struct {
 	// Set to true when update is installed and process should restart
 	restartAfterUpdate bool
 	// Cancellation for long-running operations
-	cleanCtxCancel  context.CancelFunc
-	updateCancelled bool
+	cleanCtxCancel context.CancelFunc
 }
 
 type categoryItem struct {

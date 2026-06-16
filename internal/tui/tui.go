@@ -294,6 +294,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
+		m.updateTick++
 		return m, cmd
 
 	case progress.FrameMsg:

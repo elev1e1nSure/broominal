@@ -120,7 +120,13 @@ func (m model) viewUpdating() string {
 		content += "\n" + dangerStyle.Render(fmt.Sprintf("  [ERROR] %v", m.updateError)) + "\n"
 		foot = footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
 	} else {
-		bar := m.progress.ViewAs(0)
+		width := 40
+		pos := m.updateTick % (width * 2)
+		if pos >= width {
+			pos = width*2 - 1 - pos
+		}
+		fraction := float64(pos) / float64(width-1)
+		bar := m.progress.ViewAs(fraction)
 		statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Left).Render(mutedStyle.Render(m.updateProgress))
 		content += fmt.Sprintf("\n%s\n\n%s\n", bar, statusLine)
 		foot = footer(keyHint("Esc", i18n.T("cancel")))
