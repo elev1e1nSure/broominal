@@ -215,7 +215,7 @@ var enStrings = map[string]string{
 	"cat_desc_messenger_cache":            "Cached images, avatars and temporary data from Discord, Telegram, Slack and Teams. May include files shared in chats.",
 	"cat_desc_game_launcher_cache":        "Cache and temporary data from Steam, Epic, Battle.net, Rockstar, EA, Ubisoft and GOG launchers. Will be rebuilt on next launch.",
 	"cat_desc_service_cache":              "Cached data from Spotify, OneDrive, Office, Adobe, OBS and TeamViewer. Some cache (Adobe Media Cache) can contain project data and should be reviewed. Rebuilt when needed.",
-	"cat_desc_dev_cache":                  "Cached data from VSCode, npm, pip, Git, Visual Studio, JetBrains, Go and Rust. All caches are rebuilt automatically. Does not affect projects or build environments.",
+	"cat_desc_dev_cache":                  "Cached data from VSCode, npm, pip, Git, Visual Studio, JetBrains, Go and Rust. Caches are rebuilt automatically, but first launches and builds will be slower until they warm up again.",
 	"cat_desc_edge_code_cache":            "Cached JavaScript and site data for Microsoft Edge. Will be rebuilt during browsing. Passwords, cookies and history are not affected.",
 	"cat_desc_chrome_code_cache":          "Cached JavaScript and site data for Google Chrome. Will be rebuilt during browsing. Passwords, cookies and history are not affected.",
 	"cat_desc_firefox_cache2":             "Cached website data for Firefox. Will be rebuilt during browsing. Passwords, cookies and history are not affected.",

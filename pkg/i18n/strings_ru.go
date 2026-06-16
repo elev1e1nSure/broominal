@@ -211,7 +211,7 @@ var ruStrings = map[string]string{
 	"cat_desc_messenger_cache":            "Скачанные изображения, аватарки и временные данные из Discord, Telegram, Slack и Teams. Могут включать файлы из чатов.",
 	"cat_desc_game_launcher_cache":        "Кэш и временные данные из Steam, Epic, Battle.net, Rockstar, EA, Ubisoft и GOG. Пересоздастся при следующем запуске.",
 	"cat_desc_service_cache":              "Кэшированные данные из Spotify, OneDrive, Office, Adobe, OBS и TeamViewer. Некоторые кэши (Adobe Media Cache) содержат данные проектов — проверьте перед удалением. Пересоздастся при необходимости.",
-	"cat_desc_dev_cache":                  "Кэшированные данные из VSCode, npm, pip, Git, Visual Studio, JetBrains, Go и Rust. Все кэши пересоздаются автоматически. Проекты и сборочное окружение не затрагиваются.",
+	"cat_desc_dev_cache":                  "Кэшированные данные из VSCode, npm, pip, Git, Visual Studio, JetBrains, Go и Rust. Кэши пересоздаются автоматически, но первые запуски и сборки будут медленнее, пока не прогреются заново.",
 	"cat_desc_edge_code_cache":            "Кэшированные скрипты и данные сайтов для Microsoft Edge. Пересоздастся при просмотре. Пароли, куки и история не затрагиваются.",
 	"cat_desc_chrome_code_cache":          "Кэшированные скрипты и данные сайтов для Google Chrome. Пересоздастся при просмотре. Пароли, куки и история не затрагиваются.",
 	"cat_desc_firefox_cache2":             "Кэшированные данные сайтов для Firefox. Пересоздастся при просмотре. Пароли, куки и история не затрагиваются.",
