@@ -19,7 +19,7 @@ func Set(maxAgeDays int) error {
 	if err != nil {
 		return fmt.Errorf("get executable: %w", err)
 	}
-	taskRun := fmt.Sprintf(`"%s" quarantine-cleanup --force --max-age-days %d`, exe, maxAgeDays)
+	taskRun := fmt.Sprintf(`"%s" quarantine clean --yes --max-age-days %d`, exe, maxAgeDays)
 	cmd := exec.Command("schtasks",
 		"/create",
 		"/tn", TaskName,
