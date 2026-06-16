@@ -135,7 +135,7 @@ var enStrings = map[string]string{
 	"confirm_purge_damaged":  "Delete all damaged quarantine entries? They cannot be restored.",
 	"purge_damaged_ok":       "%d damaged entries deleted",
 	"confirm_yes":            "Yes",
-	"confirm_no":             "No / Cancel",
+	"confirm_no":             "Cancel",
 	"admin_required":            "Administrator rights required",
 	"admin_required_desc":       "Some cleanup paths require elevated privileges. Restart as administrator to continue.",
 	"restart_as_admin":          "Restart as administrator",

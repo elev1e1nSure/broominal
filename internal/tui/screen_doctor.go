@@ -15,10 +15,10 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	}
 
-	// Confirmation mode: Y/Enter confirms, Esc/N cancels.
+	// Confirmation mode: Enter confirms, Esc cancels.
 	if m.doctorPendingFix != "" {
 		switch {
-		case key.Matches(msg, key.NewBinding(key.WithKeys("y", "enter"))):
+		case key.Matches(msg, key.NewBinding(key.WithKeys("enter"))):
 			result, err := doctor.Fix(m.doctorPendingFix)
 			m.doctorPendingFix = ""
 			if err != nil {
@@ -28,7 +28,7 @@ func (m model) handleKeyDoctor(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				// Refresh checks so the WARN disappears.
 				m.doctorChecks = doctor.Run()
 			}
-		case key.Matches(msg, key.NewBinding(key.WithKeys("n", "esc"))):
+		case key.Matches(msg, key.NewBinding(key.WithKeys("esc"))):
 			m.doctorPendingFix = ""
 		}
 		return m, nil
@@ -94,8 +94,8 @@ func (m model) viewDoctor() string {
 	if m.doctorPendingFix != "" {
 		body += "\n  " + reviewStyle.Render(i18n.T("confirm_purge_damaged")) + "\n"
 		body += "\n" + footer(
-			keyHint("Y/Enter", i18n.T("confirm_yes")),
-			keyHint("N/Esc", i18n.T("confirm_no")),
+			keyHint("Enter", i18n.T("confirm_yes")),
+			keyHint("Esc", i18n.T("confirm_no")),
 		)
 		return body
 	}
