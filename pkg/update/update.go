@@ -141,7 +141,7 @@ func DownloadUpdate(release *Release) (string, error) {
 		return "", fmt.Errorf("update binary too large: %d bytes (max %d)", asset.Size, maxBinarySize)
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Timeout: 10 * time.Minute}
 	resp, err := client.Get(asset.BrowserDownloadURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to download update: %w", err)

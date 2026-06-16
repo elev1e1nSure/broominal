@@ -38,7 +38,22 @@ func Default() *Config {
 	return &Config{
 		EnabledCategories: ec,
 		ActivePreset:      string(PresetQuick),
-		Exclusions:        []string{},
+		// VPN and proxy tools that unpack runtime binaries into %TEMP%:
+		// cleaning those directories kills active VPN/proxy sessions.
+		// Listed by folder name so the rule works on any username or drive.
+		Exclusions: []string{
+			"v2raytun",
+			"xray",
+			"sing-box",
+			"singbox",
+			"clash",
+			"mihomo",
+			"wireguard",
+			"openvpn",
+			"tor",
+			"nekoray",
+			"hiddify",
+		},
 		AutoRiskOverrides: map[string]string{
 			".git":         "review",
 			"node_modules": "review",
@@ -154,6 +169,20 @@ func (c *Config) IsCategoryEnabled(name string) bool {
 	return c.EnabledCategories[name]
 }
 
+var systemExclusions = []string{
+	"v2raytun",
+	"xray",
+	"sing-box",
+	"singbox",
+	"clash",
+	"mihomo",
+	"wireguard",
+	"openvpn",
+	"tor",
+	"nekoray",
+	"hiddify",
+}
+
 // IsExcluded matches any single path component against the user's exclusion
 // list. The component-wise check is what makes rules like "node_modules" or
 // "dist" work without users having to spell out full directory paths.
@@ -166,6 +195,11 @@ func (c *Config) IsExcluded(path string) bool {
 	}
 	for _, ex := range c.Exclusions {
 		if _, ok := segSet[strings.ToLower(ex)]; ok {
+			return true
+		}
+	}
+	for _, ex := range systemExclusions {
+		if _, ok := segSet[ex]; ok {
 			return true
 		}
 	}

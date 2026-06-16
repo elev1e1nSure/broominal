@@ -136,6 +136,12 @@ func scanDir(ctx context.Context, root, category string, risk types.RiskLevel, m
 			if !recursive {
 				return filepath.SkipDir
 			}
+			// Skip excluded directories entirely so we never descend into
+			// app runtime folders (VPN cores, game engines, etc.) that happen
+			// to live under %TEMP% or another scanned root.
+			if cfg.IsExcluded(path) {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 		if cfg.IsExcluded(path) {

@@ -2,6 +2,7 @@ package doctor
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -196,10 +197,17 @@ func checkManifests() Check {
 	}
 	var valid int
 	var invalid int
+	var dead int
 	for _, e := range entries {
 		if !e.IsDir() {
 			continue
 		}
+		deadPath := filepath.Join(qDir, e.Name(), "manifest.dead")
+		if _, err := os.Stat(deadPath); err == nil {
+			dead++
+			continue
+		}
+
 		mf := filepath.Join(qDir, e.Name(), "manifest.json")
 		data, err := os.ReadFile(mf)
 		if err != nil {
@@ -216,12 +224,20 @@ func checkManifests() Check {
 			valid++
 		}
 	}
+	if dead > 0 {
+		return Check{
+			Name:   i18n.T("check_manifests"),
+			Status: StatusFail,
+			Detail: fmt.Sprintf(i18n.T("dead_manifests"), dead),
+			FixKey: "purge_dead",
+		}
+	}
 	if invalid > 0 {
 		return Check{
 			Name:   i18n.T("check_manifests"),
 			Status: StatusWarn,
 			Detail: fmt.Sprintf(i18n.T("invalid_manifests"), invalid),
-			FixKey: "purge_damaged",
+			FixKey: "repair_damaged",
 		}
 	}
 	if valid == 0 && len(entries) == 0 {
@@ -269,9 +285,18 @@ func Fix(fixKey string) (string, error) {
 			return "", fmt.Errorf("failed to elevate: %w", err)
 		}
 		return "Restarting as administrator...", nil
-	case "purge_damaged":
-		n, err := quarantine.PurgeDamaged()
+	case "repair_damaged":
+		repaired, dead, err := quarantine.RepairDamaged()
 		if err != nil {
+			return "", fmt.Errorf("repair failed: %w", err)
+		}
+		return fmt.Sprintf(i18n.T("repair_damaged_ok"), repaired, dead), nil
+	case "purge_dead":
+		n, err := quarantine.PurgeDead()
+		if err != nil {
+			if errors.Is(err, quarantine.ErrScheduledForReboot) {
+				return i18n.T("purge_scheduled_reboot"), nil
+			}
 			return "", fmt.Errorf("purge failed: %w", err)
 		}
 		return fmt.Sprintf(i18n.T("purge_damaged_ok"), n), nil

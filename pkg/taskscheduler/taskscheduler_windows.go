@@ -12,7 +12,7 @@ import (
 const TaskName = "broominal quarantine-cleanup"
 
 // Set registers a daily 03:00 task that runs
-// `broominal quarantine-cleanup --force --max-age-days N`, so users who never
+// `broominal quarantine clean --yes --max-age-days N`, so users who never
 // invoke cleanup manually still have the quarantine size bounded automatically.
 func Set(maxAgeDays int) error {
 	exe, err := os.Executable()
