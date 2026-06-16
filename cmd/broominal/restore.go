@@ -14,27 +14,37 @@ import (
 func restoreCmd() *cobra.Command {
 	var forceOverwrite bool
 	cmd := &cobra.Command{
-		Use:   "restore [id|date-prefix|last]",
-		Short: "Restore a backup by ID, date prefix (e.g. 2025-06-09), or 'last'",
-		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		Use:   "restore <id|prefix|last>",
+		Short: "Restore a quarantined backup",
+		Long: `Restore files from a quarantine backup to their original locations.
+
+The backup is identified by:
+  last       — most recent backup
+  <id>       — exact quarantine ID
+  <prefix>   — any unique prefix of an ID (e.g. "2026-06-16")
+
+If a prefix matches more than one backup, the candidates are listed and
+nothing is restored. Narrow the prefix and try again.
+
+Files already present at the destination are skipped unless --force-overwrite
+is set.`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
 			id := args[0]
 			if id == "last" {
 				lastID, err := quarantine.GetLast()
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "No cleanups found: %v\n", err)
-					os.Exit(1)
+					return fmt.Errorf("no backups found: %w", err)
 				}
 				id = lastID
 			} else {
 				ids, err := quarantine.List()
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "List failed: %v\n", err)
-					os.Exit(1)
+					return fmt.Errorf("list failed: %w", err)
 				}
 				var matches []string
 				for _, rid := range ids {
-					if strings.HasPrefix(rid, id) || rid == id {
+					if rid == id || strings.HasPrefix(rid, id) {
 						matches = append(matches, rid)
 					}
 				}
@@ -43,11 +53,16 @@ func restoreCmd() *cobra.Command {
 					os.Exit(1)
 				}
 				if len(matches) > 1 {
-					fmt.Printf("%s\n", style.Yellowf("Multiple backups found, please be more specific:"))
+					fmt.Printf("  Multiple backups match %q — be more specific:\n\n", id)
 					for _, m := range matches {
 						mf, _ := quarantine.GetManifest(m)
 						if mf != nil {
-							fmt.Printf("  %s  %s  %s, %d files\n", m, mf.CreatedAt.Format("2006-01-02 15:04"), util.FormatSize(mf.TotalSize), mf.Files)
+							cats := formatCLICategories(mf.Categories)
+							fmt.Printf("  %s  %9s  %s\n",
+								cliDate(mf.CreatedAt),
+								util.FormatSize(mf.TotalSize),
+								cats,
+							)
 						} else {
 							fmt.Printf("  %s\n", m)
 						}
@@ -58,16 +73,19 @@ func restoreCmd() *cobra.Command {
 			}
 			restored, skipped, err := quarantine.Restore(id, forceOverwrite)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Restore failed: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("restore failed: %w", err)
 			}
-			fmt.Printf("%s %s files from %s", style.Greenf("Restored"), style.Boldf("%d", restored), style.Yellowf(id))
+			msg := fmt.Sprintf("Restored %s from %s",
+				style.Boldf("%s", pluralize(restored, "1 file", fmt.Sprintf("%d files", restored))),
+				style.Yellowf(id),
+			)
 			if skipped > 0 {
-				fmt.Printf(" (%s)", style.Yellowf("%d skipped", skipped))
+				msg += fmt.Sprintf("  (%s skipped)", style.Yellowf("%d", skipped))
 			}
-			fmt.Println()
+			fmt.Println("  " + msg)
+			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&forceOverwrite, "force-overwrite", false, "Overwrite existing files")
+	cmd.Flags().BoolVar(&forceOverwrite, "force-overwrite", false, "Overwrite files that already exist at the destination")
 	return cmd
 }

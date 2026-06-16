@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/elev1e1nSure/broominal/pkg/cleaner"
 	"github.com/elev1e1nSure/broominal/pkg/config"
+	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/scanner"
 	"github.com/elev1e1nSure/broominal/pkg/style"
 	"github.com/elev1e1nSure/broominal/pkg/types"
@@ -16,57 +16,88 @@ import (
 )
 
 func cleanCmd() *cobra.Command {
-	var safeOnly bool
-	var danger bool
+	var yes bool
+	var preset string
 	cmd := &cobra.Command{
 		Use:   "clean",
-		Short: "Clean selected items",
-		Run: func(cmd *cobra.Command, args []string) {
-			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		Short: "Scan and move junk to quarantine",
+		Long: `Scan configured safe zones and move all found items to quarantine.
+
+Without --yes, a dry-run preview is printed and nothing is changed.
+Add --yes to execute the cleanup.
+
+Files are never deleted — they are moved to a quarantine directory and can
+be restored at any time with: broominal restore last
+
+Use --preset to control which categories are included:
+  quick     — low-risk only, fastest
+  standard  — balanced (default)
+  deep      — includes browser caches and other heavy items`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 			defer cancel()
 			cfg, _ := config.Load()
 			if cfg == nil {
 				cfg = config.Default()
 			}
+			if err := applyPresetFlag(cfg, preset); err != nil {
+				return err
+			}
 			res, err := scanner.ScanWithConfig(ctx, cfg, nil)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("scan failed: %w", err)
 			}
-			var hasDanger bool
-			for _, cat := range res.Categories {
-				if cat.Risk == types.RiskDanger && len(cat.Items) > 0 {
-					hasDanger = true
-					break
-				}
+
+			if !yes {
+				printCleanPreview(res)
+				fmt.Printf("\n  Run with %s to proceed.\n", style.Yellowf("--yes"))
+				return nil
 			}
-			if hasDanger && !danger {
-				fmt.Fprintf(os.Stderr, "%s Danger items found. Use %s to confirm.\n", style.Failf("[BLOCKED]"), style.Yellowf("--danger"))
-				os.Exit(1)
-			}
+
 			var selected []types.Item
 			for _, cat := range res.Categories {
-				if safeOnly && cat.Risk != types.RiskSafe {
-					continue
-				}
-				for _, it := range cat.Items {
-					it.Selected = true
-					selected = append(selected, it)
+				for i := range cat.Items {
+					cat.Items[i].Selected = true
+					selected = append(selected, cat.Items[i])
 				}
 			}
 			cleanResult, err := cleaner.Run(ctx, selected, res, cfg)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Clean failed: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("clean failed: %w", err)
 			}
-			msg := fmt.Sprintf("%s %s in %s files", style.Greenf("Cleaned"), style.Cyanf(util.FormatSize(cleanResult.Freed)), style.Boldf("%d", cleanResult.Files))
+			msg := fmt.Sprintf("Freed %s in %s",
+				style.Cyanf(util.FormatSize(cleanResult.Freed)),
+				style.Boldf("%s", pluralize(cleanResult.Files, "1 file", fmt.Sprintf("%d files", cleanResult.Files))),
+			)
 			if cleanResult.Skipped > 0 {
-				msg += fmt.Sprintf(" (%s)", style.Yellowf("%d skipped", cleanResult.Skipped))
+				msg += fmt.Sprintf("  (%s skipped)", style.Yellowf("%d", cleanResult.Skipped))
 			}
-			fmt.Printf("%s. Restore ID: %s\n", msg, style.Yellowf(cleanResult.RestoreID))
+			fmt.Printf("  %s\n  Restore ID: %s\n", msg, style.Yellowf(cleanResult.RestoreID))
+			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&safeOnly, "safe", false, "Only clean safe items")
-	cmd.Flags().BoolVar(&danger, "danger", false, "Allow cleaning danger items")
+	cmd.Flags().BoolVar(&yes, "yes", false, "Execute the cleanup (default: dry-run preview)")
+	cmd.Flags().StringVar(&preset, "preset", "", "Scan preset: quick, standard, deep")
 	return cmd
+}
+
+func printCleanPreview(res *types.ScanResult) {
+	fmt.Printf("  %-32s  %10s  %6s  %s\n", "Category", "Size", "Files", "Risk")
+	fmt.Printf("  %-32s  %10s  %6s  %s\n", "────────────────────────────────", "──────────", "──────", "────────")
+	for _, c := range res.Categories {
+		label, colorFn := riskDisplay(c.Risk)
+		name := i18n.CategoryName(c.Category)
+		fmt.Printf("  %-32s  %10s  %6d  %s\n",
+			truncateCLI(name, 32),
+			util.FormatSize(c.Size),
+			c.Files,
+			colorFn("%s", label),
+		)
+	}
+	fmt.Println()
+	fmt.Printf("  Total %s  ·  Safe %s  ·  Review %s\n",
+		util.FormatSize(res.TotalSize),
+		util.FormatSize(res.SafeSize),
+		util.FormatSize(res.ReviewSize),
+	)
 }

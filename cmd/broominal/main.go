@@ -109,7 +109,8 @@ func main() {
 	rootCmd.AddCommand(reportCmd())
 	rootCmd.AddCommand(configCmd())
 	rootCmd.AddCommand(doctorCmd())
-	rootCmd.AddCommand(quarantineCleanupCmd())
+	rootCmd.AddCommand(quarantineCmd())
+	rootCmd.AddCommand(quarantineCleanupCmd()) // hidden compat alias for existing scheduled tasks
 	rootCmd.AddCommand(pathCmd())
 
 	if err := rootCmd.Execute(); err != nil {
