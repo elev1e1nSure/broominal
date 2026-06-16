@@ -216,7 +216,8 @@ func copyAndDelete(src, dst string) error {
 		// Defensive: see note on the matching in.Close() above.
 		_ = out.Close()
 	}()
-	if _, err := io.Copy(out, in); err != nil {
+	buf := make([]byte, 1024*1024) // 1MB buffer
+	if _, err := io.CopyBuffer(out, in, buf); err != nil {
 		return err
 	}
 	// Flush to disk before deleting source to prevent data loss on crash.

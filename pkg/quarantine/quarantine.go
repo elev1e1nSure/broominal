@@ -28,9 +28,11 @@ func acquireLock() error {
 		return fmt.Errorf("quarantine lock: create base dir: %w", err)
 	}
 	deadline := time.Now().Add(5 * time.Second)
+	pidStr := fmt.Sprintf("%d", os.Getpid())
 	for {
 		f, err := os.OpenFile(lockPath(), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 		if err == nil {
+			_, _ = f.WriteString(pidStr)
 			_ = f.Close()
 			return nil
 		}
@@ -45,7 +47,8 @@ func acquireLock() error {
 			}
 		}
 		if time.Now().After(deadline) {
-			return fmt.Errorf("quarantine: timed out waiting for lock (another process is running)")
+			b, _ := os.ReadFile(lockPath())
+			return fmt.Errorf("quarantine: timed out waiting for lock (locked by PID %s)", string(b))
 		}
 		time.Sleep(100 * time.Millisecond)
 	}

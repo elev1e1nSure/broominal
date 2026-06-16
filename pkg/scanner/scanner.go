@@ -16,6 +16,7 @@ import (
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/types"
+	"golang.org/x/sys/windows"
 )
 
 var browserCachePaths = []string{
@@ -32,24 +33,23 @@ const scanParallelism = 8
 
 var errScanLimit = errors.New("scan file limit reached")
 
-// EnabledScannerCount returns how many scanners are enabled in the given config.
-func EnabledScannerCount(cfg *config.Config) int {
-	n := 0
-	for _, sc := range allScanners {
-		if cfg.IsCategoryEnabled(sc.Name()) {
-			n++
-		}
-	}
-	return n
-}
-
-func ScanWithConfig(ctx context.Context, cfg *config.Config, progress func(done int)) (*types.ScanResult, error) {
+func getEnabledScanners(cfg *config.Config) []CategoryScanner {
 	var enabled []CategoryScanner
 	for _, sc := range allScanners {
 		if cfg.IsCategoryEnabled(sc.Name()) {
 			enabled = append(enabled, sc)
 		}
 	}
+	return enabled
+}
+
+// EnabledScannerCount returns how many scanners are enabled in the given config.
+func EnabledScannerCount(cfg *config.Config) int {
+	return len(getEnabledScanners(cfg))
+}
+
+func ScanWithConfig(ctx context.Context, cfg *config.Config, progress func(done int)) (*types.ScanResult, error) {
+	enabled := getEnabledScanners(cfg)
 
 	categories := make(map[string]*types.CategorySummary)
 	var mu sync.Mutex
@@ -198,20 +198,36 @@ func mergeItems(cats map[string]*types.CategorySummary, name string, risk types.
 	}
 }
 
-func recycleBinPaths() []string {
-	drive := os.Getenv("SYSTEMDRIVE")
-	if drive == "" {
-		drive = "C:"
-	}
-	binPath := filepath.Join(drive, "$Recycle.Bin")
-	entries, err := os.ReadDir(binPath)
+func getLogicalDrives() []string {
+	var drives []string
+	bitMap, err := windows.GetLogicalDrives()
 	if err != nil {
-		return nil
+		drive := os.Getenv("SYSTEMDRIVE")
+		if drive == "" {
+			drive = "C:"
+		}
+		return []string{drive}
 	}
+	for i := uint32(0); i < 26; i++ {
+		if bitMap&(1<<i) != 0 {
+			drives = append(drives, fmt.Sprintf("%c:", 'A'+i))
+		}
+	}
+	return drives
+}
+
+func recycleBinPaths() []string {
 	var paths []string
-	for _, e := range entries {
-		if e.IsDir() && len(e.Name()) > 2 {
-			paths = append(paths, filepath.Join(binPath, e.Name()))
+	for _, drive := range getLogicalDrives() {
+		binPath := filepath.Join(drive, string(filepath.Separator), "$Recycle.Bin")
+		entries, err := os.ReadDir(binPath)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if e.IsDir() && len(e.Name()) > 2 {
+				paths = append(paths, filepath.Join(binPath, e.Name()))
+			}
 		}
 	}
 	return paths
@@ -224,7 +240,8 @@ func hashFileMD5(path string) (string, error) {
 	}
 	defer f.Close()
 	h := md5.New()
-	if _, err := io.Copy(h, f); err != nil {
+	lr := io.LimitReader(f, 10*1024*1024) // limit to 10MB for performance on large files
+	if _, err := io.Copy(h, lr); err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%x", h.Sum(nil)), nil

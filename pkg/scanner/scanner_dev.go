@@ -149,6 +149,9 @@ func scanPowershellHistory(ctx context.Context, cfg *config.Config) ([]types.Ite
 		return nil, nil
 	}
 	for _, e := range entries {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 		if e.IsDir() || cfg.IsExcluded(filepath.Join(psReadLine, e.Name())) {
 			continue
 		}

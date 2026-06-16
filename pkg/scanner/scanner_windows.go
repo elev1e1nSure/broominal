@@ -44,6 +44,9 @@ func scanThumbnails(ctx context.Context, cfg *config.Config) ([]types.Item, erro
 	}
 	var items []types.Item
 	for _, path := range matches {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 		if cfg.IsExcluded(path) {
 			continue
 		}
