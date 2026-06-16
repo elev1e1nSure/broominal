@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sync"
 	"time"
@@ -55,11 +54,11 @@ func Run() []Check {
 
 // IsAdmin returns true if the current process has elevated privileges.
 func IsAdmin() bool {
-	cmd := exec.Command("cmd", "/c", "net", "session")
-	return cmd.Run() == nil
+	return windows.GetCurrentProcessToken().IsElevated()
 }
 
-// cacheEntry stores cached check results
+// cacheEntry records a successful permission probe so the next doctor run can
+// skip a directory-write test that touches the filesystem.
 type cacheEntry struct {
 	Path      string
 	Name      string
@@ -72,12 +71,14 @@ var (
 )
 
 func checkDirCached(path, name string) Check {
-	// Check cache first
+	// Avoid re-probing write permissions on every doctor run — results for a
+	// given path are stable on the same machine, so a 24h cache is a safe
+	// freshness window that matches what users expect from a health check.
 	checkCacheMu.RLock()
 	entry, ok := checkCache[path]
 	checkCacheMu.RUnlock()
 	if ok {
-		// Cache valid for 24 hours
+		// 86_400 seconds = 24h. See comment above.
 		if nowUnix()-entry.Timestamp < 86400 {
 			return Check{
 				Name:   entry.Name,
@@ -87,10 +88,13 @@ func checkDirCached(path, name string) Check {
 		}
 	}
 
-	// Run actual check
+	// Cold path: the probe below actually touches the filesystem, so we
+	// only run it when the cache is missing or stale.
 	result := checkDir(path, name)
 
-	// Cache successful results
+	// Only cache successes. Failures often resolve themselves (permissions
+	// corrected, env var set, etc.) and we want the next run to re-probe
+	// rather than report a stale failure.
 	if result.Status == StatusPass {
 		checkCacheMu.Lock()
 		checkCache[path] = cacheEntry{
@@ -110,7 +114,9 @@ func nowUnix() int64 {
 
 func checkDir(path, name string) Check {
 	if _, err := os.Stat(path); err != nil {
-		// try to create
+		// Auto-create missing dirs so first-run "doctor" doesn't report
+		// false negatives for paths the user simply hasn't touched yet —
+		// the real failure we want to surface is a permission denial.
 		if err := os.MkdirAll(path, 0700); err != nil {
 			return Check{
 				Name:       name,
@@ -120,7 +126,9 @@ func checkDir(path, name string) Check {
 			}
 		}
 	}
-	// test write
+	// A directory that exists may still be read-only for this user (ACLs,
+	// ACL-inherited deny, etc.) — an actual file write is the cheapest
+	// reliable signal that the cleaner can deposit quarantine data here.
 	testFile := filepath.Join(path, ".write_test")
 	f, err := os.Create(testFile)
 	if err != nil {
@@ -195,10 +203,9 @@ func checkManifests() Check {
 		mf := filepath.Join(qDir, e.Name(), "manifest.json")
 		data, err := os.ReadFile(mf)
 		if err != nil {
-			if os.IsNotExist(err) {
-				_ = os.RemoveAll(filepath.Join(qDir, e.Name()))
-				continue
-			}
+			// Don't delete dirs with missing manifest — they may be mid-write
+			// (Move() creates the dir before writing the manifest). Report as
+			// invalid so the user can clean them up via 'quarantine-cleanup'.
 			invalid++
 			continue
 		}
@@ -231,18 +238,24 @@ func checkManifests() Check {
 	}
 }
 
-// Fix attempts to automatically fix a problem identified by FixKey.
-// Currently only "admin" is supported.
+// Fix is a dispatcher from a doctor check to its self-repair action. Only
+// "admin" is wired up today; the remaining checks report suggestions for the
+// user to follow manually because their fixes require steps we can't take
+// programmatically (folder permissions, env-var setup, etc.).
 func Fix(fixKey string) (string, error) {
 	switch fixKey {
 	case "admin":
-		// Relaunch the current executable with elevated privileges
+		// Trigger the UAC elevation prompt for the current binary via
+		// ShellExecute's "runas" verb — this is the supported way to ask
+		// Windows to relaunch us elevated without shipping a manifest.
 		exe, err := os.Executable()
 		if err != nil {
 			return "", fmt.Errorf("cannot locate executable: %w", err)
 		}
 		verbPtr, _ := windows.UTF16PtrFromString("runas")
-		// If running inside Windows Terminal, open the elevated instance in a new WT tab
+		// If we're hosted by Windows Terminal, spawn the elevated copy as a
+		// new WT tab instead of a standalone conhost window — that matches
+		// what WT users expect and keeps the TUI rendering pipeline working.
 		if os.Getenv("WT_SESSION") != "" {
 			wtArgs := fmt.Sprintf(`new-tab -- "%s"`, exe)
 			wtPtr, _ := windows.UTF16PtrFromString("wt.exe")
