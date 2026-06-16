@@ -193,12 +193,12 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 	if err != nil {
 		return 0, 0, fmt.Errorf("open manifest: %w", err)
 	}
-	defer mf.Close()
-
 	var manifest types.Manifest
 	if err := json.NewDecoder(mf).Decode(&manifest); err != nil {
+		_ = mf.Close()
 		return 0, 0, fmt.Errorf("decode manifest: %w", err)
 	}
+	_ = mf.Close()
 
 	var restored int
 	var skipped int
