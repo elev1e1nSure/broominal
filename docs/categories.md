@@ -32,7 +32,7 @@ Enabled in all presets. Temporary data that rebuilds automatically.
 
 ---
 
-## Standard — 23 additional categories
+## Standard — 24 additional categories
 
 App caches and logs. Enabled in Standard and Deep presets.
 
@@ -61,6 +61,7 @@ App caches and logs. Enabled in Standard and Deep presets.
 | **Remote Desktop Cache** | `%LOCALAPPDATA%\Microsoft\Terminal Server Client\Cache` |
 | **PowerShell History** | `%APPDATA%\Microsoft\Windows\PowerShell\PSReadLine\*` |
 | **Postman Cache** | `%APPDATA%\Postman\Cache`, `Code Cache`, `GPUCache` |
+| **Package Manager Cache** | Chocolatey `<ChocolateyInstall>\cache`, Scoop `%USERPROFILE%\scoop\cache`, winget source indexes, pip wheels, Conda `pkgs\` |
 
 ---
 

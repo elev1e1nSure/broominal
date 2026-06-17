@@ -68,6 +68,7 @@ var All = []Def{
 	{Name: "Remote Desktop Cache", InternalKey: "rdp_cache", Risk: types.RiskSafe, MinPreset: Standard},
 	{Name: "PowerShell History", InternalKey: "powershell_history", Risk: types.RiskSafe, MinPreset: Standard},
 	{Name: "Postman Cache", InternalKey: "postman_cache", Risk: types.RiskSafe, MinPreset: Standard},
+	{Name: "Package Manager Cache", InternalKey: "pkg_manager_cache", Risk: types.RiskSafe, MinPreset: Standard},
 	// Deep
 	{Name: "Recycle Bin", InternalKey: "recycle_bin", Risk: types.RiskSafe, MinPreset: Deep},
 	{Name: "Windows Defender", InternalKey: "windows_defender", Risk: types.RiskReview, MinPreset: Deep},

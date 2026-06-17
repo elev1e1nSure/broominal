@@ -202,6 +202,7 @@ var enStrings = map[string]string{
 	"cat_printer_spooler":            "Printer Spooler",
 	"cat_powershell_history":         "PowerShell History",
 	"cat_postman_cache":              "Postman Cache",
+	"cat_pkg_manager_cache":          "Package Manager Cache",
 	"cat_cbs_dism_logs":              "CBS & DISM Logs",
 	"cat_windows_installer_patches":  "Windows Installer Patches",
 	"cat_android_cache":              "Android SDK Cache",
@@ -269,6 +270,7 @@ var enStrings = map[string]string{
 	"cat_desc_cbs_dism_logs":              "Component-Based Servicing and DISM log files. Can reach several GB over years of updates. Required for diagnosing Windows Update failures — keep if you have unresolved update issues. Remove only after confirming all updates completed without errors.",
 	"cat_desc_windows_installer_patches":  "Cached patch files for older MSI-based programs stored in $PatchCache$. Removing them may break the Repair and Modify options for those applications. Safe to remove only if you no longer need to repair or reinstall those programs.",
 	"cat_desc_android_cache":              "Android SDK download temp files, Gradle build caches and Android build tool caches. Rebuilt on next build. Does not affect installed SDKs or AVD images.",
+	"cat_desc_pkg_manager_cache":          "Download caches for Chocolatey, Scoop, winget source indexes, pip wheels and Conda packages. Rebuilt automatically on the next install or update.",
 	// Updates
 	"today":                   "Today",
 	"yesterday":               "Yesterday",
