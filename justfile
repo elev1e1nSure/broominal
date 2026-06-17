@@ -16,7 +16,7 @@ build:
 # build with release version: just build-release v1.0.0
 build-release ver:
     @pwsh -c 'Write-Host "{{ACC}}==>{{RST}} Building release ({{ver}})... " -NoNewline'
-    @go build -ldflags "-X main.Version={{ver}}" -o broominal.exe ./cmd/broominal
+    @pwsh -c '$env:GOOS = "windows"; $env:GOARCH = "amd64"; go build -ldflags "-X main.Version={{ver}}" -o broominal_windows_amd64.exe ./cmd/broominal'
     @pwsh -c 'Write-Host "{{OK}}"'
 
 # build and run: just run scan
@@ -76,5 +76,5 @@ changelog-save file:
 # remove build artifacts
 clean:
     @pwsh -c 'Write-Host "{{ACC}}==>{{RST}} Cleaning build artifacts... " -NoNewline'
-    -@del broominal.exe 2>nul
+    -@del broominal.exe broominal_windows_amd64.exe 2>nul
     @pwsh -c 'Write-Host "{{OK}}"'
