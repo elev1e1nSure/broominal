@@ -105,6 +105,10 @@ type cleanDoneMsg struct {
 	err    error
 }
 
+type cleanProgressMsg struct {
+	p types.Progress
+}
+
 type quarantineDeleteDoneMsg struct {
 	count int
 	freed int64
@@ -206,6 +210,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case cleanProgressMsg:
+		m.cleanProgress = &msg.p
+		if m.scanCh != nil {
+			return m, func() tea.Msg { return <-m.scanCh }
+		}
+		return m, nil
+
 	case scanDoneMsg:
 		m.scanCh = nil
 		m.result = msg.result
@@ -240,6 +251,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case cleanDoneMsg:
+		m.scanCh = nil
 		if msg.err != nil {
 			if errors.Is(msg.err, context.Canceled) {
 				m.screen = ScreenMainMenu
