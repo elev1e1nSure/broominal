@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elev1e1nSure/broominal/pkg/config"
-	"github.com/elev1e1nSure/broominal/pkg/doctor"
 	"github.com/elev1e1nSure/broominal/pkg/i18n"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
 	"github.com/elev1e1nSure/broominal/pkg/scanner"
@@ -25,7 +24,7 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))) {
-		if m.selectedIdx < 3 {
+		if m.selectedIdx < 2 { // Limit to 2 (Scan & Clean, Restore, Settings) as Doctor is hidden
 			m.selectedIdx++
 		}
 		return m, nil
@@ -87,11 +86,7 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.restoreIdx = 0
 			m.screen = ScreenRestore
 			return m, nil
-		case 2: // Doctor
-			m.doctorChecks = doctor.Run()
-			m.screen = ScreenDoctor
-			return m, nil
-		case 3: // Settings
+		case 2: // Settings (Doctor case 2 is temporarily commented out below)
 			cfg, err := config.Load()
 			if err != nil {
 				m.err = err
@@ -102,6 +97,12 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.selectedIdx = 0
 			m.screen = ScreenConfig
 			return m, nil
+			/*
+				case 99: // Doctor (Temporarily hidden)
+					m.doctorChecks = doctor.Run()
+					m.screen = ScreenDoctor
+					return m, nil
+			*/
 		}
 	}
 	return m, nil
@@ -111,7 +112,7 @@ func (m model) viewMainMenu() string {
 	items := []string{
 		i18n.T("menu_scan_clean"),
 		i18n.T("menu_restore"),
-		i18n.T("menu_doctor"),
+		// i18n.T("menu_doctor"), // Temporarily hidden for user
 		i18n.T("menu_settings"),
 	}
 	var content string

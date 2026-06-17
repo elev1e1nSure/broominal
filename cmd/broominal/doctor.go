@@ -14,8 +14,9 @@ func doctorCmd() *cobra.Command {
 	var fix bool
 	var yes bool
 	cmd := &cobra.Command{
-		Use:   "doctor",
-		Short: "Run health checks",
+		Use:    "doctor",
+		Short:  "Run health checks",
+		Hidden: true, // Temporarily hidden for user as requested
 		Long: `Run health checks and report the status of all system components.
 
 Without flags, prints a status table and exits with code 1 if any check fails.

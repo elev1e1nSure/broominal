@@ -108,6 +108,8 @@ type model struct {
 	// Cancellation for long-running operations
 	cleanCtxCancel     context.CancelFunc
 	deletedQuarantines map[string]bool
+	// Cleaning progress
+	cleanProgress *types.Progress
 }
 
 type categoryItem struct {
@@ -127,7 +129,7 @@ var (
 	colorWarning = lipgloss.Color("#eed49f") // Yellow
 	colorDanger  = lipgloss.Color("#ed8796") // Red
 	colorMuted   = lipgloss.Color("#9ca3af") // Gray 400
-	colorTrack   = lipgloss.Color("#374151") // Gray 700
+	colorTrack   = lipgloss.Color("#2e2e2e") // Neutral dark gray
 
 	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(colorAccent)
 	selectedStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ffffff"))
@@ -184,7 +186,11 @@ func (m model) appFrame(title, content, foot string) string {
 	}
 
 	if title != "" {
-		head = headerStyle.Width(innerWidth).Render(titleStyle.Render(title))
+		if strings.Contains(title, "\x1b") {
+			head = headerStyle.Width(innerWidth).Render(title)
+		} else {
+			head = headerStyle.Width(innerWidth).Render(titleStyle.Render(title))
+		}
 		headHeight = lipgloss.Height(head)
 	}
 

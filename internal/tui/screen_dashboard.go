@@ -129,7 +129,7 @@ func (m model) viewDashboard() string {
 		return m.appFrame(i18n.T("dashboard"), content, foot)
 	}
 
-	// Risk breakdown row
+	// Risk breakdown info for the header
 	riskDot := func(label string, size int64, rs lipgloss.Style) string {
 		sizeStr := "—"
 		if size > 0 {
@@ -137,13 +137,12 @@ func (m model) viewDashboard() string {
 		}
 		return rs.Render("■") + " " + mutedStyle.Render(label) + " " + rs.Render(sizeStr)
 	}
-	content += fmt.Sprintf("  %s    %s    %s\n",
+	riskHeaderInfo := fmt.Sprintf("%s    %s    %s",
 		riskDot(i18n.T("risk_safe"), safeSize, safeStyle),
 		riskDot(i18n.T("risk_review"), reviewSize, reviewStyle),
 		riskDot(i18n.T("risk_danger"), dangerSize, dangerStyle),
 	)
-
-	content += mutedStyle.Render(strings.Repeat("─", 52)) + "\n\n"
+	title := fmt.Sprintf("%s  |  %s", titleStyle.Render(i18n.T("dashboard")), riskHeaderInfo)
 
 	// Category bars
 	const nameWidth = 30
@@ -195,5 +194,5 @@ func (m model) viewDashboard() string {
 		keyHint("Esc", i18n.T("back")),
 	)
 
-	return m.appFrame(i18n.T("dashboard"), content, foot)
+	return m.appFrame(title, content, foot)
 }
