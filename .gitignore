@@ -28,6 +28,7 @@ Thumbs.db
 # Build
 /dist
 /build
+/nul
 
 # Agent rules
 rules.md
