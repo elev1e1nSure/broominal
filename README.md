@@ -18,7 +18,7 @@
 
 **broominal** cleans Windows by moving files into **quarantine** — not deleting them. Every cleanup is inspectable and restorable.
 
-62 scanner categories across three risk levels (Safe / Review / Danger), interactive TUI, JSON manifests, multilingual (EN/RU), AI-polished release notes.
+62 scanner categories across three risk levels (Safe / Review / Danger), interactive TUI, JSON manifests, multilingual (EN/RU).
 
 No fake boost magic. No hidden tweaks. No "trust me bro" cleanup.
 
