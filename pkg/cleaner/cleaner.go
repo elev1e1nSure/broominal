@@ -9,6 +9,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/quarantine"
@@ -37,7 +38,13 @@ func Run(ctx context.Context, items []types.Item, scanResult *types.ScanResult, 
 	var result *types.CleanResult
 
 	if cfg != nil && !cfg.QuarantineEnabled {
-		freed, files, skipped := deleteDirect(ctx, items)
+		var totalBytes int64
+		for _, it := range items {
+			if it.Selected {
+				totalBytes += it.Size
+			}
+		}
+		freed, files, skipped := deleteDirect(ctx, items, totalBytes, progress)
 		result = &types.CleanResult{
 			RestoreID: "",
 			Freed:     freed,
@@ -83,20 +90,50 @@ func Run(ctx context.Context, items []types.Item, scanResult *types.ScanResult, 
 }
 
 // deleteDirect is the irreversible cleanup path taken when the user has
-// opted out of quarantine in config. It exists separately from Move so the
-// caller never has to think about which mode is in effect; Run picks the path.
-func deleteDirect(ctx context.Context, items []types.Item) (freed int64, files int, skipped int) {
-	for _, item := range items {
+// opted out of quarantine in config. It sends progress updates via the
+// optional callback (throttled to ~250 ms), matching quarantine.Move semantics.
+func deleteDirect(ctx context.Context, items []types.Item, totalBytes int64, progress types.ProgressFn) (freed int64, files int, skipped int) {
+	total := len(items)
+	startTime := time.Now()
+	lastProg := time.Now()
+
+	for i, item := range items {
 		if ctx.Err() != nil {
 			break
 		}
 		if err := os.RemoveAll(item.Path); err != nil {
 			slog.Warn("cleaner: skipped locked or inaccessible path", "path", item.Path, "error", err)
 			skipped++
-			continue
+		} else {
+			freed += item.Size
+			files++
 		}
-		freed += item.Size
-		files++
+
+		if progress != nil {
+			now := time.Now()
+			if now.Sub(lastProg) > 250*time.Millisecond || i == total-1 {
+				lastProg = now
+				progress(types.Progress{
+					Stage:      "cleaning",
+					Processed:  i + 1,
+					Total:      total,
+					Bytes:      freed,
+					TotalBytes: totalBytes,
+					StartedAt:  startTime,
+				})
+			}
+		}
+	}
+	// Final progress tick to ensure 100% is shown.
+	if progress != nil {
+		progress(types.Progress{
+			Stage:      "cleaning",
+			Processed:  total,
+			Total:      total,
+			Bytes:      freed,
+			TotalBytes: totalBytes,
+			StartedAt:  startTime,
+		})
 	}
 	return
 }
