@@ -216,14 +216,22 @@ func (m model) viewCategories() string {
 
 func (m model) viewWarnRecycleBin() string {
 	cat := m.categories[m.detailCat].cat
+
+	// Stats line mirroring the CategoryInfo layout so the user has context.
+	stats := mutedStyle.Render(fmt.Sprintf("  %s: %s  |  %s: %d  |  %s: %s",
+		i18n.T("size"), util.FormatSize(cat.Size),
+		i18n.T("files"), cat.Files,
+		i18n.T("risk"), i18n.T("risk_"+strings.ToLower(string(cat.Risk)))))
+
 	content := dangerStyle.Render(fmt.Sprintf(i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
-		mutedStyle.Render(i18n.T("hint_recycle_warn")) + "\n"
+		stats + "\n\n" +
+		dangerStyle.Render(i18n.T("recycle_bin_warn_body")) + "\n"
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("proceed")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return m.appFrame(i18n.T("warning"), content, foot)
+	return m.appFrame(dangerStyle.Render("⚠  "+i18n.T("warning")), content, foot)
 }
 
 func (m model) viewWarnDuplicates() string {
@@ -245,13 +253,6 @@ func (m model) viewCategoryInfo() string {
 
 	var content string
 
-	// Category name and basic stats
-	content += selectedStyle.Render(i18n.CategoryName(cat.Category)) + "\n"
-	content += mutedStyle.Render(fmt.Sprintf("  %s: %s  |  %s: %d  |  %s: %s",
-		i18n.T("size"), util.FormatSize(cat.Size),
-		i18n.T("files"), cat.Files,
-		i18n.T("risk"), i18n.T("risk_"+strings.ToLower(string(cat.Risk))))) + "\n\n"
-
 	// Description box
 	if desc != "" {
 		maxW := m.width - 6
@@ -261,8 +262,17 @@ func (m model) viewCategoryInfo() string {
 		content += mutedStyle.Width(maxW).Render(desc) + "\n"
 	}
 
+	// Build header: category name  ·  size | files | risk — mirrors the
+	// dashboard stat row so the user gets full context without re-reading the list.
+	riskLabel := i18n.T("risk_" + strings.ToLower(string(cat.Risk)))
+	statsLine := mutedStyle.Render(fmt.Sprintf("%s: %s  |  %s: %d  |  %s: %s",
+		i18n.T("size"), util.FormatSize(cat.Size),
+		i18n.T("files"), cat.Files,
+		i18n.T("risk"), riskLabel))
+	headerTitle := selectedStyle.Render(i18n.CategoryName(cat.Category)) + "\n" + statsLine
+
 	foot := footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
-	return m.appFrame(i18n.T("details"), content, foot)
+	return m.appFrame(headerTitle, content, foot)
 }
 
 func (m model) viewConfirm() string {

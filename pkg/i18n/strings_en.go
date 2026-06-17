@@ -44,6 +44,7 @@ var enStrings = map[string]string{
 	"warning":                  "Warning",
 	"recycle_bin_warn":         "Recycle Bin contains %d files.",
 	"hint_recycle_warn":        "Opening details may be very slow.",
+	"recycle_bin_warn_body":    "Files in the Recycle Bin will be permanently deleted — this cannot be undone and cannot be restored from Broominal quarantine. Make sure there is nothing in the Bin you still need.",
 	"duplicate_files_warn":     "Duplicate file scan compares all files in Downloads, Desktop and Documents by content. Only copies are flagged — the original is always kept. This can be slow on large folders.",
 	"hint_recycle_continue":    "Enter: continue anyway  Esc: back",
 	"error":                    "Error",
@@ -203,6 +204,7 @@ var enStrings = map[string]string{
 	"cat_powershell_history":         "PowerShell History",
 	"cat_postman_cache":              "Postman Cache",
 	"cat_pkg_manager_cache":          "Package Manager Cache",
+	"cat_archive_temp":               "Archive Temp Files",
 	"cat_cbs_dism_logs":              "CBS & DISM Logs",
 	"cat_windows_installer_patches":  "Windows Installer Patches",
 	"cat_android_cache":              "Android SDK Cache",
@@ -271,6 +273,7 @@ var enStrings = map[string]string{
 	"cat_desc_windows_installer_patches":  "Cached patch files for older MSI-based programs stored in $PatchCache$. Removing them may break the Repair and Modify options for those applications. Safe to remove only if you no longer need to repair or reinstall those programs.",
 	"cat_desc_android_cache":              "Android SDK download temp files, Gradle build caches and Android build tool caches. Rebuilt on next build. Does not affect installed SDKs or AVD images.",
 	"cat_desc_pkg_manager_cache":          "Download caches for Chocolatey, Scoop, winget source indexes, pip wheels and Conda packages. Rebuilt automatically on the next install or update.",
+	"cat_desc_archive_temp":               "Temporary files left by 7z, RAR and other archive extractors after incomplete or cancelled extraction. These .tmp, .~, _unpack, _extract files remain in %TEMP% and are never cleaned automatically.",
 	// Updates
 	"today":                   "Today",
 	"yesterday":               "Yesterday",
