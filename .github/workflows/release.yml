@@ -72,10 +72,11 @@ jobs:
 
           $submitResp = Invoke-WebRequest -Uri "$baseUri/$orgId/SigningRequests/SubmitWithArtifact" `
             -Method Post -Form $form -Headers @{ Authorization = "Bearer $apiToken" } `
-            -StatusCodeVariable statusCode
+            -SkipHttpErrorCheck
 
-          if ($statusCode -ne 201) {
-            throw "SignPath submit failed (HTTP $statusCode)"
+          if ($submitResp.StatusCode -ne 201) {
+            $body = $submitResp.Content
+            throw "SignPath submit failed (HTTP $($submitResp.StatusCode)): $body"
           }
 
           $location = $submitResp.Headers["Location"]
