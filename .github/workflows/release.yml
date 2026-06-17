@@ -53,56 +53,62 @@ jobs:
           go build -ldflags "-s -w -X main.Version=${{ env.VERSION }}" -o "${{ env.BINARY }}" ./cmd/broominal
         shell: pwsh
 
-      - name: Sign with SignPath
+      # - name: Sign with SignPath
+      #   run: |
+      #     $ErrorActionPreference = "Stop"
+      #     $orgId = "83a8dd1a-54f4-4de1-9607-37cf551b6d2b"
+      #     $apiToken = "${{ secrets.SIGNPATH_API_TOKEN }}"
+      #     $baseUri = "https://app.signpath.io/api/v1"
+      #     $binary = "${{ env.BINARY }}"
+      # 
+      #     Write-Host "Submitting $binary to SignPath..."
+      # 
+      #     $form = @{
+      #       projectSlug        = "broominal"
+      #       signingPolicySlug  = "release_signing"
+      #       description        = "${{ env.VERSION }}"
+      #       artifact           = (Get-Item $binary)
+      #     }
+      # 
+      #     $submitResp = Invoke-WebRequest -Uri "$baseUri/$orgId/SigningRequests/SubmitWithArtifact" `
+      #       -Method Post -Form $form -Headers @{ Authorization = "Bearer $apiToken" } `
+      #       -SkipHttpErrorCheck
+      # 
+      #     if ($submitResp.StatusCode -ne 201) {
+      #       $body = $submitResp.Content
+      #       throw "SignPath submit failed (HTTP $($submitResp.StatusCode)): $body"
+      #     }
+      # 
+      #     $location = $submitResp.Headers["Location"]
+      #     $signingRequestId = $location -split "/" | Select-Object -Last 1
+      #     Write-Host "Signing request: $signingRequestId"
+      # 
+      #     # Poll for completion
+      #     $timeout = 600
+      #     $elapsed = 0
+      #     do {
+      #       Start-Sleep -Seconds 5
+      #       $elapsed += 5
+      #       $sr = Invoke-RestMethod -Uri "$baseUri/$orgId/SigningRequests/$signingRequestId" `
+      #         -Headers @{ Authorization = "Bearer $apiToken" }
+      #       Write-Host "Status: $($sr.status) ($elapsed s)"
+      #     } while ($sr.status -ne "Completed" -and $elapsed -lt $timeout)
+      # 
+      #     if ($sr.status -ne "Completed") {
+      #       throw "Signing did not complete. Final status: $($sr.status)"
+      #     }
+      # 
+      #     # Download signed artifact
+      #     New-Item -ItemType Directory -Force signed | Out-Null
+      #     Invoke-WebRequest -Uri "$baseUri/$orgId/SigningRequests/$signingRequestId/SignedArtifact" `
+      #       -Headers @{ Authorization = "Bearer $apiToken" } -OutFile "signed/$binary"
+      #     Write-Host "Signed: signed/$binary"
+      #   shell: pwsh
+
+      - name: Copy unsigned binary (SignPath skipped)
         run: |
-          $ErrorActionPreference = "Stop"
-          $orgId = "83a8dd1a-54f4-4de1-9607-37cf551b6d2b"
-          $apiToken = "${{ secrets.SIGNPATH_API_TOKEN }}"
-          $baseUri = "https://app.signpath.io/api/v1"
-          $binary = "${{ env.BINARY }}"
-
-          Write-Host "Submitting $binary to SignPath..."
-
-          $form = @{
-            projectSlug        = "broominal"
-            signingPolicySlug  = "release_signing"
-            description        = "${{ env.VERSION }}"
-            artifact           = (Get-Item $binary)
-          }
-
-          $submitResp = Invoke-WebRequest -Uri "$baseUri/$orgId/SigningRequests/SubmitWithArtifact" `
-            -Method Post -Form $form -Headers @{ Authorization = "Bearer $apiToken" } `
-            -SkipHttpErrorCheck
-
-          if ($submitResp.StatusCode -ne 201) {
-            $body = $submitResp.Content
-            throw "SignPath submit failed (HTTP $($submitResp.StatusCode)): $body"
-          }
-
-          $location = $submitResp.Headers["Location"]
-          $signingRequestId = $location -split "/" | Select-Object -Last 1
-          Write-Host "Signing request: $signingRequestId"
-
-          # Poll for completion
-          $timeout = 600
-          $elapsed = 0
-          do {
-            Start-Sleep -Seconds 5
-            $elapsed += 5
-            $sr = Invoke-RestMethod -Uri "$baseUri/$orgId/SigningRequests/$signingRequestId" `
-              -Headers @{ Authorization = "Bearer $apiToken" }
-            Write-Host "Status: $($sr.status) ($elapsed s)"
-          } while ($sr.status -ne "Completed" -and $elapsed -lt $timeout)
-
-          if ($sr.status -ne "Completed") {
-            throw "Signing did not complete. Final status: $($sr.status)"
-          }
-
-          # Download signed artifact
           New-Item -ItemType Directory -Force signed | Out-Null
-          Invoke-WebRequest -Uri "$baseUri/$orgId/SigningRequests/$signingRequestId/SignedArtifact" `
-            -Headers @{ Authorization = "Bearer $apiToken" } -OutFile "signed/$binary"
-          Write-Host "Signed: signed/$binary"
+          Copy-Item "${{ env.BINARY }}" -Destination "signed/${{ env.BINARY }}"
         shell: pwsh
 
       - name: Generate checksums
