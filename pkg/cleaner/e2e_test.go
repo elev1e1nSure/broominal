@@ -46,7 +46,7 @@ func TestE2EScanCleanRestore(t *testing.T) {
 		}
 	}
 
-	cleanRes, err := Run(ctx, items, res, cfg)
+	cleanRes, err := Run(ctx, items, res, cfg, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

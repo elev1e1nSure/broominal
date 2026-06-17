@@ -63,7 +63,10 @@ broominal ui
 
 ---
 
-## doctor
+## doctor [Hidden]
+
+> [!NOTE]
+> This command is temporarily hidden from the CLI command list and help outputs, but remains fully functional.
 
 Run health checks and verify the integrity of the configuration, directory permissions, and quarantine manifests.
 

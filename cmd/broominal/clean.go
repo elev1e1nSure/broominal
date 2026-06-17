@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/elev1e1nSure/broominal/pkg/cleaner"
@@ -61,16 +63,28 @@ Use --preset to control which categories are included:
 					selected = append(selected, cat.Items[i])
 				}
 			}
-			cleanResult, err := cleaner.Run(ctx, selected, res, cfg)
+			cleanResult, err := cleaner.Run(ctx, selected, res, cfg, func(p types.Progress) {
+				fmt.Fprintf(os.Stderr, "\r  %3d%% | %s | ETA %-8s | %d/%d",
+					p.Percent(),
+					p.FormatThroughput(),
+					p.FormatETA(),
+					p.Processed,
+					p.Total,
+				)
+			})
 			if err != nil {
 				return fmt.Errorf("clean failed: %w", err)
 			}
+			fmt.Fprintf(os.Stderr, "\r%s\r", strings.Repeat(" ", 80))
 			msg := fmt.Sprintf("Freed %s in %s",
 				style.Cyanf(util.FormatSize(cleanResult.Freed)),
 				style.Boldf("%s", pluralize(cleanResult.Files, "1 file", fmt.Sprintf("%d files", cleanResult.Files))),
 			)
 			if cleanResult.Skipped > 0 {
 				msg += fmt.Sprintf("  (%s skipped)", style.Yellowf("%d", cleanResult.Skipped))
+			}
+			if cleanResult.Cancelled {
+				msg += "  " + style.Yellowf("(cancelled)")
 			}
 			fmt.Printf("  %s\n  Restore ID: %s\n", msg, style.Yellowf(cleanResult.RestoreID))
 			return nil

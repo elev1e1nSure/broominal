@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -110,16 +111,41 @@ func (m model) handleKeyRestoreConflict(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) viewCleaning() string {
 	var content string
-	fraction := 0.0
-	if m.scanTotal > 0 {
-		fraction = float64(m.scanCompleted) / float64(m.scanTotal)
+
+	if m.cleanProgress != nil && m.cleanProgress.Total > 0 {
+		fraction := float64(m.cleanProgress.Processed) / float64(m.cleanProgress.Total)
+		if fraction > 1.0 {
+			fraction = 1.0
+		}
+		bar := m.progress.ViewAs(fraction)
+		barLine := bar
+
+		statusParts := []string{
+			fmt.Sprintf("%d%%", m.cleanProgress.Percent()),
+		}
+		if tp := m.cleanProgress.FormatThroughput(); tp != "" {
+			statusParts = append(statusParts, tp)
+		}
+		if eta := m.cleanProgress.FormatETA(); eta != "" {
+			statusParts = append(statusParts, "ETA "+eta)
+		}
+		statusParts = append(statusParts, fmt.Sprintf("%d/%d", m.cleanProgress.Processed, m.cleanProgress.Total))
+
+		statusText := strings.Join(statusParts, " | ")
+		statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Left).Render(mutedStyle.Render(statusText))
+
+		content = fmt.Sprintf("\n%s\n\n%s\n", barLine, statusLine)
+	} else {
+		fraction := 0.0
+		if m.scanTotal > 0 {
+			fraction = float64(m.scanCompleted) / float64(m.scanTotal)
+		}
+		bar := m.progress.ViewAs(fraction)
+		statusText := fmt.Sprintf("%d%% | %s %d/%d", int(fraction*100), i18n.T("cleaning_in_progress"), m.scanCompleted, m.scanTotal)
+		statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Left).Render(mutedStyle.Render(statusText))
+
+		content = fmt.Sprintf("\n%s\n\n%s\n", bar, statusLine)
 	}
-
-	bar := m.progress.ViewAs(fraction)
-	statusText := fmt.Sprintf("%d%% | %s %d/%d", int(fraction*100), i18n.T("cleaning_in_progress"), m.scanCompleted, m.scanTotal)
-	statusLine := lipgloss.NewStyle().Width(m.progress.Width).Align(lipgloss.Left).Render(mutedStyle.Render(statusText))
-
-	content += fmt.Sprintf("\n%s\n\n%s\n", bar, statusLine)
 
 	foot := footer(keyHint("Esc", i18n.T("cancel")))
 	return m.appFrame(i18n.T("cleaning"), content, foot)
@@ -134,7 +160,11 @@ func (m model) viewResult() string {
 	content := fmt.Sprintf("  Freed:      %s\n", safeStyle.Render(util.FormatSize(m.cleanResult.Freed))) +
 		fmt.Sprintf("  Files:      %s\n", valueStyle.Render(fmt.Sprintf("%d", m.cleanResult.Files)))
 	if m.cleanResult.Skipped > 0 {
-		content += fmt.Sprintf("  Skipped:    %s\n", reviewStyle.Render(fmt.Sprintf("%d", m.cleanResult.Skipped)))
+		label := "Skipped"
+		if m.cleanResult.Cancelled {
+			label = "Cancelled"
+		}
+		content += fmt.Sprintf("  %s:    %s\n", label, reviewStyle.Render(fmt.Sprintf("%d", m.cleanResult.Skipped)))
 	}
 	content += fmt.Sprintf("  Restore ID: %s\n", mutedStyle.Render(m.cleanResult.RestoreID))
 	foot := footer(

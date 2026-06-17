@@ -3,6 +3,7 @@ package cleaner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -19,7 +20,9 @@ import (
 // delete based on cfg, and writes a JSON report when scanResult is provided.
 // cfg may be nil to imply "use quarantine" — the CLI and the TUI both rely
 // on this default for first-run, config-not-yet-loaded cases.
-func Run(ctx context.Context, items []types.Item, scanResult *types.ScanResult, cfg *config.Config) (*types.CleanResult, error) {
+// progress is an optional callback for per-file progress during quarantine
+// moves; nil disables progress reporting.
+func Run(ctx context.Context, items []types.Item, scanResult *types.ScanResult, cfg *config.Config, progress types.ProgressFn) (*types.CleanResult, error) {
 	sort.Slice(items, func(i, j int) bool {
 		di := strings.Count(items[i].Path, string(os.PathSeparator))
 		dj := strings.Count(items[j].Path, string(os.PathSeparator))
@@ -54,15 +57,20 @@ func Run(ctx context.Context, items []types.Item, scanResult *types.ScanResult, 
 			}
 		}
 
-		id, freed, files, skipped, err := quarantine.Move(ctx, items)
+		id, freed, files, skipped, err := quarantine.Move(ctx, items, progress)
 		if err != nil {
 			return nil, err
+		}
+		cancelled := false
+		if errors.Is(ctx.Err(), context.Canceled) {
+			cancelled = true
 		}
 		result = &types.CleanResult{
 			RestoreID: id,
 			Freed:     freed,
 			Files:     files,
 			Skipped:   skipped,
+			Cancelled: cancelled,
 		}
 	}
 

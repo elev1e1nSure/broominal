@@ -54,7 +54,7 @@ func TestScanCleanRestoreDoctorPipeline(t *testing.T) {
 	}
 
 	// Clean
-	cleanResult, err := Run(ctx, selected, res, nil)
+	cleanResult, err := Run(ctx, selected, res, nil, nil)
 	if err != nil {
 		t.Fatalf("clean failed: %v", err)
 	}
