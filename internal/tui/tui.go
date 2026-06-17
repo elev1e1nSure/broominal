@@ -212,7 +212,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case cleanProgressMsg:
 		m.cleanProgress = &msg.p
-		// EMA smoothing for throughput and ETA display (alpha=0.15, ~3s window).
+		// EMA smoothing for throughput (alpha=0.15, ~3s window).
 		if m.smoothBytesPerSec == 0 {
 			elapsed := time.Since(msg.p.StartedAt).Seconds()
 			if elapsed > 0.1 && msg.p.Bytes > 0 {
@@ -225,11 +225,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.smoothBytesPerSec = 0.15*instant + 0.85*m.smoothBytesPerSec
 			}
 		}
-		if m.smoothBytesPerSec > 0 && msg.p.TotalBytes > 0 && msg.p.Processed < msg.p.Total {
-			remaining := float64(msg.p.TotalBytes-msg.p.Bytes) / m.smoothBytesPerSec
-			m.smoothETA = time.Duration(remaining) * time.Second
-			if m.smoothETA < 0 {
-				m.smoothETA = 0
+		// EMA smoothing for ETA based on item count (matches progress bar), alpha=0.15.
+		rawETA := msg.p.ETA()
+		if rawETA > 0 {
+			if m.smoothETA == 0 {
+				m.smoothETA = rawETA
+			} else {
+				m.smoothETA = time.Duration(0.15*float64(rawETA) + 0.85*float64(m.smoothETA))
 			}
 		} else {
 			m.smoothETA = 0
