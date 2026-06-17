@@ -110,6 +110,9 @@ type model struct {
 	deletedQuarantines map[string]bool
 	// Cleaning progress
 	cleanProgress *types.Progress
+	// Smoothed display values to reduce jitter in throughput/ETA.
+	smoothBytesPerSec float64
+	smoothETA         time.Duration
 }
 
 type categoryItem struct {

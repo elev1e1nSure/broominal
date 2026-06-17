@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -123,10 +124,10 @@ func (m model) viewCleaning() string {
 		statusParts := []string{
 			fmt.Sprintf("%d%%", m.cleanProgress.Percent()),
 		}
-		if tp := m.cleanProgress.FormatThroughput(); tp != "" {
+		if tp := m.formatSmoothedThroughput(); tp != "" {
 			statusParts = append(statusParts, tp)
 		}
-		if eta := m.cleanProgress.FormatETA(); eta != "" {
+		if eta := m.formatSmoothedETA(); eta != "" {
 			statusParts = append(statusParts, "ETA "+eta)
 		}
 		statusParts = append(statusParts, fmt.Sprintf("%d/%d", m.cleanProgress.Processed, m.cleanProgress.Total))
@@ -187,4 +188,32 @@ func (m model) viewRestoreConflict() string {
 		keyHint("Esc", i18n.T("back")),
 	)
 	return m.appFrame(i18n.T("restore_conflicts"), content, foot)
+}
+
+func (m model) formatSmoothedThroughput() string {
+	if m.smoothBytesPerSec <= 0 {
+		return ""
+	}
+	mbps := m.smoothBytesPerSec / (1024 * 1024)
+	if mbps >= 1000 {
+		return fmt.Sprintf("%.1f GB/s", mbps/1024)
+	}
+	if mbps >= 1 {
+		return fmt.Sprintf("%.1f MB/s", mbps)
+	}
+	return fmt.Sprintf("%.1f KB/s", mbps*1024)
+}
+
+func (m model) formatSmoothedETA() string {
+	if m.smoothETA <= 0 {
+		return ""
+	}
+	d := m.smoothETA.Truncate(time.Second)
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%dm%ds", int(d.Minutes()), int(d.Seconds())%60)
+	}
+	return fmt.Sprintf("%dh%dm", int(d.Hours()), int(d.Minutes())%60)
 }
