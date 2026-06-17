@@ -17,6 +17,8 @@ jobs:
       contents: write
     env:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      BINARY: broominal_windows_amd64.exe
+      VERSION: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', github.event.inputs.version) || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,12 +47,34 @@ jobs:
         shell: pwsh
 
       - name: Build
-        run: go build -ldflags "-s -w -X main.Version=${{ github.ref_name }}" -o broominal.exe ./cmd/broominal
+        run: |
+          $env:GOOS = "windows"
+          $env:GOARCH = "amd64"
+          go build -ldflags "-s -w -X main.Version=${{ env.VERSION }}" -o "${{ env.BINARY }}" ./cmd/broominal
+        shell: pwsh
+
+      - name: Upload unsigned artifact
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-binary
+          path: ${{ env.BINARY }}
+
+      - name: Sign with SignPath
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '83a8dd1a-54f4-4de1-9607-37cf551b6d2b'
+          project-slug: 'broominal'
+          signing-policy-slug: 'release-signing'
+          github-artifact-id: '${{ steps.upload-unsigned.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: signed
 
       - name: Generate checksums
         run: |
-          $hash = Get-FileHash broominal.exe -Algorithm SHA256
-          "$( $hash.Hash)  broominal.exe" | Out-File -Encoding utf8 checksums.txt
+          $hash = Get-FileHash "signed/${{ env.BINARY }}" -Algorithm SHA256
+          "$( $hash.Hash)  ${{ env.BINARY }}" | Out-File -Encoding utf8 checksums.txt
         shell: pwsh
 
       - name: Create and push tag
@@ -69,5 +93,5 @@ jobs:
           body_path: RELEASE_BODY.md
           tag_name: ${{ github.event.inputs.version != '' && format('v{0}', github.event.inputs.version) || github.ref_name }}
           files: |
-            broominal.exe
+            signed/${{ env.BINARY }}
             checksums.txt
