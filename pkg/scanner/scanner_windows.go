@@ -23,6 +23,67 @@ func scanTemp(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	return scanDir(ctx, tempPath, "temp", types.RiskSafe, nil, true, cfg)
 }
 
+var archiveTempMarkers = map[string]struct{}{
+	".tmp":     {},
+	".~":       {},
+	"_unpack":  {},
+	"_extract": {},
+	"_work":    {},
+	".zt":      {},
+	".7z":      {},
+	".rar":     {},
+	".part":    {},
+	".bc":      {},
+}
+
+func scanArchiveTemp(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
+	tempPath := os.Getenv("TEMP")
+	if tempPath == "" {
+		return nil, nil
+	}
+	var items []types.Item
+	err := filepath.WalkDir(tempPath, func(path string, d fs.DirEntry, err error) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if err != nil {
+			if errors.Is(err, os.ErrPermission) {
+				return filepath.SkipDir
+			}
+			if errors.Is(err, os.ErrNotExist) {
+				return nil
+			}
+			return fmt.Errorf("scan archive_temp: walk error at %s: %w", path, err)
+		}
+		if d.IsDir() || cfg.IsExcluded(path) {
+			return nil
+		}
+		base := filepath.Base(path)
+		ext := strings.ToLower(filepath.Ext(base))
+		stem := strings.ToLower(strings.TrimSuffix(base, ext))
+		_, extMatch := archiveTempMarkers[ext]
+		_, stemMatch := archiveTempMarkers[stem]
+		if !extMatch && !stemMatch {
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil {
+			return nil
+		}
+		items = append(items, types.Item{
+			Category: "archive_temp",
+			Path:     path,
+			Size:     info.Size(),
+			Risk:     types.RiskSafe,
+		})
+		return nil
+	})
+	if err != nil {
+		slog.Warn("scanner: archive_temp scan failed", "path", tempPath, "error", err)
+	}
+	return items, nil
+}
+
 func scanLogs(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	tempPath := os.Getenv("TEMP")
@@ -117,7 +178,6 @@ func scanEmptyFolders(ctx context.Context, cfg *config.Config) ([]types.Item, er
 	var items []types.Item
 	paths := []string{
 		os.Getenv("TEMP"),
-		filepath.Join(os.Getenv("USERPROFILE"), "Downloads"),
 	}
 	for _, root := range paths {
 		if root == "" {

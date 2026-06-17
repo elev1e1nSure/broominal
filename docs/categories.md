@@ -38,7 +38,7 @@ App caches and logs. Enabled in Standard and Deep presets.
 
 | Category | Paths |
 |----------|-------|
-| **Empty Folders** | Empty dirs in `%TEMP%`, `%USERPROFILE%\Downloads` |
+| **Empty Folders** | Empty dirs in `%TEMP%` |
 | **Messenger Cache** | Discord (Cache, Code Cache), Telegram, Slack (Cache, Code Cache, GPUCache), Teams |
 | **Game Launcher Cache** | Steam, Epic, Battle.net, Rockstar, EA, Ubisoft, GOG |
 | **Dev Cache** (⚠ Review) | VSCode, npm, pip, Git, Visual Studio, JetBrains, Go build, Rust cargo |
