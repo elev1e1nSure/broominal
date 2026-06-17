@@ -42,6 +42,10 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.scanCh = ch
 			m.scanTotal = scanner.EnabledScannerCount(cfg)
 			m.scanCompleted = 0
+			// Clear any cached result so the dashboard shows the progress bar
+			// instead of stale data from a previous scan with a different preset.
+			m.result = nil
+			m.categories = nil
 			m.screen = ScreenDashboard
 			go func() {
 				ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
