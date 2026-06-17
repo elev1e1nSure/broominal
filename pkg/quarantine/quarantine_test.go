@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -39,7 +40,7 @@ func TestCopyAndDelete(t *testing.T) {
 	content := []byte("hello quarantine")
 	_ = os.WriteFile(src, content, 0644)
 
-	if err := copyAndDelete(src, dst); err != nil {
+	if err := copyAndDelete(context.Background(), src, dst); err != nil {
 		t.Fatalf("copyAndDelete failed: %v", err)
 	}
 
@@ -71,7 +72,7 @@ func TestMoveReal(t *testing.T) {
 		{Path: src2, Size: 2, Selected: true},
 	}
 
-	id, freed, files, _, err := Move(context.Background(), items)
+	id, freed, files, _, err := Move(context.Background(), items, nil)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -107,7 +108,7 @@ func TestMoveMissingFile(t *testing.T) {
 	items := []types.Item{
 		{Path: filepath.Join(tmp, "missing.txt"), Size: 10, Selected: true},
 	}
-	_, freed, files, _, err := Move(context.Background(), items)
+	_, freed, files, _, err := Move(context.Background(), items, nil)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -137,7 +138,7 @@ func TestMoveDuplicateNames(t *testing.T) {
 		{Path: f2, Size: 1, Selected: true},
 	}
 
-	id, _, _, _, err := Move(context.Background(), items)
+	id, _, _, _, err := Move(context.Background(), items, nil)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -153,19 +154,11 @@ func TestMoveDuplicateNames(t *testing.T) {
 	if len(names) != 2 {
 		t.Fatalf("expected 2 quarantined files, got %d", len(names))
 	}
-	// One should be same.txt, other same_1.txt
-	hasSame := false
-	hasSame1 := false
+	// Both files should have atomic counter suffixes (_1.brm and _2.brm or similar).
 	for _, n := range names {
-		if n == "same.txt.brm" {
-			hasSame = true
+		if !strings.HasPrefix(n, "same.txt_") || !strings.HasSuffix(n, ".brm") {
+			t.Errorf("unexpected name: %q", n)
 		}
-		if n == "same.txt_1.brm" {
-			hasSame1 = true
-		}
-	}
-	if !hasSame || !hasSame1 {
-		t.Errorf("names = %v, want same.txt.brm and same.txt_1.brm", names)
 	}
 }
 
@@ -177,7 +170,7 @@ func TestRestoreHappyPath(t *testing.T) {
 	_ = os.WriteFile(src, []byte("data"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(context.Background(), items)
+	id, _, _, _, err := Move(context.Background(), items, nil)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -210,7 +203,7 @@ func TestRestoreConflictSkip(t *testing.T) {
 	_ = os.WriteFile(src, []byte("original"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(context.Background(), items)
+	id, _, _, _, err := Move(context.Background(), items, nil)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -244,7 +237,7 @@ func TestRestoreForceOverwrite(t *testing.T) {
 	_ = os.WriteFile(src, []byte("original"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(context.Background(), items)
+	id, _, _, _, err := Move(context.Background(), items, nil)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -276,7 +269,7 @@ func TestCheckRestoreConflicts(t *testing.T) {
 	_ = os.WriteFile(src, []byte("data"), 0644)
 
 	items := []types.Item{{Path: src, Size: 4, Selected: true}}
-	id, _, _, _, err := Move(context.Background(), items)
+	id, _, _, _, err := Move(context.Background(), items, nil)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -552,7 +545,7 @@ func TestMoveContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel immediately
 
-	_, freed, files, skipped, err := Move(ctx, items)
+	_, freed, files, skipped, err := Move(ctx, items, nil)
 	if err != context.Canceled {
 		t.Fatalf("expected context.Canceled, got: %v", err)
 	}
@@ -583,7 +576,7 @@ func TestMoveLockedFile(t *testing.T) {
 	defer f.Close()
 
 	items := []types.Item{{Path: locked, Size: 4, Selected: true}}
-	_, freed, files, skipped, err := Move(context.Background(), items)
+	_, freed, files, skipped, err := Move(context.Background(), items, nil)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}
@@ -603,7 +596,7 @@ func TestRestoreEmptyDir(t *testing.T) {
 	_ = os.MkdirAll(src, 0755)
 
 	items := []types.Item{{Path: src, Size: 0, Selected: true}}
-	id, _, files, _, err := Move(context.Background(), items)
+	id, _, files, _, err := Move(context.Background(), items, nil)
 	if err != nil {
 		t.Fatalf("Move failed: %v", err)
 	}

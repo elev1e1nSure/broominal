@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 // JournalEntry represents a single operation logged in the WAL.
@@ -18,6 +19,7 @@ type JournalEntry struct {
 
 // Journal manages a Write-Ahead Log to track file moves and guarantee 0% data loss.
 type Journal struct {
+	mu  sync.Mutex
 	f   *os.File
 	enc *json.Encoder
 }
@@ -37,6 +39,8 @@ func NewJournal(dir string) (*Journal, error) {
 
 // Begin logs the intent to move a file.
 func (j *Journal) Begin(original, quarantined string, size int64, category string) error {
+	j.mu.Lock()
+	defer j.mu.Unlock()
 	entry := JournalEntry{
 		Op:          "begin",
 		Original:    original,
@@ -44,26 +48,24 @@ func (j *Journal) Begin(original, quarantined string, size int64, category strin
 		Size:        size,
 		Category:    category,
 	}
-	if err := j.enc.Encode(entry); err != nil {
-		return err
-	}
-	return j.f.Sync() // Ensure it hits disk before we touch the file
+	return j.enc.Encode(entry)
 }
 
 // Commit logs the successful completion of a file move.
 func (j *Journal) Commit(original, quarantined string) error {
+	j.mu.Lock()
+	defer j.mu.Unlock()
 	entry := JournalEntry{
 		Op:          "done",
 		Original:    original,
 		Quarantined: quarantined,
 	}
-	if err := j.enc.Encode(entry); err != nil {
-		return err
-	}
-	return j.f.Sync()
+	return j.enc.Encode(entry)
 }
 
 // Close closes the journal file.
 func (j *Journal) Close() error {
+	j.mu.Lock()
+	defer j.mu.Unlock()
 	return j.f.Close()
 }

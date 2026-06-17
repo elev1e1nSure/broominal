@@ -1,6 +1,7 @@
 package quarantine
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/sys/windows"
@@ -185,7 +187,17 @@ func uniquePath(dir, name string) string {
 	}
 }
 
-func copyAndDelete(src, dst string) error {
+// uniquePathAtomic generates a guaranteed-unique path by appending an
+// atomic sequence number. The caller must hold the journal/manifest lock
+// so that the generated path is used before another goroutine allocates
+// the next sequence number.
+func uniquePathAtomic(dir, srcPath string, seq *int64) string {
+	n := atomic.AddInt64(seq, 1)
+	base := filepath.Base(srcPath)
+	return filepath.Join(dir, fmt.Sprintf("%s_%d.brm", base, n))
+}
+
+func copyAndDelete(ctx context.Context, src, dst string) error {
 	srcStat, err := os.Lstat(src)
 	if err != nil {
 		return err
@@ -203,9 +215,6 @@ func copyAndDelete(src, dst string) error {
 		return err
 	}
 	defer func() {
-		// Defensive: the explicit Close below can be skipped by an early
-		// return on the io.Copy error path. Double-close is a no-op for
-		// *os.File, so we can always defer this.
 		_ = in.Close()
 	}()
 	out, err := os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
@@ -213,14 +222,33 @@ func copyAndDelete(src, dst string) error {
 		return err
 	}
 	defer func() {
-		// Defensive: see note on the matching in.Close() above.
 		_ = out.Close()
 	}()
-	buf := make([]byte, 1024*1024) // 1MB buffer
-	if _, err := io.CopyBuffer(out, in, buf); err != nil {
-		return err
+
+	buf := make([]byte, 1024*1024)
+	for {
+		select {
+		case <-ctx.Done():
+			_ = out.Close()
+			_ = in.Close()
+			_ = removeRetry(dst)
+			return ctx.Err()
+		default:
+		}
+		n, readErr := in.Read(buf)
+		if n > 0 {
+			if _, writeErr := out.Write(buf[:n]); writeErr != nil {
+				return writeErr
+			}
+		}
+		if readErr != nil {
+			if readErr == io.EOF {
+				break
+			}
+			return readErr
+		}
 	}
-	// Flush to disk before deleting source to prevent data loss on crash.
+
 	if err := out.Sync(); err != nil {
 		return err
 	}
@@ -232,19 +260,17 @@ func copyAndDelete(src, dst string) error {
 	if dstStat.Size() != expectedSize {
 		_ = out.Close()
 		_ = in.Close()
-		_ = removeRetry(dst) // revert copy
+		_ = removeRetry(dst)
 		return fmt.Errorf("size mismatch after copy: expected %d, got %d", expectedSize, dstStat.Size())
 	}
 
 	if err := out.Close(); err != nil {
 		return err
 	}
-	// Close before unlink: on Windows an open file cannot be removed,
-	// and the deferred close runs after the explicit one only on panic.
 	_ = in.Close()
 	err = removeRetry(src)
 	if err != nil {
-		_ = removeRetry(dst) // revert copy if we can't remove original
+		_ = removeRetry(dst)
 		return err
 	}
 	return nil

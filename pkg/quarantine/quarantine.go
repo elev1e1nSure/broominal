@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
@@ -87,11 +89,15 @@ func generateBackupID() (string, error) {
 	}
 }
 
+const moveWorkers = 4
+const moveChannelCap = 100
+
 // Move transfers the given items to a fresh quarantine batch and returns its
 // restore ID. Items that are missing, locked, or symlinks are counted as
 // skipped and excluded from the manifest so a later restore cannot resurrect
-// dangerous targets.
-func Move(ctx context.Context, items []types.Item) (string, int64, int, int, error) {
+// dangerous targets. Four workers process files concurrently; progress is
+// reported through the callback (throttled to ~250 ms).
+func Move(ctx context.Context, items []types.Item, progress types.ProgressFn) (string, int64, int, int, error) {
 	if err := acquireLock(); err != nil {
 		return "", 0, 0, 0, err
 	}
@@ -103,88 +109,176 @@ func Move(ctx context.Context, items []types.Item) (string, int64, int, int, err
 
 	qDir := filepath.Join(BaseDir(), id)
 
-	manifest := types.Manifest{
-		ID:        id,
-		CreatedAt: time.Now(),
-		Label:     "Cleanup " + id,
-		Items:     make([]types.ManifestItem, 0, len(items)),
+	// Pre-compute category set before consuming items.
+	catSet := make(map[string]struct{})
+	var totalItems int
+	var totalBytes int64
+	for _, it := range items {
+		if !it.Selected {
+			continue
+		}
+		totalItems++
+		totalBytes += it.Size
+		if it.Category != "" {
+			catSet[it.Category] = struct{}{}
+		}
 	}
+
+	manifest := types.Manifest{
+		ID:         id,
+		CreatedAt:  time.Now(),
+		Label:      "Cleanup " + id,
+		Items:      make([]types.ManifestItem, 0, totalItems),
+		Categories: make([]string, 0, len(catSet)),
+	}
+	for c := range catSet {
+		manifest.Categories = append(manifest.Categories, c)
+	}
+	sort.Strings(manifest.Categories)
 
 	journal, err := NewJournal(qDir)
 	if err != nil {
 		return "", 0, 0, 0, fmt.Errorf("create journal: %w", err)
 	}
 
-	var freed int64
-	var files int
-	var skipped int
-	for _, it := range items {
-		if ctx.Err() != nil {
-			journal.Close()
-			return id, freed, files, skipped, ctx.Err()
-		}
-		if !it.Selected {
-			continue
-		}
-		info, err := os.Lstat(it.Path)
-		if err != nil {
-			skipped++
-			continue
-		}
-		if info.Mode()&os.ModeSymlink != 0 {
-			skipped++
-			slog.Warn("quarantine: skipping symlink", "path", it.Path)
-			continue
-		}
+	itemCh := make(chan types.Item, moveChannelCap)
 
-		qPath := uniquePath(qDir, filepath.Base(it.Path)+".brm")
+	var (
+		mu        sync.Mutex
+		freed     int64
+		files     int32
+		skipped   int32
+		hadErr    int32
+		firstErr  error
+		moveSeq   int64
+		startTime = time.Now()
+		lastProg  time.Time
+	)
 
-		if err := journal.Begin(it.Path, qPath, it.Size, it.Category); err != nil {
-			skipped++
-			slog.Warn("quarantine: failed to write journal begin", "error", err)
-			continue
-		}
-
-		moved := true
-		if err := os.Rename(it.Path, qPath); err != nil {
-			if err := copyAndDelete(it.Path, qPath); err != nil {
-				moved = false
-				slog.Warn("quarantine: failed to move file", "path", it.Path, "error", err)
+	// Producer: feed items into channel, checking ctx cancellation.
+	go func() {
+		defer close(itemCh)
+		for _, it := range items {
+			select {
+			case <-ctx.Done():
+				return
+			case itemCh <- it:
 			}
 		}
+	}()
 
-		if moved {
-			if err := journal.Commit(it.Path, qPath); err != nil {
-				slog.Warn("quarantine: failed to write journal commit", "error", err)
-				journal.Close()
-				return id, freed, files, skipped, err
+	var wg sync.WaitGroup
+	for i := 0; i < moveWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for it := range itemCh {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+				if !it.Selected {
+					continue
+				}
+				info, err := os.Lstat(it.Path)
+				if err != nil {
+					atomic.AddInt32(&skipped, 1)
+					continue
+				}
+				if info.Mode()&os.ModeSymlink != 0 {
+					atomic.AddInt32(&skipped, 1)
+					slog.Warn("quarantine: skipping symlink", "path", it.Path)
+					continue
+				}
+
+				mu.Lock()
+				qPath := uniquePathAtomic(qDir, it.Path, &moveSeq)
+				journalErr := journal.Begin(it.Path, qPath, it.Size, it.Category)
+				mu.Unlock()
+				if journalErr != nil {
+					atomic.AddInt32(&skipped, 1)
+					slog.Warn("quarantine: failed to write journal begin", "error", journalErr)
+					continue
+				}
+
+				moved := true
+				if err := os.Rename(it.Path, qPath); err != nil {
+					if err := copyAndDelete(ctx, it.Path, qPath); err != nil {
+						moved = false
+						slog.Warn("quarantine: failed to move file", "path", it.Path, "error", err)
+					}
+				}
+
+				if moved {
+					if err := journal.Commit(it.Path, qPath); err != nil {
+						slog.Warn("quarantine: failed to write journal commit", "error", err)
+						journal.Close()
+						atomic.StoreInt32(&hadErr, 1)
+						if firstErr == nil {
+							firstErr = err
+						}
+						return
+					}
+
+					mu.Lock()
+					manifest.Items = append(manifest.Items, types.ManifestItem{
+						Original:    it.Path,
+						Quarantined: qPath,
+						Size:        it.Size,
+					})
+					mu.Unlock()
+					atomic.AddInt64(&freed, it.Size)
+					atomic.AddInt32(&files, 1)
+				} else {
+					atomic.AddInt32(&skipped, 1)
+				}
+
+				if progress != nil {
+					now := time.Now()
+					if now.Sub(lastProg) > 250*time.Millisecond {
+						lastProg = now
+						p := types.Progress{
+							Stage:      "cleaning",
+							Processed:  int(atomic.LoadInt32(&files)) + int(atomic.LoadInt32(&skipped)),
+							Total:      totalItems,
+							Bytes:      atomic.LoadInt64(&freed),
+							TotalBytes: totalBytes,
+							StartedAt:  startTime,
+						}
+						progress(p)
+					}
+				}
 			}
+		}()
+	}
+	wg.Wait()
 
-			manifest.Items = append(manifest.Items, types.ManifestItem{
-				Original:    it.Path,
-				Quarantined: qPath,
-				Size:        it.Size,
-			})
-			freed += it.Size
-			files++
-		} else {
-			skipped++
-		}
+	if ctx.Err() != nil && atomic.LoadInt32(&files) == 0 {
+		journal.Close()
+		_ = os.RemoveAll(qDir)
+		return id, 0, 0, 0, ctx.Err()
 	}
-	manifest.TotalSize = freed
-	manifest.Files = files
 
-	catSet := make(map[string]struct{})
-	for _, it := range items {
-		if it.Selected && it.Category != "" {
-			catSet[it.Category] = struct{}{}
-		}
+	if atomic.LoadInt32(&hadErr) != 0 {
+		journal.Close()
+		return id, atomic.LoadInt64(&freed), int(atomic.LoadInt32(&files)), int(atomic.LoadInt32(&skipped)), firstErr
 	}
-	manifest.Categories = make([]string, 0, len(catSet))
-	for c := range catSet {
-		manifest.Categories = append(manifest.Categories, c)
+
+	// Final progress tick so the consumer sees 100 %.
+	if progress != nil {
+		progress(types.Progress{
+			Stage:      "cleaning",
+			Processed:  totalItems,
+			Total:      totalItems,
+			Bytes:      atomic.LoadInt64(&freed),
+			TotalBytes: totalBytes,
+			StartedAt:  startTime,
+		})
 	}
-	sort.Strings(manifest.Categories)
+
+	manifest.TotalSize = atomic.LoadInt64(&freed)
+	manifest.Files = int(atomic.LoadInt32(&files))
 
 	manifestPath := filepath.Join(qDir, "manifest.json")
 	if err := writeManifest(manifestPath, &manifest); err != nil {
@@ -195,7 +289,7 @@ func Move(ctx context.Context, items []types.Item) (string, int64, int, int, err
 	journal.Close()
 	_ = os.Remove(filepath.Join(qDir, "journal.jsonl"))
 
-	return id, freed, files, skipped, nil
+	return id, atomic.LoadInt64(&freed), int(atomic.LoadInt32(&files)), int(atomic.LoadInt32(&skipped)), nil
 }
 
 // Restore returns quarantined files to their original paths using the manifest
@@ -259,7 +353,7 @@ func Restore(id string, forceOverwrite bool) (int, int, error) {
 			}
 		}
 		if err := os.Rename(it.Quarantined, it.Original); err != nil {
-			if err := copyAndDelete(it.Quarantined, it.Original); err != nil {
+			if err := copyAndDelete(context.Background(), it.Quarantined, it.Original); err != nil {
 				remaining = append(remaining, it)
 				continue
 			}
