@@ -65,7 +65,7 @@ jobs:
 
           $form = @{
             projectSlug        = "broominal"
-            signingPolicySlug  = "release-signing"
+            signingPolicySlug  = "release_signing"
             description        = "${{ env.VERSION }}"
             artifact           = (Get-Item $binary)
           }
