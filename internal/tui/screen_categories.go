@@ -217,21 +217,30 @@ func (m model) viewCategories() string {
 func (m model) viewWarnRecycleBin() string {
 	cat := m.categories[m.detailCat].cat
 
+	maxW := m.width - 6
+	if maxW < 40 {
+		maxW = 40
+	}
+
 	// Stats line mirroring the CategoryInfo layout so the user has context.
-	stats := mutedStyle.Render(fmt.Sprintf("  %s: %s  |  %s: %d  |  %s: %s",
+	stats := mutedStyle.Render(fmt.Sprintf("%s: %s  |  %s: %d  |  %s: %s",
 		i18n.T("size"), util.FormatSize(cat.Size),
 		i18n.T("files"), cat.Files,
 		i18n.T("risk"), i18n.T("risk_"+strings.ToLower(string(cat.Risk)))))
 
-	content := dangerStyle.Render(fmt.Sprintf(i18n.T("recycle_bin_warn"), cat.Files)) + "\n" +
+	// Main warning title (white, bold) and stats line below it.
+	warnTitle := selectedStyle.Render(fmt.Sprintf(i18n.T("recycle_bin_warn"), cat.Files))
+
+	content := warnTitle + "\n" +
 		stats + "\n\n" +
-		dangerStyle.Render(i18n.T("recycle_bin_warn_body")) + "\n"
+		mutedStyle.Width(maxW).Render(i18n.T("recycle_bin_warn_body")) + "\n"
+
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("proceed")),
 		keyHint("Esc", i18n.T("back")),
 	)
-	return m.appFrame(dangerStyle.Render("⚠  "+i18n.T("warning")), content, foot)
+	return m.appFrame(i18n.T("warning"), content, foot)
 }
 
 func (m model) viewWarnDuplicates() string {
@@ -287,19 +296,22 @@ func (m model) viewConfirm() string {
 }
 
 func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
-	var safe, review int64
+	var safe, review, danger int64
 	var files int
 	for _, c := range cats {
 		if c.selected {
-			if c.cat.Risk == types.RiskSafe {
+			switch c.cat.Risk {
+			case types.RiskSafe:
 				safe += c.cat.Size
-			} else {
+			case types.RiskReview:
 				review += c.cat.Size
+			case types.RiskDanger:
+				danger += c.cat.Size
 			}
 			files += c.cat.Files
 		}
 	}
-	total := safe + review
+	total := safe + review + danger
 
 	const labelWidth = 22
 	row := func(label string, val string, vs lipgloss.Style) string {
@@ -313,7 +325,16 @@ func buildConfirmMessage(cats []categoryItem, result *types.ScanResult) string {
 	body += row(i18n.T("risk_safe"), util.FormatSize(safe), safeStyle)
 	if review > 0 {
 		body += row(i18n.T("risk_review"), util.FormatSize(review), reviewStyle)
-		body += "\n" + reviewStyle.Render("  ⚠  "+i18n.T("contains_review_files")) + "\n\n"
+	}
+	if danger > 0 {
+		body += row(i18n.T("risk_danger"), util.FormatSize(danger), dangerStyle)
+	}
+	if review > 0 || danger > 0 {
+		warnStyle := reviewStyle
+		if danger > 0 {
+			warnStyle = dangerStyle
+		}
+		body += "\n" + warnStyle.Render("  ⚠  "+i18n.T("contains_review_files")) + "\n\n"
 	} else {
 		body += "\n"
 	}

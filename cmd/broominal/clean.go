@@ -95,9 +95,10 @@ func printCleanPreview(res *types.ScanResult) {
 		)
 	}
 	fmt.Println()
-	fmt.Printf("  Total %s  ·  Safe %s  ·  Review %s\n",
+	fmt.Printf("  Total %s  ·  Safe %s  ·  Review %s  ·  Danger %s\n",
 		util.FormatSize(res.TotalSize),
 		util.FormatSize(res.SafeSize),
 		util.FormatSize(res.ReviewSize),
+		util.FormatSize(res.DangerSize),
 	)
 }

@@ -222,7 +222,7 @@ func TestViewCategoriesAlignsLongNames(t *testing.T) {
 		{cat: types.CategorySummary{Category: "BBBBBBBBBBBBBBBBBBBBBBBBBBBB", Size: 100, Files: 1, Risk: types.RiskSafe}, selected: true},
 		{cat: types.CategorySummary{Category: "CCCCCCCCCCCCCCCCCCCCCCCCCCCC", Size: 50, Files: 2, Risk: types.RiskReview}, selected: false},
 	}
-	m.selectedIdx = 0
+	m.selectedIdx = -1
 
 	out := ansi.Strip(m.View())
 	var sizeCols []int
@@ -358,6 +358,7 @@ func TestBuildConfirmMessage(t *testing.T) {
 	cats := []categoryItem{
 		{cat: types.CategorySummary{Category: "Temp", Risk: types.RiskSafe, Size: 100, Files: 2}, selected: true},
 		{cat: types.CategorySummary{Category: "Downloads", Risk: types.RiskReview, Size: 200, Files: 1}, selected: true},
+		{cat: types.CategorySummary{Category: "Recycle Bin", Risk: types.RiskDanger, Size: 300, Files: 3}, selected: true},
 	}
 	res := &types.ScanResult{}
 	msg := buildConfirmMessage(cats, res)
@@ -372,6 +373,9 @@ func TestBuildConfirmMessage(t *testing.T) {
 	}
 	if !strings.Contains(msg, i18n.T("risk_review")) {
 		t.Errorf("should contain %q", i18n.T("risk_review"))
+	}
+	if !strings.Contains(msg, i18n.T("risk_danger")) {
+		t.Errorf("should contain %q", i18n.T("risk_danger"))
 	}
 }
 
