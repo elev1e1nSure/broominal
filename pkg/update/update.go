@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -102,18 +103,32 @@ func HasInternet() bool {
 	return true
 }
 
-// DownloadUpdate downloads the Windows binary from the release
+// DownloadUpdate downloads the Windows binary from the release.
+// It prefers an exact runtime.GOARCH match (broominal_windows_amd64.exe),
+// falls back to any *windows*.exe, and finally any .exe as last resort.
 func DownloadUpdate(release *Release) (string, error) {
-	// Find the Windows asset
+	expected := fmt.Sprintf("broominal_windows_%s.exe", runtime.GOARCH)
+
 	var asset *Asset
+	// Stage 1: exact GOARCH match (e.g. broominal_windows_amd64.exe)
 	for i := range release.Assets {
 		a := &release.Assets[i]
-		if strings.Contains(a.Name, "windows") && strings.HasSuffix(a.Name, ".exe") {
+		if strings.EqualFold(a.Name, expected) {
 			asset = a
 			break
 		}
 	}
-	// Fallback: any .exe if no "windows"-named asset found
+	// Stage 2: any windows .exe
+	if asset == nil {
+		for i := range release.Assets {
+			a := &release.Assets[i]
+			if strings.Contains(a.Name, "windows") && strings.HasSuffix(a.Name, ".exe") {
+				asset = a
+				break
+			}
+		}
+	}
+	// Stage 3: any .exe as last resort
 	if asset == nil {
 		for i := range release.Assets {
 			a := &release.Assets[i]
