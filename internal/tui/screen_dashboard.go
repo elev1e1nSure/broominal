@@ -78,16 +78,34 @@ func (m model) viewDashboard() string {
 		foot := footer(keyHint("Esc", i18n.T("back")))
 		return m.appFrame(i18n.T("scanning"), content, foot)
 	}
-
-	var totalFiles int
-	for _, c := range m.result.Categories {
-		totalFiles += c.Files
+	if len(m.categories) == 0 && m.result != nil {
+		m.categories = make([]categoryItem, 0, len(m.result.Categories))
+		for _, c := range m.result.Categories {
+			m.categories = append(m.categories, categoryItem{cat: c, selected: true})
+		}
 	}
 
-	cats := make([]types.CategorySummary, len(m.result.Categories))
-	copy(cats, m.result.Categories)
-	sort.Slice(cats, func(i, j int) bool {
-		return cats[i].Size > cats[j].Size
+	var totalFiles int
+	var safeSize, reviewSize, dangerSize int64
+	var selectedCats []types.CategorySummary
+
+	for _, c := range m.categories {
+		if c.selected {
+			totalFiles += c.cat.Files
+			switch c.cat.Risk {
+			case types.RiskSafe:
+				safeSize += c.cat.Size
+			case types.RiskReview:
+				reviewSize += c.cat.Size
+			case types.RiskDanger:
+				dangerSize += c.cat.Size
+			}
+			selectedCats = append(selectedCats, c.cat)
+		}
+	}
+
+	sort.Slice(selectedCats, func(i, j int) bool {
+		return selectedCats[i].Size > selectedCats[j].Size
 	})
 
 	var content string
@@ -95,10 +113,19 @@ func (m model) viewDashboard() string {
 	if totalFiles == 0 {
 		content += safeStyle.Render(i18n.T("nothing_found")) + "\n"
 		content += mutedStyle.Render(i18n.T("nothing_found_desc")) + "\n\n"
-		foot := footer(
-			keyHint("Q", i18n.T("quit")),
-			keyHint("Esc", i18n.T("back")),
-		)
+		var foot string
+		if len(m.categories) > 0 {
+			foot = footer(
+				keyHint("Q", i18n.T("quit")),
+				keyHint("D", i18n.T("select_categories")),
+				keyHint("Esc", i18n.T("back")),
+			)
+		} else {
+			foot = footer(
+				keyHint("Q", i18n.T("quit")),
+				keyHint("Esc", i18n.T("back")),
+			)
+		}
 		return m.appFrame(i18n.T("dashboard"), content, foot)
 	}
 
@@ -111,9 +138,9 @@ func (m model) viewDashboard() string {
 		return rs.Render("■") + " " + mutedStyle.Render(label) + " " + rs.Render(sizeStr)
 	}
 	content += fmt.Sprintf("  %s    %s    %s\n",
-		riskDot(i18n.T("risk_safe"), m.result.SafeSize, safeStyle),
-		riskDot(i18n.T("risk_review"), m.result.ReviewSize, reviewStyle),
-		riskDot(i18n.T("risk_danger"), m.result.DangerSize, dangerStyle),
+		riskDot(i18n.T("risk_safe"), safeSize, safeStyle),
+		riskDot(i18n.T("risk_review"), reviewSize, reviewStyle),
+		riskDot(i18n.T("risk_danger"), dangerSize, dangerStyle),
 	)
 
 	content += mutedStyle.Render(strings.Repeat("─", 52)) + "\n\n"
@@ -122,7 +149,7 @@ func (m model) viewDashboard() string {
 	const nameWidth = 30
 	const barWidth = 18
 	maxSize := int64(1)
-	for _, c := range cats {
+	for _, c := range selectedCats {
 		if c.Size > maxSize {
 			maxSize = c.Size
 		}
@@ -136,7 +163,7 @@ func (m model) viewDashboard() string {
 	var renderedCats int
 	var skippedCats int
 
-	for _, c := range cats {
+	for _, c := range selectedCats {
 		if c.Size == 0 {
 			continue
 		}
