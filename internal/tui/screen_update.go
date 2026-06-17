@@ -120,10 +120,7 @@ func (m model) viewUpdating() string {
 		foot = footer(keyHint("Q", i18n.T("quit")), keyHint("Esc", i18n.T("back")))
 	} else {
 		width := 40
-		pos := m.updateTick % (width * 2)
-		if pos >= width {
-			pos = width*2 - 1 - pos
-		}
+		pos := m.updateTick % width
 		fraction := float64(pos) / float64(width-1)
 		bar := m.progress.ViewAs(fraction)
 		content += fmt.Sprintf("\n%s\n", bar)

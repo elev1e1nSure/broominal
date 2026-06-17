@@ -106,7 +106,8 @@ type model struct {
 	// Set to true when update is installed and process should restart
 	restartAfterUpdate bool
 	// Cancellation for long-running operations
-	cleanCtxCancel context.CancelFunc
+	cleanCtxCancel     context.CancelFunc
+	deletedQuarantines map[string]bool
 }
 
 type categoryItem struct {
@@ -251,8 +252,9 @@ func initialModel() model {
 	)
 
 	return model{
-		screen:   ScreenMainMenu,
-		spinner:  s,
-		progress: p,
+		screen:             ScreenMainMenu,
+		spinner:            s,
+		progress:           p,
+		deletedQuarantines: make(map[string]bool),
 	}
 }

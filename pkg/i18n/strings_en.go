@@ -234,7 +234,7 @@ var enStrings = map[string]string{
 	"cat_desc_opera_cache":                "Cached website data for Opera. Rebuilt as you browse. Passwords, cookies, bookmarks, and history are not affected.",
 	"cat_desc_brave_cache":                "Cached website data for Brave. Rebuilt as you browse. Passwords, cookies, bookmarks, and history are not affected.",
 	"cat_desc_vivaldi_cache":              "Cached website data for Vivaldi. Rebuilt as you browse. Passwords, cookies, bookmarks, and history are not affected.",
-	"cat_desc_yandex_cache":              "Cached website data for Yandex Browser. Rebuilt as you browse. Passwords, cookies, bookmarks, and history are not affected.",
+	"cat_desc_yandex_cache":               "Cached website data for Yandex Browser. Rebuilt as you browse. Passwords, cookies, bookmarks, and history are not affected.",
 	"cat_desc_windows_defender":           "Windows Defender scan history and quarantine log. Any files Defender has quarantined — including possible false positives — will be permanently destroyed and cannot be recovered. Real-time protection continues to work normally after removal.",
 	"cat_desc_windows_prefetch":           "Windows Prefetch files that speed up application startup. Rebuilt automatically after removal. First launches may be slightly slower.",
 	"cat_desc_icon_cache":                 "Windows icon cache used to render file icons in Explorer. Rebuilt automatically. May briefly show blank icons until the cache is warm.",

@@ -99,18 +99,8 @@ func (m model) viewDashboard() string {
 			keyHint("Q", i18n.T("quit")),
 			keyHint("Esc", i18n.T("back")),
 		)
-		return m.appFrame("", content, foot)
+		return m.appFrame(i18n.T("dashboard"), content, foot)
 	}
-
-	// Stats row: total size · files · categories
-	secondary := fmt.Sprintf("%d %s  ·  %d %s",
-		totalFiles, i18n.T("files"),
-		len(m.result.Categories), i18n.T("stat_categories"),
-	)
-	content += fmt.Sprintf("  %s  %s\n",
-		valueStyle.Render(util.FormatSize(m.result.TotalSize)),
-		mutedStyle.Render("·  "+secondary),
-	)
 
 	// Risk breakdown row
 	riskDot := func(label string, size int64, rs lipgloss.Style) string {
@@ -178,5 +168,5 @@ func (m model) viewDashboard() string {
 		keyHint("Esc", i18n.T("back")),
 	)
 
-	return m.appFrame("", content, foot)
+	return m.appFrame(i18n.T("dashboard"), content, foot)
 }

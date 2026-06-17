@@ -81,6 +81,8 @@ func cleanupQuarantines(shouldDelete func(time.Time) bool) (int, int64, error) {
 				size += info.Size()
 				return nil
 			})
+			// Delete manifest first so it won't reappear in the TUI even if forceRemoveAll is partial/delayed
+			_ = os.Remove(manifestPath)
 			if err := forceRemoveAll(dirPath); err != nil {
 				if errors.Is(err, ErrScheduledForReboot) {
 					deleted++
@@ -297,17 +299,15 @@ func Delete(id string) (int64, error) {
 			return nil
 		})
 	}
+	// Delete manifest first so it won't reappear in the TUI even if forceRemoveAll is partial/delayed
+	manifestPath := filepath.Join(dirPath, "manifest.json")
+	_ = os.Remove(manifestPath)
+
 	if err := forceRemoveAll(dirPath); err != nil {
 		if errors.Is(err, ErrScheduledForReboot) {
 			return size, ErrScheduledForReboot
 		}
-		// If manifest is gone the entry won't reappear — locked leftover files are best-effort.
-		manifestPath := filepath.Join(dirPath, "manifest.json")
-		if _, statErr := os.Stat(manifestPath); os.IsNotExist(statErr) {
-			slog.Warn("quarantine: manifest removed but dir has locked files", "path", dirPath, "error", err)
-			return size, nil
-		}
-		return 0, err
+		return size, nil
 	}
 	return size, nil
 }

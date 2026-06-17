@@ -76,6 +76,7 @@ var scanFuncs = map[string]func(context.Context, *config.Config) ([]types.Item, 
 	"PowerShell History":         scanPowershellHistory,
 	"Postman Cache":              scanPostmanCache,
 	"Package Manager Cache":      scanPkgManagerCache,
+	"Archive Temp Files":         scanArchiveTemp,
 	// Deep
 	"Recycle Bin":               scanRecycleBin,
 	"Windows Defender":          scanWindowsDefender,

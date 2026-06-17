@@ -285,8 +285,7 @@ func (m model) viewCategoryInfo() string {
 }
 
 func (m model) viewConfirm() string {
-	content := m.confirmMsg +
-		"  " + mutedStyle.Render(strings.Repeat("─", 42)) + "\n"
+	content := m.confirmMsg
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("confirm")),

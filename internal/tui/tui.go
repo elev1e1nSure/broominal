@@ -227,7 +227,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.screen = ScreenError
 			return m, nil
 		}
-		m.restoreEntries = reloadEntries()
+		if m.deleteAllQuarantine {
+			for _, entry := range m.restoreEntries {
+				m.deletedQuarantines[entry.id] = true
+			}
+		} else if m.restoreIdx < len(m.restoreEntries) {
+			m.deletedQuarantines[m.restoreEntries[m.restoreIdx].id] = true
+		}
+		m.restoreEntries = m.reloadEntriesFiltered()
 		m.restoreIdx = 0
 		m.screen = ScreenRestore
 		return m, nil

@@ -153,12 +153,6 @@ func TestViewDashboard(t *testing.T) {
 	if !strings.Contains(out, "Dashboard") && !strings.Contains(out, "Scan Results") {
 		t.Error("dashboard view should contain 'Dashboard' or 'Scan Results'")
 	}
-	if !strings.Contains(out, "300 B") {
-		t.Error("dashboard view should contain total size")
-	}
-	if !strings.Contains(out, "3 Files") {
-		t.Error("dashboard view should contain file count")
-	}
 	if strings.Contains(out, "░") || strings.Contains(out, "█") {
 		t.Error("dashboard bars should use fixed background segments")
 	}

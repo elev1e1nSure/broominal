@@ -69,6 +69,9 @@ func (m model) handleKeyMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 			var entries []restoreEntry
 			for _, id := range ids {
+				if m.deletedQuarantines[id] {
+					continue
+				}
 				mf, _ := quarantine.GetManifest(id)
 				if mf == nil {
 					continue

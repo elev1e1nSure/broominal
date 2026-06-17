@@ -37,7 +37,7 @@ func (m model) handleKeyRestore(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	// Delete selected — go to confirmation screen
-	if key.Matches(msg, key.NewBinding(key.WithKeys("x"))) {
+	if key.Matches(msg, key.NewBinding(key.WithKeys("x", "d"))) {
 		if len(m.restoreEntries) == 0 || m.restoreIdx >= len(m.restoreEntries) {
 			return m, nil
 		}
@@ -64,7 +64,7 @@ func (m model) handleKeyRestore(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.restoreResult = fmt.Sprintf(i18n.T("restored_n_skipped"), restored, skipped)
-		m.restoreEntries = reloadEntries()
+		m.restoreEntries = m.reloadEntriesFiltered()
 		if m.restoreIdx >= len(m.restoreEntries) {
 			m.restoreIdx = len(m.restoreEntries) - 1
 			if m.restoreIdx < 0 {
@@ -137,10 +137,7 @@ func (m model) viewDeletingQuarantine() string {
 	}
 
 	width := 40
-	pos := m.updateTick % (width * 2)
-	if pos >= width {
-		pos = width*2 - 1 - pos
-	}
+	pos := m.updateTick % width
 	fraction := float64(pos) / float64(width-1)
 	bar := m.progress.ViewAs(fraction)
 
@@ -190,7 +187,7 @@ func (m model) viewRestore() string {
 	foot := footer(
 		keyHint("Q", i18n.T("quit")),
 		keyHint("Enter", i18n.T("restore")),
-		keyHint("X", i18n.T("delete")),
+		keyHint("D", i18n.T("delete")),
 		keyHint("A", i18n.T("delete_all")),
 		keyHint("Esc", i18n.T("back")),
 	)
@@ -228,11 +225,14 @@ func (m model) viewConfirmDeleteAllQuarantine() string {
 	return m.appFrame(i18n.T("warning"), content, foot)
 }
 
-// reloadEntries returns an up-to-date list of quarantine entries.
-func reloadEntries() []restoreEntry {
+// reloadEntriesFiltered returns an up-to-date list of quarantine entries, omitting deleted ones.
+func (m model) reloadEntriesFiltered() []restoreEntry {
 	ids, _ := quarantine.List()
 	var entries []restoreEntry
 	for _, rid := range ids {
+		if m.deletedQuarantines[rid] {
+			continue
+		}
 		mf, _ := quarantine.GetManifest(rid)
 		if mf == nil {
 			continue
