@@ -19,7 +19,7 @@
 
 **broominal** cleans Windows by moving files into **quarantine** — not deleting them. Every cleanup is inspectable and restorable.
 
-62 scanner categories across three risk levels (Safe / Review / Danger), interactive TUI, JSON manifests, multilingual (EN/RU).
+58 scanner categories across three risk levels (Safe / Review / Danger), interactive TUI, JSON manifests, multilingual (EN/RU).
 
 No fake boost magic. No hidden tweaks. No "trust me bro" cleanup.
 
@@ -52,13 +52,13 @@ Operations are protected by a **Write-Ahead Log (WAL)** (`journal.jsonl`) that g
 
 ## Safety
 
-| Level | Behavior |
-|-------|----------|
-| **Safe** | Auto-selected. Temp, caches, auto-rebuilt data |
-| **Review** | Manual select. Downloads, dumps, update cache |
-| **Danger** | Never auto-selected. System paths |
+| Level | Description |
+|-------|-------------|
+| **Safe** | Temp, caches, auto-rebuilt data |
+| **Review** | Downloads, dumps, update cache |
+| **Danger** | System paths |
 
-Three presets: **Quick** (19 safe categories) → **Standard** (42 total) → **Deep** (62 total). Review items require manual selection regardless of preset.
+Three presets: **Quick** (19 safe categories) → **Standard** (43 total) → **Deep** (58 total). All categories enabled by the preset are selected for cleanup by default.
 
 ## Commands
 

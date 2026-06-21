@@ -89,7 +89,8 @@ internal/
 3. **`pkg/scanner/scanner_registry.go`** — wire `"Category Name": scanXxx` in `scanFuncs`  
 4. **`pkg/i18n/strings_en.go` & `pkg/i18n/strings_ru.go`** — add translations for `cat_*` and `cat_desc_*` for EN and RU
 
-A missing registration causes a startup panic — safe by design.
+> [!IMPORTANT]
+> A missing category registration causes a startup panic — safe by design.
 
 ## Config
 

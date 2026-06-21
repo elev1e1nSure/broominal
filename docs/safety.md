@@ -2,19 +2,20 @@
 
 ## Core Rule
 
+> [!IMPORTANT]
 > Cleanup must be **reversible**.
 
 Files are never deleted permanently by default. They are moved to a local **quarantine** directory with a JSON manifest. Any cleanup can be inspected and restored.
 
 ## Risk Levels
 
-Every scanned file gets a risk level based on its category.
+Every scanned file gets a risk level based on its category. These levels serve as visual guides in the TUI (green/yellow/red) to help the user identify potentially sensitive areas. All categories enabled by the active preset are scanned and selected for cleanup by default, but the user can always review and deselect them before execution.
 
-| Level | Behavior |
+| Level | Behavior / Description |
 |-------|----------|
-| **Safe** | Auto-selected for cleanup. Temp files, caches, and automatically-rebuilt data. |
-| **Review** | Must be manually selected. Downloads, dumps, update caches — check before removing. |
-| **Danger** | Never auto-selected. System paths, protected extensions. |
+| **Safe** | Temp files, caches, and automatically-rebuilt data. |
+| **Review** | Downloads, dumps, update caches — check before removing. |
+| **Danger** | System paths, protected extensions. |
 
 Review categories exist in Standard and Deep presets. Quick preset contains only Safe categories.
 
@@ -40,7 +41,10 @@ Restore reverses the mapping. If the original path already exists, the TUI shows
 
 ### When Quarantine Is Disabled
 
-If `QuarantineEnabled = false` in config, `os.RemoveAll` is called directly. **No manifest is created, no restoration is possible.** A warning is shown in the TUI.
+> [!CAUTION]
+> If `QuarantineEnabled = false` in config, `os.RemoveAll` is called directly.
+> **No manifest is created, and restoration is not possible.**
+> A warning is shown in the TUI.
 
 ## Security Guards
 
@@ -66,7 +70,7 @@ Some categories apply age-based filters to avoid touching active data:
 | Preset | Categories | Behavior |
 |--------|-----------|----------|
 | **Quick** | 19 | Temp + browser + GPU caches. All Safe. |
-| **Standard** | 42 total | Adds app caches, logs, dev tool caches. Some Review. |
+| **Standard** | 43 total | Adds app caches, logs, dev tool caches. Some Review. |
 | **Deep** | 58 total | Adds user data areas, system cleanup. More Review items. |
 
-All Review categories require manual selection regardless of preset. The preset only controls which categories appear — it does not auto-select Review items.
+All categories enabled by the preset are selected by default. The user can review the category details and manually deselect any items before initiating the cleanup.

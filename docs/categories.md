@@ -1,6 +1,6 @@
 # Cleanup Categories
 
-62 categories across three presets. Risk levels: **Safe** (auto-selected), **Review** (manual select), **Danger** (never auto-selected).
+58 categories across three presets. Risk levels: **Safe**, **Review**, **Danger** (visual cues indicating severity and potential impact).
 
 ---
 
@@ -59,22 +59,22 @@ App caches and logs. Enabled in Standard and Deep presets.
 | **BranchCache** | `%SystemRoot%\ServiceProfiles\NetworkService\AppData\Local\PeerDistRepub` |
 | **OneDrive Logs** | `%LOCALAPPDATA%\Microsoft\OneDrive\logs`, `%USERPROFILE%\OneDrive\Logs` |
 | **Remote Desktop Cache** | `%LOCALAPPDATA%\Microsoft\Terminal Server Client\Cache` |
-| **PowerShell History** | `%APPDATA%\Microsoft\Windows\PowerShell\PSReadLine\*` |
+| **Archive Temp Files** | Archive/extract leftovers (`.tmp`, `.part`, `.7z`, `_unpack` etc.) in `%TEMP%` |
 | **Postman Cache** | `%APPDATA%\Postman\Cache`, `Code Cache`, `GPUCache` |
 | **Package Manager Cache** | Chocolatey `<ChocolateyInstall>\cache`, Scoop `%USERPROFILE%\scoop\cache`, winget source indexes, pip wheels, Conda `pkgs\` |
 
 ---
 
-## Deep — 16 additional categories
+## Deep — 15 additional categories
 
-Areas that may contain user data or affect system behavior. Review carefully.
+> [!WARNING]
+> Areas that may contain user data or affect system behavior. Review carefully.
 
 | Category | Paths |
 |----------|-------|
 | **Windows Defender** (⚠ Review) | `%ProgramData%\Microsoft\Windows Defender\Scans\History` |
 | **Startup Leftovers** (⚠ Review) | `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` |
 | **Scheduled Tasks** (⚠ Review) | `%SystemRoot%\System32\Tasks` (non-Microsoft, orphaned) |
-| **Recent Documents** (⚠ Review) | `%APPDATA%\Microsoft\Windows\Recent\*.lnk` |
 | **Old Chkdsk Files** (⚠ Review) | `FOUND.*` dirs on all drives |
 | **RetailDemo Content** | `%SystemRoot%\ServiceProfiles\LocalService\AppData\Local\Microsoft\Windows\RetailDemo` |
 | **Thumbs.db** | `Thumbs.db`, `ehthumbs.db` in user profile |

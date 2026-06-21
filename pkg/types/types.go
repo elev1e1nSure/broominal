@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// RiskLevel expresses how dangerous it is to delete a file. It drives the UI color
-// and gates which items the `clean` command refuses to touch without --danger.
+// RiskLevel expresses the potential impact of deleting a category's files. It drives
+// the UI color coding in the TUI.
 type RiskLevel string
 
 const (
