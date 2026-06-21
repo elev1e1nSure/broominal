@@ -78,11 +78,9 @@ var scanFuncs = map[string]func(context.Context, *config.Config) ([]types.Item, 
 	"Package Manager Cache":      scanPkgManagerCache,
 	"Archive Temp Files":         scanArchiveTemp,
 	// Deep
-	"Recycle Bin":               scanRecycleBin,
 	"Windows Defender":          scanWindowsDefender,
 	"Startup Leftovers":         scanStartupLeftovers,
 	"Scheduled Tasks":           scanScheduledTasksLeftovers,
-	"Duplicate Files":           scanDuplicateFiles,
 	"Recent Documents":          scanRecentDocuments,
 	"Old Chkdsk Files":          scanOldChkdskFiles,
 	"RetailDemo Content":        scanRetailDemoContent,
@@ -96,8 +94,6 @@ var scanFuncs = map[string]func(context.Context, *config.Config) ([]types.Item, 
 	"Crash & Memory Dumps":      scanCrashMemoryDumps,
 	"Microsoft Store Cache":     scanMsStoreCache,
 	"Printer Spooler":           scanPrinterSpooler,
-	"Old Installers":            scanOldInstallersCat,
-	"Large Old Files":           scanLargeOldFilesCat,
 }
 
 // allScanners is built from categories.All + scanFuncs.

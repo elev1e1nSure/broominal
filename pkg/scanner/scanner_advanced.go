@@ -14,18 +14,6 @@ import (
 	"github.com/elev1e1nSure/broominal/pkg/types"
 )
 
-func scanRecycleBin(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	var items []types.Item
-	for _, rp := range recycleBinPaths() {
-		sub, err := scanDir(ctx, rp, "recycle_bin", types.RiskSafe, nil, true, cfg)
-		if err != nil {
-			slog.Warn("scanner: recycle bin scan failed", "path", rp, "error", err)
-		}
-		items = append(items, sub...)
-	}
-	return items, nil
-}
-
 func scanStartupLeftovers(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
 	var items []types.Item
 	paths := []string{
@@ -99,80 +87,6 @@ func scanScheduledTasksLeftovers(ctx context.Context, cfg *config.Config) ([]typ
 		})
 		return nil
 	})
-	return items, nil
-}
-
-func scanDuplicateFiles(ctx context.Context, cfg *config.Config) ([]types.Item, error) {
-	const minSize = 1 * 1024 * 1024 // 1 MB
-	roots := []string{
-		filepath.Join(os.Getenv("USERPROFILE"), "Downloads"),
-		filepath.Join(os.Getenv("USERPROFILE"), "Desktop"),
-		filepath.Join(os.Getenv("USERPROFILE"), "Documents"),
-	}
-	type entry struct {
-		path string
-		size int64
-	}
-	bySize := make(map[int64][]entry)
-	for _, root := range roots {
-		if root == "" {
-			continue
-		}
-		_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
-			if err != nil {
-				if errors.Is(err, os.ErrPermission) {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			if d.IsDir() {
-				return nil
-			}
-			if cfg.IsExcluded(path) {
-				return nil
-			}
-			info, err := d.Info()
-			if err != nil || info.Size() < minSize {
-				return nil
-			}
-			bySize[info.Size()] = append(bySize[info.Size()], entry{path: path, size: info.Size()})
-			return nil
-		})
-	}
-	byHash := make(map[string][]entry)
-	for _, files := range bySize {
-		if len(files) < 2 {
-			continue
-		}
-		for _, f := range files {
-			if ctx.Err() != nil {
-				break
-			}
-			h, err := hashFileMD5(f.path)
-			if err != nil {
-				slog.Warn("scanner: duplicate hash failed", "path", f.path, "error", err)
-				continue
-			}
-			byHash[h] = append(byHash[h], f)
-		}
-	}
-	var items []types.Item
-	for _, entries := range byHash {
-		if len(entries) < 2 {
-			continue
-		}
-		for _, e := range entries[1:] {
-			items = append(items, types.Item{
-				Category: "duplicate_files",
-				Path:     e.path,
-				Size:     e.size,
-				Risk:     types.RiskReview,
-			})
-		}
-	}
 	return items, nil
 }
 

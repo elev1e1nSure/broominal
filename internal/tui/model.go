@@ -25,8 +25,6 @@ const (
 	ScreenMainMenu Screen = iota
 	ScreenDashboard
 	ScreenCategories
-	ScreenWarnRecycleBin
-	ScreenWarnDuplicates
 	ScreenCategoryInfo
 	// Quarantine deletion confirmations
 	ScreenConfirmDeleteQuarantine

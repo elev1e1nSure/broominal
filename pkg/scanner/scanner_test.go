@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/types"
@@ -87,86 +86,6 @@ func TestScanDir(t *testing.T) {
 	}
 	if len(items4) != 1 {
 		t.Fatalf("expected 1 item, got %d", len(items4))
-	}
-}
-
-func TestScanOldInstallers(t *testing.T) {
-	tmp := t.TempDir()
-	old := time.Now().AddDate(0, -12, 0)
-
-	// Create old .exe
-	exe := filepath.Join(tmp, "old_setup.exe")
-	_ = os.WriteFile(exe, []byte("exe"), 0644)
-	_ = os.Chtimes(exe, old, old)
-
-	// Create old .msi
-	msi := filepath.Join(tmp, "old_setup.msi")
-	_ = os.WriteFile(msi, []byte("msi"), 0644)
-	_ = os.Chtimes(msi, old, old)
-
-	// Create recent .exe (should be skipped)
-	recentExe := filepath.Join(tmp, "recent_setup.exe")
-	_ = os.WriteFile(recentExe, []byte("exe"), 0644)
-	_ = os.Chtimes(recentExe, time.Now(), time.Now())
-
-	// Create non-installer old file (should be skipped)
-	other := filepath.Join(tmp, "old_readme.txt")
-	_ = os.WriteFile(other, []byte("txt"), 0644)
-	_ = os.Chtimes(other, old, old)
-
-	cfg := config.Default()
-	cfg.OldInstallerMonths = 6
-
-	items, err := scanOldInstallers(context.Background(), tmp, cfg)
-	if err != nil {
-		t.Fatalf("scanOldInstallers error: %v", err)
-	}
-	if len(items) != 2 {
-		t.Fatalf("expected 2 items, got %d", len(items))
-	}
-	for _, it := range items {
-		if it.Category != "old_installers" {
-			t.Errorf("category = %q, want old_installers", it.Category)
-		}
-	}
-}
-
-func TestScanLargeOldFiles(t *testing.T) {
-	tmp := t.TempDir()
-	old := time.Now().AddDate(0, -12, 0)
-
-	// Create large old file (150 MB)
-	big := filepath.Join(tmp, "big_old.bin")
-	f, _ := os.Create(big)
-	f.Truncate(150 * 1024 * 1024)
-	f.Close()
-	_ = os.Chtimes(big, old, old)
-
-	// Create small old file (should be skipped)
-	small := filepath.Join(tmp, "small_old.bin")
-	_ = os.WriteFile(small, []byte("tiny"), 0644)
-	_ = os.Chtimes(small, old, old)
-
-	// Create large recent file (should be skipped)
-	recent := filepath.Join(tmp, "big_recent.bin")
-	f2, _ := os.Create(recent)
-	f2.Truncate(150 * 1024 * 1024)
-	f2.Close()
-	_ = os.Chtimes(recent, time.Now(), time.Now())
-
-	cfg := config.Default()
-	cfg.LargeFileMonths = 6
-	cfg.LargeFileMinSizeMB = 100
-
-	items, err := scanLargeOldFiles(context.Background(), tmp, cfg)
-	if err != nil {
-		t.Fatalf("scanLargeOldFiles error: %v", err)
-	}
-	if len(items) != 1 {
-		t.Fatalf("expected 1 item, got %d", len(items))
-	}
-	if items[0].Path != big {
-		t.Errorf("path = %q, want %q", items[0].Path, big)
 	}
 }
 
@@ -288,49 +207,6 @@ func TestExtractTaskCommand(t *testing.T) {
 				t.Errorf("extractTaskCommand = %q, want %q", got, tc.want)
 			}
 		})
-	}
-}
-
-func TestScanDuplicateFiles(t *testing.T) {
-	tmp := t.TempDir()
-	t.Setenv("USERPROFILE", tmp)
-
-	downloads := filepath.Join(tmp, "Downloads")
-	_ = os.MkdirAll(downloads, 0755)
-
-	// Two 2-MB files with identical content — one duplicate expected
-	content := make([]byte, 2*1024*1024)
-	for i := range content {
-		content[i] = 0xAB
-	}
-	_ = os.WriteFile(filepath.Join(downloads, "file1.bin"), content, 0644)
-	_ = os.WriteFile(filepath.Join(downloads, "file2.bin"), content, 0644)
-
-	// Different content — should NOT be flagged
-	other := make([]byte, 2*1024*1024)
-	for i := range other {
-		other[i] = 0xCD
-	}
-	_ = os.WriteFile(filepath.Join(downloads, "file3.bin"), other, 0644)
-
-	// Small file (< 1 MB) — should be ignored even if duplicated
-	small := []byte("tiny")
-	_ = os.WriteFile(filepath.Join(downloads, "small1.txt"), small, 0644)
-	_ = os.WriteFile(filepath.Join(downloads, "small2.txt"), small, 0644)
-
-	cfg := config.Default()
-	items, err := scanDuplicateFiles(context.Background(), cfg)
-	if err != nil {
-		t.Fatalf("scanDuplicateFiles error: %v", err)
-	}
-	if len(items) != 1 {
-		t.Fatalf("expected 1 duplicate, got %d", len(items))
-	}
-	if items[0].Category != "duplicate_files" {
-		t.Errorf("category = %q, want duplicate_files", items[0].Category)
-	}
-	if items[0].Risk != types.RiskReview {
-		t.Errorf("risk = %v, want RiskReview", items[0].Risk)
 	}
 }
 

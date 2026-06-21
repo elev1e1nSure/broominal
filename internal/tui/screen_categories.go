@@ -38,11 +38,6 @@ func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("d"))) {
 		if m.selectedIdx < len(m.categories) {
 			m.detailCat = m.selectedIdx
-			cat := m.categories[m.selectedIdx].cat
-			if cat.Category == "Recycle Bin" && cat.Files > 10000 {
-				m.screen = ScreenWarnRecycleBin
-				return m, nil
-			}
 			m.screen = ScreenCategoryInfo
 		}
 		return m, nil
@@ -50,11 +45,6 @@ func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys(" "))) {
 		if m.selectedIdx < len(m.categories) {
 			cat := m.categories[m.selectedIdx]
-			if cat.cat.Category == "Duplicate Files" && !cat.selected {
-				m.detailCat = m.selectedIdx
-				m.screen = ScreenWarnDuplicates
-				return m, nil
-			}
 			m.categories[m.selectedIdx].selected = !cat.selected
 		}
 		return m, nil
@@ -62,40 +52,6 @@ func (m model) handleKeyCategories(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
 		m.screen = ScreenConfirm
 		m.confirmMsg = buildConfirmMessage(m.categories, m.result)
-		return m, nil
-	}
-	return m, nil
-}
-
-func (m model) handleKeyWarnRecycleBin(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
-		return m, tea.Quit
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
-		m.screen = ScreenCategories
-		m.selectedIdx = m.detailCat
-		return m, nil
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
-		m.screen = ScreenCategoryInfo
-		return m, nil
-	}
-	return m, nil
-}
-
-func (m model) handleKeyWarnDuplicates(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, key.NewBinding(key.WithKeys("q"))) {
-		return m, tea.Quit
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
-		m.screen = ScreenCategories
-		m.selectedIdx = m.detailCat
-		return m, nil
-	}
-	if key.Matches(msg, key.NewBinding(key.WithKeys("enter"))) {
-		m.categories[m.detailCat].selected = true
-		m.screen = ScreenCategories
-		m.selectedIdx = m.detailCat
 		return m, nil
 	}
 	return m, nil
@@ -222,45 +178,6 @@ func (m model) viewCategories() string {
 		keyHint("Esc", i18n.T("back")),
 	)
 	return m.appFrame(i18n.T("categories"), content, foot)
-}
-
-func (m model) viewWarnRecycleBin() string {
-	cat := m.categories[m.detailCat].cat
-
-	maxW := m.width - 6
-	if maxW < 40 {
-		maxW = 40
-	}
-
-	// Stats line mirroring the CategoryInfo layout so the user has context.
-	stats := mutedStyle.Render(fmt.Sprintf("%s: %s  |  %s: %d  |  %s: %s",
-		i18n.T("size"), util.FormatSize(cat.Size),
-		i18n.T("files"), cat.Files,
-		i18n.T("risk"), i18n.T("risk_"+strings.ToLower(string(cat.Risk)))))
-
-	// Main warning title (white, bold) and stats line below it.
-	warnTitle := selectedStyle.Render(fmt.Sprintf(i18n.T("recycle_bin_warn"), cat.Files))
-
-	content := warnTitle + "\n" +
-		stats + "\n\n" +
-		mutedStyle.Width(maxW).Render(i18n.T("recycle_bin_warn_body")) + "\n"
-
-	foot := footer(
-		keyHint("Q", i18n.T("quit")),
-		keyHint("Enter", i18n.T("proceed")),
-		keyHint("Esc", i18n.T("back")),
-	)
-	return m.appFrame(i18n.T("warning"), content, foot)
-}
-
-func (m model) viewWarnDuplicates() string {
-	content := reviewStyle.Render(i18n.T("duplicate_files_warn")) + "\n"
-	foot := footer(
-		keyHint("Q", i18n.T("quit")),
-		keyHint("Enter", i18n.T("proceed")),
-		keyHint("Esc", i18n.T("back")),
-	)
-	return m.appFrame(i18n.T("warning"), content, foot)
 }
 
 func (m model) viewCategoryInfo() string {

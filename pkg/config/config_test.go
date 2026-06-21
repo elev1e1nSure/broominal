@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,15 +9,6 @@ import (
 
 func TestDefault(t *testing.T) {
 	cfg := Default()
-	if cfg.OldInstallerMonths != 6 {
-		t.Errorf("OldInstallerMonths = %d, want 6", cfg.OldInstallerMonths)
-	}
-	if cfg.LargeFileMinSizeMB != 100 {
-		t.Errorf("LargeFileMinSizeMB = %d, want 100", cfg.LargeFileMinSizeMB)
-	}
-	if cfg.LargeFileMonths != 6 {
-		t.Errorf("LargeFileMonths = %d, want 6", cfg.LargeFileMonths)
-	}
 	if !cfg.QuarantineEnabled {
 		t.Errorf("QuarantineEnabled = false, want true")
 	}
@@ -30,7 +20,7 @@ func TestDefault(t *testing.T) {
 			t.Errorf("%q should be enabled by default (Quick preset)", cat)
 		}
 	}
-	for _, cat := range []string{"Downloads", "Recycle Bin", "Messenger Cache", "Zoom Cache", "Windows Defender", "Epic Games Cache", "Adobe Cache", "JetBrains Cache", "Office Cache", "Java Cache", "Recent Documents"} {
+	for _, cat := range []string{"Downloads", "Messenger Cache", "Zoom Cache", "Windows Defender", "Epic Games Cache", "Adobe Cache", "JetBrains Cache", "Office Cache", "Java Cache", "Recent Documents"} {
 		if cfg.EnabledCategories[cat] {
 			t.Errorf("%q should be disabled by default (Quick preset)", cat)
 		}
@@ -111,8 +101,8 @@ func TestLoadSave(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load failed: %v", err)
 	}
-	if cfg.OldInstallerMonths != 6 {
-		t.Errorf("unexpected default: %d", cfg.OldInstallerMonths)
+	if !cfg.QuarantineEnabled {
+		t.Errorf("unexpected default: %v", cfg.QuarantineEnabled)
 	}
 
 	// Verify file was created
@@ -121,7 +111,7 @@ func TestLoadSave(t *testing.T) {
 	}
 
 	// Modify and Save
-	cfg.OldInstallerMonths = 12
+	cfg.QuarantineEnabled = false
 	if err := Save(cfg); err != nil {
 		t.Fatalf("Save failed: %v", err)
 	}
@@ -131,8 +121,8 @@ func TestLoadSave(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load after Save failed: %v", err)
 	}
-	if cfg2.OldInstallerMonths != 12 {
-		t.Errorf("OldInstallerMonths = %d, want 12", cfg2.OldInstallerMonths)
+	if cfg2.QuarantineEnabled {
+		t.Errorf("QuarantineEnabled = true, want false")
 	}
 }
 
@@ -239,34 +229,5 @@ func TestLoadReadError(t *testing.T) {
 	_, err := Load()
 	if err == nil {
 		t.Fatal("expected error when config path is a directory")
-	}
-}
-
-func TestLoadInvalidThresholds(t *testing.T) {
-	tmp := t.TempDir()
-	t.Setenv("LOCALAPPDATA", tmp)
-
-	bad := &Config{
-		EnabledCategories:  map[string]bool{"Temp": true},
-		OldInstallerMonths: -1,
-		LargeFileMinSizeMB: 0,
-		LargeFileMonths:    -5,
-	}
-	_ = os.MkdirAll(Dir(), 0755)
-	data, _ := json.Marshal(bad)
-	_ = os.WriteFile(Path(), data, 0644)
-
-	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load failed: %v", err)
-	}
-	if cfg.OldInstallerMonths <= 0 {
-		t.Errorf("OldInstallerMonths = %d, want > 0", cfg.OldInstallerMonths)
-	}
-	if cfg.LargeFileMinSizeMB <= 0 {
-		t.Errorf("LargeFileMinSizeMB = %d, want > 0", cfg.LargeFileMinSizeMB)
-	}
-	if cfg.LargeFileMonths <= 0 {
-		t.Errorf("LargeFileMonths = %d, want > 0", cfg.LargeFileMonths)
 	}
 }

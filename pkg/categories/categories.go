@@ -69,12 +69,10 @@ var All = []Def{
 	{Name: "Postman Cache", InternalKey: "postman_cache", Risk: types.RiskSafe, MinPreset: Standard},
 	{Name: "Package Manager Cache", InternalKey: "pkg_manager_cache", Risk: types.RiskSafe, MinPreset: Standard},
 	{Name: "Archive Temp Files", InternalKey: "archive_temp", Risk: types.RiskSafe, MinPreset: Standard},
-	// Deep
-	{Name: "Recycle Bin", InternalKey: "recycle_bin", Risk: types.RiskDanger, MinPreset: Deep},
 	{Name: "Windows Defender", InternalKey: "windows_defender", Risk: types.RiskReview, MinPreset: Deep},
 	{Name: "Startup Leftovers", InternalKey: "startup_leftover", Risk: types.RiskReview, MinPreset: Deep},
 	{Name: "Scheduled Tasks", InternalKey: "scheduled_tasks_leftover", Risk: types.RiskReview, MinPreset: Deep},
-	{Name: "Duplicate Files", InternalKey: "duplicate_files", Risk: types.RiskReview, MinPreset: Deep},
+	// Deep
 	{Name: "Old Chkdsk Files", InternalKey: "old_chkdsk_files", Risk: types.RiskSafe, MinPreset: Deep},
 	{Name: "RetailDemo Content", InternalKey: "retail_demo_content", Risk: types.RiskSafe, MinPreset: Deep},
 	{Name: "Thumbs.db", InternalKey: "thumbs_db", Risk: types.RiskSafe, MinPreset: Deep},
@@ -87,6 +85,4 @@ var All = []Def{
 	{Name: "Crash & Memory Dumps", InternalKey: "crash_memory_dumps", Risk: types.RiskReview, MinPreset: Deep},
 	{Name: "Microsoft Store Cache", InternalKey: "ms_store_cache", Risk: types.RiskReview, MinPreset: Deep},
 	{Name: "Printer Spooler", InternalKey: "printer_spooler", Risk: types.RiskReview, MinPreset: Deep},
-	{Name: "Old Installers", InternalKey: "old_installers", Risk: types.RiskSafe, MinPreset: Deep},
-	{Name: "Large Old Files", InternalKey: "large_old_files", Risk: types.RiskDanger, MinPreset: Deep},
 }

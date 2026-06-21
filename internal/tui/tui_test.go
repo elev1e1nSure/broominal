@@ -272,22 +272,6 @@ func TestViewRestoreConflict(t *testing.T) {
 	}
 }
 
-func TestViewWarnRecycleBin(t *testing.T) {
-	m := testModel()
-	m.screen = ScreenWarnRecycleBin
-	m.categories = []categoryItem{
-		{cat: types.CategorySummary{Category: "Recycle Bin", Files: 15000}},
-	}
-	m.detailCat = 0
-	out := m.View()
-	if !strings.Contains(out, "Warning") {
-		t.Error("view should contain 'Warning'")
-	}
-	if !strings.Contains(out, "Recycle Bin") {
-		t.Error("view should contain 'Recycle Bin'")
-	}
-}
-
 func TestUpdateErrMsg(t *testing.T) {
 	m := testModel()
 	msg := errMsg{fmt.Errorf("scan failed")}
@@ -352,7 +336,7 @@ func TestBuildConfirmMessage(t *testing.T) {
 	cats := []categoryItem{
 		{cat: types.CategorySummary{Category: "Temp", Risk: types.RiskSafe, Size: 100, Files: 2}, selected: true},
 		{cat: types.CategorySummary{Category: "Downloads", Risk: types.RiskReview, Size: 200, Files: 1}, selected: true},
-		{cat: types.CategorySummary{Category: "Recycle Bin", Risk: types.RiskDanger, Size: 300, Files: 3}, selected: true},
+		{cat: types.CategorySummary{Category: "Windows.old", Risk: types.RiskDanger, Size: 300, Files: 3}, selected: true},
 	}
 	res := &types.ScanResult{}
 	msg := buildConfirmMessage(cats, res)

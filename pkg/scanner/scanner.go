@@ -2,10 +2,8 @@ package scanner
 
 import (
 	"context"
-	"crypto/md5"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -16,7 +14,6 @@ import (
 
 	"github.com/elev1e1nSure/broominal/pkg/config"
 	"github.com/elev1e1nSure/broominal/pkg/types"
-	"golang.org/x/sys/windows"
 )
 
 var browserCachePaths = []string{
@@ -196,55 +193,6 @@ func mergeItems(cats map[string]*types.CategorySummary, name string, risk types.
 		cat.Files++
 		cat.Items = append(cat.Items, it)
 	}
-}
-
-func getLogicalDrives() []string {
-	var drives []string
-	bitMap, err := windows.GetLogicalDrives()
-	if err != nil {
-		drive := os.Getenv("SYSTEMDRIVE")
-		if drive == "" {
-			drive = "C:"
-		}
-		return []string{drive}
-	}
-	for i := uint32(0); i < 26; i++ {
-		if bitMap&(1<<i) != 0 {
-			drives = append(drives, fmt.Sprintf("%c:", 'A'+i))
-		}
-	}
-	return drives
-}
-
-func recycleBinPaths() []string {
-	var paths []string
-	for _, drive := range getLogicalDrives() {
-		binPath := filepath.Join(drive, string(filepath.Separator), "$Recycle.Bin")
-		entries, err := os.ReadDir(binPath)
-		if err != nil {
-			continue
-		}
-		for _, e := range entries {
-			if e.IsDir() && len(e.Name()) > 2 {
-				paths = append(paths, filepath.Join(binPath, e.Name()))
-			}
-		}
-	}
-	return paths
-}
-
-func hashFileMD5(path string) (string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	h := md5.New()
-	lr := io.LimitReader(f, 10*1024*1024) // limit to 10MB for performance on large files
-	if _, err := io.Copy(h, lr); err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
 // scanFirefoxCache walks the Firefox Profiles root and descends into each

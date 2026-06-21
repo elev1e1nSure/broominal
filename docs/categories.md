@@ -65,17 +65,15 @@ App caches and logs. Enabled in Standard and Deep presets.
 
 ---
 
-## Deep — 20 additional categories
+## Deep — 16 additional categories
 
 Areas that may contain user data or affect system behavior. Review carefully.
 
 | Category | Paths |
 |----------|-------|
-| **Recycle Bin** | `$Recycle.Bin\*` |
 | **Windows Defender** (⚠ Review) | `%ProgramData%\Microsoft\Windows Defender\Scans\History` |
 | **Startup Leftovers** (⚠ Review) | `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` |
 | **Scheduled Tasks** (⚠ Review) | `%SystemRoot%\System32\Tasks` (non-Microsoft, orphaned) |
-| **Duplicate Files** (⚠ Review) | Downloads, Desktop, Documents (by MD5 content) |
 | **Recent Documents** (⚠ Review) | `%APPDATA%\Microsoft\Windows\Recent\*.lnk` |
 | **Old Chkdsk Files** (⚠ Review) | `FOUND.*` dirs on all drives |
 | **RetailDemo Content** | `%SystemRoot%\ServiceProfiles\LocalService\AppData\Local\Microsoft\Windows\RetailDemo` |
@@ -89,8 +87,6 @@ Areas that may contain user data or affect system behavior. Review carefully.
 | **Crash & Memory Dumps** (⚠ Review) | CrashDumps, Minidump, MEMORY.DMP (older than 7 days) |
 | **Microsoft Store Cache** (⚠ Review) | UWP/Store app caches — all apps including games |
 | **Printer Spooler** (⚠ Review) | Stuck print jobs older than 1 hour |
-| **Old Installers** (⚠ Review) | Installer artifacts in `%TEMP%`, `%APPDATA%` — `.exe`, `.msi` older than `old_installer_months` |
-| **Large Old Files** (⚠ Review) | Files larger than `large_file_size_mb` unused since `large_file_months` months |
 
 ---
 

@@ -13,13 +13,10 @@ import (
 
 // Config holds user-configurable cleanup rules.
 type Config struct {
-	EnabledCategories  map[string]bool   `json:"enabled_categories"`
-	ActivePreset       string            `json:"active_preset"`
-	OldInstallerMonths int               `json:"old_installer_months"`
-	LargeFileMinSizeMB int               `json:"large_file_min_size_mb"`
-	LargeFileMonths    int               `json:"large_file_months"`
-	Exclusions         []string          `json:"exclusions"`
-	AutoRiskOverrides  map[string]string `json:"auto_risk_overrides"`
+	EnabledCategories map[string]bool   `json:"enabled_categories"`
+	ActivePreset      string            `json:"active_preset"`
+	Exclusions        []string          `json:"exclusions"`
+	AutoRiskOverrides map[string]string `json:"auto_risk_overrides"`
 	// QuarantineEnabled controls whether cleanups move files to quarantine (true, default)
 	// or permanently delete them without recovery (false).
 	QuarantineEnabled bool `json:"quarantine_enabled"`
@@ -58,9 +55,6 @@ func Default() *Config {
 			".git":         "review",
 			"node_modules": "review",
 		},
-		OldInstallerMonths:        6,
-		LargeFileMinSizeMB:        100,
-		LargeFileMonths:           6,
 		QuarantineEnabled:         true,
 		QuarantineAutoCleanupDays: 7,
 		Language:                  "",
@@ -113,15 +107,6 @@ func Load() (*Config, error) {
 		if _, ok := cfg.EnabledCategories[cat]; !ok {
 			cfg.EnabledCategories[cat] = val
 		}
-	}
-	if cfg.OldInstallerMonths <= 0 {
-		cfg.OldInstallerMonths = defaults.OldInstallerMonths
-	}
-	if cfg.LargeFileMinSizeMB <= 0 {
-		cfg.LargeFileMinSizeMB = defaults.LargeFileMinSizeMB
-	}
-	if cfg.LargeFileMonths <= 0 {
-		cfg.LargeFileMonths = defaults.LargeFileMonths
 	}
 	// QuarantineEnabled defaults to true; existing configs without the field get true.
 	// We detect "missing from JSON" by checking if it was explicitly set to false.
